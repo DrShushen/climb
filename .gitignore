@@ -52,3 +52,10 @@ MANIFEST
 .venv*/
 .conda*/
 .python-version
+
+# === Custom ===
+# Hidden:
+.ruff_cache
+.dev
+# Visible:
+wd

@@ -1,3 +1,4 @@
+# === Setup ===
 [build-system]
 # AVOID CHANGING REQUIRES: IT WILL BE UPDATED BY PYSCAFFOLD!
 requires = ["setuptools>=46.1.0", "setuptools_scm[toml]>=5"]
@@ -7,3 +8,27 @@ build-backend = "setuptools.build_meta"
 # For smarter version schemes and other configuration options,
 # check out https://github.com/pypa/setuptools_scm
 version_scheme = "no-guess-dev"
+
+
+# === Linting ===
+[tool.ruff]
+line-length = 120
+target-version = "py39"
+
+[tool.ruff.lint]
+extend-select = ["I"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["climb"]
+
+
+# === Other ===
+[tool.bandit]
+exclude_dirs = [
+    ".dev",
+    ".tox",
+    ".vscode",
+    "build",
+    "dist",
+    "wd",
+]

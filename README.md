@@ -10,18 +10,8 @@
 [![Twitter](https://img.shields.io/twitter/url/http/shields.io.svg?style=social&label=Twitter)](https://twitter.com/climb-ai)
 -->
 
-[![Project generated with PyScaffold](https://img.shields.io/badge/-PyScaffold-005CA0?logo=pyscaffold)](https://pyscaffold.org/)
-
-# climb-ai
+# CliMB
 
 > CliMB: An AI-enabled Partner for Clinical Predictive Modeling
 
 A longer description of your project goes here...
-
-
-<!-- pyscaffold-notes -->
-
-## Note
-
-This project has been set up using PyScaffold 4.6. For details and usage
-information on PyScaffold see https://pyscaffold.org/.
