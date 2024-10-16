@@ -690,7 +690,7 @@ class OpenAIMinBaselineEngine(OpenAIEngineBase):
                                         visibility="all",
                                     )
                                 )
-    
+
     def create_new_message_branch(self) -> bool:
         # Create a new message branch.
         last_branch_point = tree_helpers.get_last_branch_point_node(self.session.messages)
@@ -708,6 +708,7 @@ class OpenAIMinBaselineEngine(OpenAIEngineBase):
             )
             return True
         return False
+
 
 class AzureOpenAIMinBaselineEngine(
     AzureOpenAIEngineMixin,  # Mixing needs to come first to override the methods correctly.

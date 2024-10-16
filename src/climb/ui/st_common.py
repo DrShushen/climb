@@ -97,7 +97,7 @@ def run_global_markdown_css_hack() -> None:
     REPLACE_IN_STYLE_STR = {
         "{SIDEBAR_WIDTH_PX}": SIDEBAR_WIDTH_PX,
     }
-    
+
     style_str = """
     <style>
     section[data-testid="stSidebar"] {
@@ -105,7 +105,7 @@ def run_global_markdown_css_hack() -> None:
     }
     </style>
     """
-    
+
     style_str = replace_str_from_dict(style_str, REPLACE_IN_STYLE_STR)
     st.markdown(style_str, unsafe_allow_html=True)
 
@@ -206,7 +206,7 @@ class JSExecutor:
             for replace_with in replacements.values():
                 if '"' in replace_with:
                     raise ValueError(f"Replacement value contains double quotes: {replace_with}")
-        
+
         actual_js_code = replace_str_from_dict(self._js_code, replacements or dict())
 
         def _exec(js_code: str) -> Any:
