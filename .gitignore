@@ -59,3 +59,8 @@ MANIFEST
 .dev
 # Visible:
 wd
+# Files
+.env
+keys.env
+az_openai_config.yml
+db.json

@@ -91,10 +91,31 @@ def kill_executing_tool():
         st.session_state.engine.stop_tool_execution()
 
 
+def run_global_markdown_css_hack() -> None:
+    SIDEBAR_WIDTH_PX = 224
+
+    REPLACE_IN_STYLE_STR = {
+        "{SIDEBAR_WIDTH_PX}": SIDEBAR_WIDTH_PX,
+    }
+    
+    style_str = """
+    <style>
+    section[data-testid="stSidebar"] {
+        width: {SIDEBAR_WIDTH_PX}px !important;
+    }
+    </style>
+    """
+    
+    style_str = replace_str_from_dict(style_str, REPLACE_IN_STYLE_STR)
+    st.markdown(style_str, unsafe_allow_html=True)
+
+
 def menu() -> None:
     # --- Execute any clean-up actions when setting up a new page:
     kill_executing_tool()
     # ---
+
+    run_global_markdown_css_hack()  # NOTE: We fix the sidebar width (can't be adjusted).
 
     st.sidebar.page_link("pages/main.py", label=PAGE_TITLES["main_emoji"])
     st.sidebar.page_link("pages/research_management.py", label=PAGE_TITLES["research_management_emoji"])
@@ -102,7 +123,7 @@ def menu() -> None:
 
     with st.sidebar:
         st.markdown("---")
-        st.image("./CLIMB.png")
+        st.image("./entry/st/climb.png")
         st.markdown(
             f"""
             :blue-background[**Cli**]nical :blue-background[**M**]achine Learning :blue-background[**B**]uilder
@@ -111,11 +132,11 @@ def menu() -> None:
             """
         )
         st.markdown("by [van der Schaar Lab](https://www.vanderschaar-lab.com/)")
-        st.image("https://www.vanderschaar-lab.com/wp-content/uploads/2020/04/transpLogo_long_plus.png")
+        st.image("./entry/st/vds.png")
         st.markdown(
             "and [Cambridge Centre for AI in Medicine](https://www.damtp.cam.ac.uk/new-cambridge-centre-ai-medicine-ccaim-0)"
         )
-        st.image("./ccaim-logo.png", width=150)
+        st.image("./entry/st/ccaim.png", width=150)
 
 
 def initialize_common_st_state(db: DB) -> None:
@@ -179,6 +200,13 @@ class JSExecutor:
         self._log_text = log_text
 
     def execute_js(self, replacements: Optional[Dict[str, str]] = None) -> Any:
+        # Ensure no double quotes in the replacement values.
+        # This is because we assume that double quotes are used to wrap the replacement values in the JS code.
+        if replacements is not None:
+            for replace_with in replacements.values():
+                if '"' in replace_with:
+                    raise ValueError(f"Replacement value contains double quotes: {replace_with}")
+        
         actual_js_code = replace_str_from_dict(self._js_code, replacements or dict())
 
         def _exec(js_code: str) -> Any:
