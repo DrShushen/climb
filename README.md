@@ -15,16 +15,17 @@
 
 This repository is the implementation of the system as described in the preprint [CliMB: An AI-enabled Partner for Clinical Predictive Modeling](http://arxiv.org/abs/2410.03736).
 
-[![Demo Video](docs/assets/video-demo.gif)](https://www.youtube.com/watch?v=76XuR0K3F5Y)
-
 [<img src="docs/assets/play.svg" height=12> Watch the demo](https://www.youtube.com/watch?v=76XuR0K3F5Y)
+
+[![Demo Video](docs/assets/video-demo.gif)](https://www.youtube.com/watch?v=76XuR0K3F5Y)
 
 
 
 ## 🏥 Overview
 CliMB is a no-code AI-enabled partner designed to empower clinician scientists to create predictive models using natural language. It guides you through the entire medical data science pipeline, in order to create predictive models from real-world data in just one conversation.
 
-<img src="docs/assets/climb-fig-main.png" alt="CliMB Conceptual Figure">
+<img src="docs/assets/climb-fig-main.png" width=49% alt="CliMB Conceptual Figure">
+<img src="docs/assets/climb-fig-clinical.png" width=50% alt="CliMB Clinical Figure"> 
 
 
 
