@@ -151,7 +151,7 @@ def execute_code(
     # TODO: Better management of environments.
     # TODO: Deleting code file at the end?
 
-    env_name = "R_py38_climb_code_exec"
+    env_name = "climb-code"
 
     needed_dependencies = set(dependencies)
     env_dependencies = set(

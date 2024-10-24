@@ -1,8 +1,8 @@
 [![Documentation Status](https://readthedocs.org/projects/climb-ai/badge/?version=latest)](https://climb-ai.readthedocs.io/en/latest/?badge=latest)
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/release/python-370/)
-[![PyPI-Server](https://img.shields.io/pypi/v/climb-ai?color=blue)](https://pypi.org/project/climb-ai/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE.txt)
+<!-- [![PyPI-Server](https://img.shields.io/pypi/v/climb-ai?color=blue)](https://pypi.org/project/climb-ai/) -->
 <!-- [![Downloads](https://static.pepy.tech/badge/climb-ai)](https://pepy.tech/project/climb-ai) -->
 
 [![arXiv](https://img.shields.io/badge/arXiv-2301.12260-b31b1b.svg)](http://arxiv.org/abs/2410.03736)
@@ -88,7 +88,46 @@ A useful additional resource for understanding the privacy implications of speci
 
 
 ## 📦 Installation
+In order to use CliMB, you need to accomplish the following three steps:
+1. 🐍 Set up the `conda` environments.
+2. 🔑 Obtain the API keys for the third-party LLM ([OpenAI](https://platform.openai.com/) or[Azure OpenAI Service](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview)).
+3. 📈 Install the CliMB package.
+
+### 1. 🐍 Set up the `conda` environments
+CliMB uses [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/getting-started.html) to manage the Python environments. Before installing CliMB, you need to set up two `conda` environments as follows.
+1. If you do not have `conda` installed on your system, follow [these instructions](https://docs.anaconda.com/free/miniconda/) to install `miniconda`.
+2. Create the *main* conda environment for CliMB:
+     ```bash
+     conda create -n climb python=3.9 -y
+     ```
+     Python `3.9` or newer should be set.
+3. Create a *separate* `conda` environment that will be used for *code execution*:
+     > [!CAUTION]
+     > The exact environment name `climb-code` must be used.
+
+     ```bash
+     # Create and activate the environment, Python `3.9` or newer should be set:
+     conda create -n climb-code python=3.9 -y
+
+     # Activate the environment:
+     conda activate climb-code
+     # Install some standard packages in the environment. If more packages are needed by generated code, those will be automatically installed by the tool.
+     conda install pandas numpy matplotlib seaborn scikit-learn shap -y
+     # Exit this environment:
+     conda deactivate
+     ```
+
+     CliMB will automatically use this environment when executing the generated code.
+
+### 2. 🔑 Obtain the API keys for the third-party LLM
+#### OpenAI
 TODO.
+#### Azure OpenAI Service
+TODO.
+
+### 3. 📈 Install the CliMB package
+TODO.
+
 
 
 ## 📚 Documentation
