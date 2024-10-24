@@ -1,0 +1,25 @@
+models:
+
+  - name: "your-custom-name"
+    # ^ This is to identify the model in the UI, it can be anything.
+    endpoint: "https://my-endpoint-1.openai.azure.com/"
+    # ^ The endpoint of azure openai service you are using.
+    deployment_name: "your-deployment-name"
+    # ^ The deployment name of the model you are using.
+    api_version: "2024-02-01"
+    # ^ The api version, see https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#api-specs
+    model: "gpt-4-0125-preview"
+    # ^ This needs to match the model type you set up in the Azure OpenAI Portal.
+    # Currently the options are:
+    #  - "gpt-4-1106-preview"
+    #  - "gpt-4-0125-preview"
+    #  - "gpt-4o"
+
+  # You can have more than one model in the Azure config file. You will be able to switch between them in the UI.
+  - name: "your-custom-name-2"
+    endpoint: "https://my-endpoint-2.openai.azure.com/"
+    deployment_name: "your-deployment-name-2"
+    api_version: "2024-02-01"
+    model: "gpt-4-0125-preview"
+
+  # ...

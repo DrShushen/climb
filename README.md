@@ -135,15 +135,72 @@ CliMB uses [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/g
 1. Create an Azure account [here](https://azure.microsoft.com/en-gb/pricing/purchase-options/azure-account?icid=azurefreeaccount).
 2. Create an Azure OpenAI Service resource by following [this guide](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/create-resource).
      * At the final **"Deploy a model"** step, we recommend selecting `gpt-4` (one of the versions `1106-preview`, `0125-preview`, or `turbo-<DATE>`), or `gpt-4o` (any version).
-     * When you are deploying the model, make note of the **(1) name** that you use as it is needed later.
-3. In [Azure OpenAI Studio](https://oai.azure.com/), click the resource name at the top right of the screen to find: **(2) endpoint** and **(3) key**, make note of these as they are needed later.
+     * When you are deploying the model, make note of the **① deployment name** that you use as it is needed later.
+3. In [Azure OpenAI Studio](https://oai.azure.com/), click the resource name at the top right of the screen to find: **② endpoint** and **③ key**, make note of these as they are needed later.
      
-     <img src="docs/assets/installation-az-info.png" height=200 alt="CliMB Clinical Figure">
+     <img src="docs/assets/installation-az-info.png" height=450 alt="CliMB Clinical Figure">
 
 
 
 ### 3. 📈 Install the CliMB package
-TODO.
+1. Clone the CliMB repository and navigate to the directory (we will call this the **repo directory**)
+    ```bash
+    # Clone the repository:
+    git clone <get the URL from github>
+
+    # Navigate inside the repo directory:
+    cd climb
+    ```
+2. Activate the *main* `conda` environment and install the package itself (this will install all the dependencies as well):
+    ```bash
+    # Activate the main environment:
+    conda activate climb
+
+    # Install the CliMB package:
+    pip install -e .
+    ```
+3. Finally, you need to set up the configuration file for the LLM provider you chose.
+     * Copy the [Example `.env`](./config/.env) file to the **repo directory**.
+     On Windows you may wish to rename it to `keys.env` to avoid the file being hidden / extension confusion.
+     * **Option 1: OpenAI**:
+          * Open the `.env`/`keys.env` file in the **repo directory** and replace the value of
+               ```ini
+               OPENAI_API_KEY="API_KEY_FOR_OPENAI"
+               ```
+               with the **key** you obtained.
+     * **Option 2: Azure OpenAI Service**:
+          * Open the `.env`/`keys.env` file in the **repo directory**.
+               ```ini
+               AZURE_OPENAI_API_KEY__my-endpoint-1="API_KEY_FOR_AZURE_ENDPOINT_1"
+               ```
+               * Update the value `"API_KEY_FOR_AZURE_ENDPOINT_1"` with the **③ key** you obtained.
+               * Replace `my-endpoint-1` template with the ID of the endpoint you are actually using. For example, if your endpoint is `https://my-clinic.openai.azure.com/`, use the `my-clinic` part. In this example case, the line would look like:
+                    ```ini
+                    AZURE_OPENAI_API_KEY__my-clinic="your actual ③ key"
+                    ```
+          * Copy the [Example `az_openai_config.yml`](./config/az_openai_config.yml) file to the **repo directory**.
+          * Open the `az_openai_config.yml` file in the **repo directory**:
+               ```yaml
+               models:
+                 - name: "your-custom-name"
+                   # ^ This is to identify the model in the UI, it can be anything.
+                   endpoint: "https://my-endpoint-1.openai.azure.com/"
+                   # ^ The endpoint of azure openai service you are using.
+                   deployment_name: "your-deployment-name"
+                   # ^ The deployment name of the model you are using.
+                   api_version: "2024-02-01"
+                   # ^ The api version, see https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#api-specs
+                   model: "gpt-4-0125-preview"
+                   # ^ This needs to match the model type you set up in the Azure OpenAI Portal.
+                   # Currently the options are:
+                   #  - "gpt-4-1106-preview"
+                   #  - "gpt-4-0125-preview"
+                   #  - "gpt-4o"
+               ```
+               * You need to set the value of `endpoint` to **② endpoint** and `deployment_name` to **① deployment name**.
+               * Make sure th `model` field matches the model type you deployed in the Azure OpenAI Portal.
+               * Make sure the `api_version` field matches one of the [versions available](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#api-specs), it is best practice to use the latest version available.
+               * The `name` field can be anything you want, it is used to identify the model in the UI.
 
 
 
