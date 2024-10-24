@@ -24,7 +24,7 @@ This repository is the implementation of the system as described in the preprint
 ## 🏥 Overview
 CliMB is a no-code AI-enabled partner designed to empower clinician scientists to create predictive models using natural language. It guides you through the entire medical data science pipeline, in order to create predictive models from real-world data in just one conversation.
 
-<img src="docs/assets/climb-fig-clinical.png" width=45% alt="CliMB Clinical Figure"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <img src="docs/assets/climb-fig-main.png" width=45% alt="CliMB Conceptual Figure">
+<img src="docs/assets/climb-fig-clinical.png" width=45% alt="CliMB Clinical Figure"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <img src="docs/assets/climb-fig-main.png" width=45% alt="CliMB Conceptual Figure">
 
 
 
