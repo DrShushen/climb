@@ -205,6 +205,31 @@ CliMB uses [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/g
 
 
 
+## 🚀 Usage
+To launch CliMB UI, from the **repo directory**, run:
+```bash
+streamlit run entry/st/app.py
+```
+
+This will show the output like:
+```txt
+  You can now view your Streamlit app in your browser.
+
+  Local URL: http://localhost:8501
+  Network URL: http://192.168.0.68:8501
+```
+
+Navigate to the `Local URL` in your browser ([Chrome](https://www.google.com/intl/en_uk/chrome/) is recommended for UI compatibility reasons) to start using CliMB.
+
+The **working directory** of CliMB will be:
+```bash
+<repo_directory>/wd/
+```
+
+CliMB will put all the various data and model files there. Each research session will have its own subdirectory inside the `wd` directory. If you delete a session, the corresponding subdirectory will be deleted as well.
+
+
+
 ## ✍️ Citing
 
 If you use CliMB in your work, please cite the associated paper:
