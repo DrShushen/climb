@@ -204,5 +204,15 @@ CliMB uses [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/g
 
 
 
-## 📚 Documentation
-TODO.
+
+## ✍️ Citing
+
+If you use CliMB in your work, please cite the associated paper:
+```bibtex
+@article{saveliev2024climb,
+  title={CliMB: An AI-enabled Partner for Clinical Predictive Modeling},
+  author={Saveliev, Evgeny and Schubert, Tim and Pouplin, Thomas and Kosmoliaptsis, Vasilis and van der Schaar, Mihaela},
+  journal={arXiv preprint arXiv:2410.03736},
+  year={2024}
+}
+```

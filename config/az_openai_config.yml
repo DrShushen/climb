@@ -16,10 +16,10 @@ models:
     #  - "gpt-4o"
 
   # You can have more than one model in the Azure config file. You will be able to switch between them in the UI.
-  - name: "your-custom-name-2"
-    endpoint: "https://my-endpoint-2.openai.azure.com/"
-    deployment_name: "your-deployment-name-2"
-    api_version: "2024-02-01"
-    model: "gpt-4-0125-preview"
+  # - name: "your-custom-name-2"
+  #   endpoint: "https://my-endpoint-2.openai.azure.com/"
+  #   deployment_name: "your-deployment-name-2"
+  #   api_version: "2024-02-01"
+  #   model: "gpt-4-0125-preview"
 
   # ...
