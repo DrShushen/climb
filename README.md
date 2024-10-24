@@ -89,9 +89,9 @@ A useful additional resource for understanding the privacy implications of speci
 
 ## 📦 Installation
 In order to use CliMB, you need to accomplish the following three steps:
-1. 🐍 Set up the `conda` environments.
-2. 🔑 Obtain the API keys for the third-party LLM ([OpenAI](https://platform.openai.com/) or[Azure OpenAI Service](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview)).
-3. 📈 Install the CliMB package.
+1. [🐍 Set up the `conda` environments](#1--set-up-the-conda-environments)
+2. [🔑 Obtain the API keys for the third-party LLM](#2--obtain-the-api-keys-for-the-third-party-llm) ([OpenAI](https://platform.openai.com/) or[Azure OpenAI Service](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview))
+3. [📈 Install the CliMB package](#3--install-the-climb-package)
 
 ### 1. 🐍 Set up the `conda` environments
 CliMB uses [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/getting-started.html) to manage the Python environments. Before installing CliMB, you need to set up two `conda` environments as follows.
@@ -102,6 +102,7 @@ CliMB uses [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/g
      ```
      Python `3.9` or newer should be set.
 3. Create a *separate* `conda` environment that will be used for *code execution*:
+
      > [!CAUTION]
      > The exact environment name `climb-code` must be used.
 
@@ -120,10 +121,26 @@ CliMB uses [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/g
      CliMB will automatically use this environment when executing the generated code.
 
 ### 2. 🔑 Obtain the API keys for the third-party LLM
-#### OpenAI
-TODO.
-#### Azure OpenAI Service
-TODO.
+> [!WARNING]  
+> Please read the [🔏 Data Privacy](#-data-privacy) section before proceeding with this step, in order to make an informed decision about which LLM provider is suitable for your use case.
+
+#### Option 1: OpenAI
+1. Sign up for OpenAI platform [here](https://platform.openai.com/signup).
+2. Fund your account by following [this guide](https://help.openai.com/en/articles/8264644-what-is-prepaid-billing).
+3. Follow [this guide](https://help.openai.com/en/articles/4936850-where-do-i-find-my-openai-api-key) to get your API key.
+     * ⚠️ Never share your API key with anyone and treat it as a "password". A reminder to developers to to never commit your API keys to a public repository!
+     * Make note of this **key** as it is needed later.
+
+#### Option 2: Azure OpenAI Service
+1. Create an Azure account [here](https://azure.microsoft.com/en-gb/pricing/purchase-options/azure-account?icid=azurefreeaccount).
+2. Create an Azure OpenAI Service resource by following [this guide](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/create-resource).
+     * At the final **"Deploy a model"** step, we recommend selecting `gpt-4` (one of the versions `1106-preview`, `0125-preview`, or `turbo-<DATE>`), or `gpt-4o` (any version).
+     * When you are deploying the model, make note of the **(1) name** that you use as it is needed later.
+3. In [Azure OpenAI Studio](https://oai.azure.com/), click the resource name at the top right of the screen to find: **(2) endpoint** and **(3) key**, make note of these as they are needed later.
+     
+     <img src="docs/assets/installation-az-info.png" height=200 alt="CliMB Clinical Figure">
+
+
 
 ### 3. 📈 Install the CliMB package
 TODO.
