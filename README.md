@@ -17,7 +17,7 @@ This repository is the implementation of the system as described in the preprint
 
 [![Demo Video](docs/assets/video-demo.gif)](https://www.youtube.com/watch?v=76XuR0K3F5Y)
 
-[<img src="docs/assets/play.svg" height=10> Watch the demo](https://www.youtube.com/watch?v=76XuR0K3F5Y)
+[<img src="docs/assets/play.svg" height=12> Watch the demo](https://www.youtube.com/watch?v=76XuR0K3F5Y)
 
 
 
