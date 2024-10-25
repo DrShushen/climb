@@ -58,11 +58,11 @@ In order to use third-party, proprietary LLMs, CliMB uses their API ([What's an 
 
 It is critical that you understand the terms of service of the LLM provider you choose to use with CliMB. Below are links to the overviews of how each provider uses your data (but a detailed review of the terms of service is highly recommended):
 * **OpenAI**:
-     * [OpenAI Platform - How we use your data](https://platform.openai.com/docs/models/how-we-use-your-data)
-     * [Privacy Policy](https://openai.com/policies/row-privacy-policy/)
+    * [OpenAI Platform - How we use your data](https://platform.openai.com/docs/models/how-we-use-your-data)
+    * [Privacy Policy](https://openai.com/policies/row-privacy-policy/)
 * **Azure OpenAI Service**:
-     * [Data, privacy, and security for Azure OpenAI Service](https://learn.microsoft.com/en-us/legal/cognitive-services/openai/data-privacy?tabs=azure-portal)
-     * [Privacy in Azure](https://azure.microsoft.com/en-gb/explore/trusted-cloud/privacy)
+    * [Data, privacy, and security for Azure OpenAI Service](https://learn.microsoft.com/en-us/legal/cognitive-services/openai/data-privacy?tabs=azure-portal)
+    * [Privacy in Azure](https://azure.microsoft.com/en-gb/explore/trusted-cloud/privacy)
 
 For instance, in case of **Azure OpenAI Service**, the following applies:
 > Your prompts (inputs) and completions (outputs), your embeddings, and your training data:
@@ -97,28 +97,27 @@ In order to use CliMB, you need to accomplish the following three steps:
 CliMB uses [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/getting-started.html) to manage the Python environments. Before installing CliMB, you need to set up two `conda` environments as follows.
 1. If you do not have `conda` installed on your system, follow [these instructions](https://docs.anaconda.com/free/miniconda/) to install `miniconda`.
 2. Create the *main* conda environment for CliMB:
-     ```bash
-     conda create -n climb python=3.9 -y
-     ```
-     Python `3.9` or newer should be set.
+    ```bash
+    conda create -n climb python=3.9 -y
+    ```
+    Python `3.9` or newer should be set.
 3. Create a *separate* `conda` environment that will be used for *code execution*:
 
-     > [!CAUTION]
-     > The exact environment name `climb-code` must be used.
+    > ⚠️ The exact environment name `climb-code` must be used.
 
-     ```bash
-     # Create and activate the environment, Python `3.9` or newer should be set:
-     conda create -n climb-code python=3.9 -y
+    ```bash
+    # Create and activate the environment, Python `3.9` or newer should be set:
+    conda create -n climb-code python=3.9 -y
 
-     # Activate the environment:
-     conda activate climb-code
-     # Install some standard packages in the environment. If more packages are needed by generated code, those will be automatically installed by the tool.
-     conda install pandas numpy matplotlib seaborn scikit-learn shap -y
-     # Exit this environment:
-     conda deactivate
-     ```
+    # Activate the environment:
+    conda activate climb-code
+    # Install some standard packages in the environment. If more packages are needed by generated code, those will be automatically installed by the tool.
+    conda install pandas numpy matplotlib seaborn scikit-learn shap -y
+    # Exit this environment:
+    conda deactivate
+    ```
 
-     CliMB will automatically use this environment when executing the generated code.
+    CliMB will automatically use this environment when executing the generated code.
 
 ### 2. 🔑 Obtain the API keys for the third-party LLM
 > [!WARNING]  
@@ -128,17 +127,17 @@ CliMB uses [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/g
 1. Sign up for OpenAI platform [here](https://platform.openai.com/signup).
 2. Fund your account by following [this guide](https://help.openai.com/en/articles/8264644-what-is-prepaid-billing).
 3. Follow [this guide](https://help.openai.com/en/articles/4936850-where-do-i-find-my-openai-api-key) to get your API key.
-     * ⚠️ Never share your API key with anyone and treat it as a "password". A reminder to developers to to never commit your API keys to a public repository!
-     * Make note of this **key** as it is needed later.
+    * ⚠️ Never share your API key with anyone and treat it as a "password". A reminder to developers to to never commit your API keys to a public repository!
+    * Make note of this **key** as it is needed later.
 
 #### Option 2: Azure OpenAI Service
 1. Create an Azure account [here](https://azure.microsoft.com/en-gb/pricing/purchase-options/azure-account?icid=azurefreeaccount).
 2. Create an Azure OpenAI Service resource by following [this guide](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/create-resource).
-     * At the final **"Deploy a model"** step, we recommend selecting `gpt-4` (one of the versions `1106-preview`, `0125-preview`, or `turbo-<DATE>`), or `gpt-4o` (any version).
-     * When you are deploying the model, make note of the **① deployment name** that you use as it is needed later.
+    * At the final **"Deploy a model"** step, we recommend selecting `gpt-4` (one of the versions `1106-preview`, `0125-preview`, or `turbo-<DATE>`), or `gpt-4o` (any version).
+    * When you are deploying the model, make note of the **① deployment name** that you use as it is needed later.
 3. In [Azure OpenAI Studio](https://oai.azure.com/), click the resource name at the top right of the screen to find: **② endpoint** and **③ key**, make note of these as they are needed later.
-     
-     <img src="docs/assets/installation-az-info.png" height=450 alt="CliMB Clinical Figure">
+    
+    <img src="docs/assets/installation-az-info.png" height=450 alt="CliMB Clinical Figure">
 
 
 
@@ -160,47 +159,47 @@ CliMB uses [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/g
     pip install -e .
     ```
 3. Finally, you need to set up the configuration file for the LLM provider you chose.
-     * Copy the [Example `.env`](./config/.env) file to the **repo directory**.
-     On Windows you may wish to rename it to `keys.env` to avoid the file being hidden / extension confusion.
-     * **Option 1: OpenAI**:
-          * Open the `.env`/`keys.env` file in the **repo directory** and replace the value of
-               ```ini
-               OPENAI_API_KEY="API_KEY_FOR_OPENAI"
-               ```
-               with the **key** you obtained.
-     * **Option 2: Azure OpenAI Service**:
-          * Open the `.env`/`keys.env` file in the **repo directory**.
-               ```ini
-               AZURE_OPENAI_API_KEY__my-endpoint-1="API_KEY_FOR_AZURE_ENDPOINT_1"
-               ```
-               * Update the value `"API_KEY_FOR_AZURE_ENDPOINT_1"` with the **③ key** you obtained.
-               * Replace `my-endpoint-1` template with the ID of the endpoint you are actually using. For example, if your endpoint is `https://my-clinic.openai.azure.com/`, use the `my-clinic` part. In this example case, the line would look like:
-                    ```ini
-                    AZURE_OPENAI_API_KEY__my-clinic="your actual ③ key"
-                    ```
-          * Copy the [Example `az_openai_config.yml`](./config/az_openai_config.yml) file to the **repo directory**.
-          * Open the `az_openai_config.yml` file in the **repo directory**:
-               ```yaml
-               models:
-                 - name: "your-custom-name"
-                   # ^ This is to identify the model in the UI, it can be anything.
-                   endpoint: "https://my-endpoint-1.openai.azure.com/"
-                   # ^ The endpoint of azure openai service you are using.
-                   deployment_name: "your-deployment-name"
-                   # ^ The deployment name of the model you are using.
-                   api_version: "2024-02-01"
-                   # ^ The api version, see https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#api-specs
-                   model: "gpt-4-0125-preview"
-                   # ^ This needs to match the model type you set up in the Azure OpenAI Portal.
-                   # Currently the options are:
-                   #  - "gpt-4-1106-preview"
-                   #  - "gpt-4-0125-preview"
-                   #  - "gpt-4o"
-               ```
-               * You need to set the value of `endpoint` to **② endpoint** and `deployment_name` to **① deployment name**.
-               * Make sure th `model` field matches the model type you deployed in the Azure OpenAI Portal.
-               * Make sure the `api_version` field matches one of the [versions available](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#api-specs), it is best practice to use the latest version available.
-               * The `name` field can be anything you want, it is used to identify the model in the UI.
+    * Copy the [Example `.env`](./config/.env) file to the **repo directory**.
+    On Windows you may wish to rename it to `keys.env` to avoid the file being hidden / extension confusion.
+    * **Option 1: OpenAI**:
+        * Open the `.env`/`keys.env` file in the **repo directory** and replace the value of
+            ```ini
+            OPENAI_API_KEY="API_KEY_FOR_OPENAI"
+            ```
+            with the **key** you obtained.
+    * **Option 2: Azure OpenAI Service**:
+        * Open the `.env`/`keys.env` file in the **repo directory**.
+            ```ini
+            AZURE_OPENAI_API_KEY__my-endpoint-1="API_KEY_FOR_AZURE_ENDPOINT_1"
+            ```
+            * Update the value `"API_KEY_FOR_AZURE_ENDPOINT_1"` with the **③ key** you obtained.
+            * Replace `my-endpoint-1` template with the ID of the endpoint you are actually using. For example, if your endpoint is `https://my-clinic.openai.azure.com/`, use the `my-clinic` part. In this example case, the line would look like:
+                ```ini
+                AZURE_OPENAI_API_KEY__my-clinic="your actual ③ key"
+                ```
+        * Copy the [Example `az_openai_config.yml`](./config/az_openai_config.yml) file to the **repo directory**.
+        * Open the `az_openai_config.yml` file in the **repo directory**:
+            ```yaml
+            models:
+              - name: "your-custom-name"
+                # ^ This is to identify the model in the UI, it can be anything.
+                endpoint: "https://my-endpoint-1.openai.azure.com/"
+                # ^ The endpoint of azure openai service you are using.
+                deployment_name: "your-deployment-name"
+                # ^ The deployment name of the model you are using.
+                api_version: "2024-02-01"
+                # ^ The api version, see https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#api-specs
+                model: "gpt-4-0125-preview"
+                # ^ This needs to match the model type you set up in the Azure OpenAI Portal.
+                # Currently the options are:
+                #  - "gpt-4-1106-preview"
+                #  - "gpt-4-0125-preview"
+                #  - "gpt-4o"
+            ```
+            * You need to set the value of `endpoint` to **② endpoint** and `deployment_name` to **① deployment name**.
+            * Make sure th `model` field matches the model type you deployed in the Azure OpenAI Portal.
+            * Make sure the `api_version` field matches one of the [versions available](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#api-specs), it is best practice to use the latest version available.
+            * The `name` field can be anything you want, it is used to identify the model in the UI.
 
 
 
@@ -227,6 +226,24 @@ The **working directory** of CliMB will be:
 ```
 
 CliMB will put all the various data and model files there. Each research session will have its own subdirectory inside the `wd` directory. If you delete a session, the corresponding subdirectory will be deleted as well.
+
+
+
+## 🔺 Updating CliMB
+
+To update to the latest version of CliMB, navigate to the **repo directory**, then follow these steps:
+
+1. Pull the latest changes by running:
+    ```bash
+    git pull
+    ```
+1. Update the package:
+    ```bash
+    # Activate the environment:
+    conda activate climb
+    # Update the package:
+    pip install -U -e .
+    ```
 
 
 
