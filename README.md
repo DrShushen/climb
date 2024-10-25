@@ -133,7 +133,7 @@ CliMB uses [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/g
 #### Option 2: Azure OpenAI Service
 1. Create an Azure account [here](https://azure.microsoft.com/en-gb/pricing/purchase-options/azure-account?icid=azurefreeaccount).
 2. Create an Azure OpenAI Service resource by following [this guide](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/create-resource).
-    * At the final **"Deploy a model"** step, we recommend selecting `gpt-4` (one of the versions `1106-preview`, `0125-preview`, or `turbo-<DATE>`), or `gpt-4o` (any version).
+    * At the final **"Deploy a model"** step, we recommend selecting `gpt-4` or `gpt-4o`. More specifically, please select one of these [versions](https://github.com/vanderschaarlab/climb/blob/main/src/climb/engine/const.py#L1-L8).
     * When you are deploying the model, make note of the **① deployment name** that you use as it is needed later.
 3. In [Azure OpenAI Studio](https://oai.azure.com/), click the resource name at the top right of the screen to find: **② endpoint** and **③ key**, make note of these as they are needed later.
     
@@ -188,13 +188,13 @@ CliMB uses [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/g
                 deployment_name: "your-deployment-name"
                 # ^ The deployment name of the model you are using.
                 api_version: "2024-02-01"
-                # ^ The api version, see https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#api-specs
+                # ^ The api version, see
+                # - https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#api-specs
+                # - https://learn.microsoft.com/en-us/azure/ai-services/openai/api-version-deprecation
                 model: "gpt-4-0125-preview"
                 # ^ This needs to match the model type you set up in the Azure OpenAI Portal.
-                # Currently the options are:
-                #  - "gpt-4-1106-preview"
-                #  - "gpt-4-0125-preview"
-                #  - "gpt-4o"
+                # See the allowed options here:
+                # - https://github.com/vanderschaarlab/climb/blob/main/src/climb/engine/const.py#L1-L8
             ```
             * You need to set the value of `endpoint` to **② endpoint** and `deployment_name` to **① deployment name**.
             * Make sure th `model` field matches the model type you deployed in the Azure OpenAI Portal.
