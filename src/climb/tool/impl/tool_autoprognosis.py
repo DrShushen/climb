@@ -335,7 +335,8 @@ def autoprognosis_regression(
     # NOTE: May wish to modify these for purposes of demos etc.
     regressors = [
         "linear_regression",
-        "bayesian_ridge",
+        # "bayesian_ridge",
+        # TODO: Restore this once "n_iter parameter not found" error is fixed in AP.
     ]
     num_iter = 1
     if mode == "all":
