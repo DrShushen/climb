@@ -75,6 +75,7 @@ or [Miniconda]:
 ```
 conda create -n climb-dev python=3.9
 conda activate climb-dev
+conda install anaconda::pango
 ```
 
 ### Clone the repository

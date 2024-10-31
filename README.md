@@ -98,7 +98,11 @@ CliMB uses [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/g
 1. If you do not have `conda` installed on your system, follow [these instructions](https://docs.anaconda.com/free/miniconda/) to install `miniconda`.
 2. Create the *main* conda environment for CliMB:
     ```bash
+    # Create the environment:
     conda create -n climb python=3.9 -y
+    
+    # Install a system dependency needed for PDF generation:
+    conda install anaconda::pango
     ```
     Python `3.9` or newer should be set.
 3. Create a *separate* `conda` environment that will be used for *code execution*:
