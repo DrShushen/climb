@@ -16,8 +16,8 @@ CliMB uses [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/g
     # Create the environment:
     conda create -n climb python=3.9 -y
     
-    # Install a system dependency needed for PDF generation:
-    conda install anaconda::pango
+    # Install a dependency needed for PDF generation:
+    conda install conda-forge::weasyprint
     ```
     Python `3.9` or newer should be set.
 3. Create a *separate* `conda` environment that will be used for *code execution*:
