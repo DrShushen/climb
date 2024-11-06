@@ -9,7 +9,15 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 import streamlit_antd_components as sac
-from weasyprint import HTML
+
+try:
+    from weasyprint import HTML
+
+    WEASYPRINT_WORKING = True
+except Exception as ex:
+    print(f"Error importing weasyprint:\n{ex}")
+    print("PDF report generation will not be supported but you can still use CliMB.")
+    WEASYPRINT_WORKING = False
 
 from climb.common import Message, create_new_session
 from climb.common.data_structures import Agent, InteractionStage, ResponseKind, Session, UploadedFileAbstraction
@@ -1066,17 +1074,22 @@ with main_col_2:
             st.markdown("")  # Spacer.
             st.markdown("##### Report:")
             if st.button("🖨️ Generate session report", key="gen_report_btn_1"):
-                with st.spinner("Generating report..."):
-                    report_path = prepare_report(working_dir=engine().working_directory_abs)
-                    with open(report_path, "rb") as file:
-                        btn = st.download_button(
-                            label="⬇️ Download report",
-                            data=file,
-                            file_name=os.path.basename(report_path),
-                            mime="text/pdf",
-                            type="primary",
-                            key="download_report_btn_1",
-                        )
+                if WEASYPRINT_WORKING:
+                    with st.spinner("Generating report..."):
+                        report_path = prepare_report(working_dir=engine().working_directory_abs)
+                        with open(report_path, "rb") as file:
+                            btn = st.download_button(
+                                label="⬇️ Download report",
+                                data=file,
+                                file_name=os.path.basename(report_path),
+                                mime="text/pdf",
+                                type="primary",
+                                key="download_report_btn_1",
+                            )
+                else:
+                    st.warning(
+                        "WeasyPrint import failed. Please check the troubleshooting section in the documentation."
+                    )
 
             # Bottom spacer.
             for _ in range(2):
@@ -2018,16 +2031,21 @@ def main_flow() -> None:
             with st.chat_message("assistant"):
                 st.markdown("🏁 **Project finished.** 🏁")
                 if st.button("🖨️ Generate session report"):
-                    with st.spinner("Generating report..."):
-                        report_path = prepare_report(working_dir=engine().working_directory_abs)
-                        with open(report_path, "rb") as file:
-                            st.download_button(
-                                label="⬇️ Download report",
-                                data=file,
-                                file_name=os.path.basename(report_path),
-                                mime="text/pdf",
-                                type="primary",
-                            )
+                    if WEASYPRINT_WORKING:
+                        with st.spinner("Generating report..."):
+                            report_path = prepare_report(working_dir=engine().working_directory_abs)
+                            with open(report_path, "rb") as file:
+                                st.download_button(
+                                    label="⬇️ Download report",
+                                    data=file,
+                                    file_name=os.path.basename(report_path),
+                                    mime="text/pdf",
+                                    type="primary",
+                                )
+                    else:
+                        st.warning(
+                            "WeasyPrint import failed. Please check the troubleshooting section in the documentation."
+                        )
             user_input_box(disabled=True)
 
         # I. Handle user input.
