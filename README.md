@@ -100,7 +100,17 @@ However, the following points regarding data storage and human review for purpos
 * [Preventing abuse and harmful content generation](https://learn.microsoft.com/en-us/legal/cognitive-services/openai/data-privacy?tabs=azure-portal#preventing-abuse-and-harmful-content-generation)
 * [How can customers get an exemption from abuse monitoring and human review?](https://learn.microsoft.com/en-us/legal/cognitive-services/openai/data-privacy?tabs=azure-portal#how-can-customers-get-an-exemption-from-abuse-monitoring-and-human-review)
 
+<!-- exclude_docs -->
+> [!WARNING]  
+> If using **OpenAI** as the LLM provider, the corresponding terms of service should be reviewed in detail.
+<!-- exclude_docs_end -->
+<!-- include_docs
+```{admonition} Warning
+:class: attention
+
 If using **OpenAI** as the LLM provider, the corresponding terms of service should be reviewed in detail.
+```
+include_docs_end -->
 
 A useful additional resource for understanding the privacy implications of specific LLM providers is PhysioNet's [Responsible use of MIMIC data with online services like GPT](https://physionet.org/news/post/gpt-responsible-use). PhysioNet is the provider of the MIMIC datasets, a set of widely-used open access datasets in clinical research.
 
@@ -272,7 +282,7 @@ CliMB will put all the various data and model files there. Each research session
 
 
 
-## 🔺 Updating CliMB
+## 📦⬆️ Updating CliMB
 
 To update to the latest version of CliMB, navigate to the **repo directory**, then follow these steps:
 
