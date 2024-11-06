@@ -19,12 +19,13 @@ CliMB: An AI-enabled Partner for Clinical Predictive Modeling
 ```{toctree}
 :maxdepth: 2
 
-Overview <readme>
+Overview <overview>
 Contributions & Help <contributing>
+Developer's Guide <devguide>
 License <license>
 Authors <authors>
 Changelog <changelog>
-Module Reference <api/modules>
+API Reference <api/modules>
 ```
 
 ## Indices and tables

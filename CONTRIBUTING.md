@@ -55,7 +55,7 @@ python3 -m http.server --directory 'docs/_build/html'
 
 ## Code Contributions
 
-Details of the code architecture can be found in the [developer's guide](#).
+Details of the code architecture can be found in the [developer's guide](https://climb-ai.readthedocs.io/devguide).
 
 ### Submit an issue
 

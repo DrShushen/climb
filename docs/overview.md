@@ -1,51 +1,36 @@
 <!-- CliMB README.md -->
 
-<!-- exclude_docs -->
-[![Documentation Status](https://readthedocs.org/projects/climb-ai/badge/?version=latest)](https://climb-ai.readthedocs.io/en/latest/?badge=latest)
-
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/release/python-370/)
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE.txt)
-<!-- [![PyPI-Server](https://img.shields.io/pypi/v/climb-ai?color=blue)](https://pypi.org/project/climb-ai/) -->
-<!-- [![Downloads](https://static.pepy.tech/badge/climb-ai)](https://pepy.tech/project/climb-ai) -->
-
-[![arXiv](https://img.shields.io/badge/arXiv-2301.12260-b31b1b.svg)](http://arxiv.org/abs/2410.03736)
-[![YouTube](https://img.shields.io/badge/YouTube-%23FF0000.svg?logo=YouTube&logoColor=white)](https://www.youtube.com/watch?v=76XuR0K3F5Y)
-<!-- exclude_docs_end -->
 
 
-# <img src="docs/assets/climb-logo-no-text.png" height=25> CliMB
+# <img src="assets/climb-logo-no-text.png" height=25> CliMB
 
 > **CliMB**: **Cli**nical **M**achine learning **B**uilder
 
 This repository is the implementation of the system as described in the preprint [CliMB: An AI-enabled Partner for Clinical Predictive Modeling](http://arxiv.org/abs/2410.03736).
 
-[<img src="docs/assets/play.svg" height=12> Watch the demo](https://www.youtube.com/watch?v=76XuR0K3F5Y)
+[<img src="assets/play.svg" height=12> Watch the demo](https://www.youtube.com/watch?v=76XuR0K3F5Y)
 
-[![Demo Video](docs/assets/video-demo.gif)](https://www.youtube.com/watch?v=76XuR0K3F5Y)
+[![Demo Video](assets/video-demo.gif)](https://www.youtube.com/watch?v=76XuR0K3F5Y)
 
 
 
 ## 🏥 Overview
 CliMB is an AI-enabled partner designed to empower clinician scientists to create predictive models from real-world clinical data, all within a single conversation. With its no-code, natural language interface, CliMB guides you through the entire data science pipeline, from data exploration and engineering to model building and interpretation. The intuitive interface combines an interactive chat with a dashboard that displays project progress, data transformations, and visualizations, making it easy to follow along. Leveraging state-of-the-art methods in AutoML, data-centric AI, and interpretability tools, CliMB offers a streamlined solution for developing robust, clinically relevant predictive models.
 
-<img src="docs/assets/climb-fig-clinical.png" width=45% alt="CliMB Clinical Figure"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <img src="docs/assets/climb-fig-main.png" width=45% alt="CliMB Conceptual Figure">
+<img src="assets/climb-fig-clinical.png" width=45% alt="CliMB Clinical Figure"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <img src="assets/climb-fig-main.png" width=45% alt="CliMB Conceptual Figure">
 
 Our vision is for CliMB to integrate seamlessly into the clinician's workflow, supporting the complete cycle of clinical predictive modeling, and ultimately democratizing machine learning and AI utilization in healthcare.
 
 
 
 ## 🔏 Data Privacy
-<!-- exclude_docs -->
-> [!WARNING]  
-> It is crucial to understand the data privacy and confidentiality implications of using CliMB. Please ensure to read this section prior to using the system.
-<!-- exclude_docs_end -->
-<!-- include_docs
+
 ```{admonition} Warning
 :class: attention
 
 It is crucial to understand the data privacy and confidentiality implications of using CliMB. Please ensure to read this section prior to using the system.
 ```
-include_docs_end -->
+
 
 When using CliMB with real-world clinical data, you as the clinician scientist act as the data steward, and are responsible for ensuring that the use of the data complies with all relevant laws and regulations, as well as ethical considerations. CliMB aims to provide a secure and privacy-preserving environment for data exploration and model building, while balancing this with leveraging the capabilities of the most advanced large language models (LLMs). This section summarizes the data privacy fundamentals of CliMB and should allow you to make an informed decision about using the system with your data.
 
@@ -66,21 +51,17 @@ In order to use third-party, proprietary LLMs, CliMB uses their API ([What's an 
 * The **message data** is transferred, encrypted, via the internet to the LLM provider's (cloud) servers, which then generate a response message.
 * The **message data** may be stored by the LLM provider for some limited time (e.g., often 30 days) in order to detect and prevent abuse of the API.
 
-<!-- exclude_docs -->
-> [!NOTE]
-> **Message data** in CliMB is all the content you see in the chat interface, including the text you type, the text the system generates, and the output of code execution and tool invocations. This is also know as "prompts" and "completions", or the "context". This data *may* contain sensitive information, such as variable names, categorical values, and other data that you are working with in your predictive modeling project. It is unlikely to contain any patient records in full, as this is not required in the CliMB workflow, however this is **not guaranteed**.
-<!-- exclude_docs_end -->
-<!-- include_docs
+
 ```{admonition} Note
 :class: note
 
 **Message data** in CliMB is all the content you see in the chat interface, including the text you type, the text the system generates, and the output of code execution and tool invocations. This is also know as "prompts" and "completions", or the "context". This data *may* contain sensitive information, such as variable names, categorical values, and other data that you are working with in your predictive modeling project. It is unlikely to contain any patient records in full, as this is not required in the CliMB workflow, however this is **not guaranteed**.
 ```
-include_docs_end -->
+
 
 It is critical that you understand the terms of service of the LLM provider you choose to use with CliMB. Below are links to the overviews of how each provider uses your data (but a detailed review of the terms of service is highly recommended):
 * **OpenAI**:
-    * [OpenAI Platform - How we use your data](https://platform.openai.com/docs/models/how-we-use-your-data)
+    * [OpenAI Platform - How we use your data](https://platform.openai.com/models/how-we-use-your-data)
     * [Privacy Policy](https://openai.com/policies/row-privacy-policy/)
 * **Azure OpenAI Service**:
     * [Data, privacy, and security for Azure OpenAI Service](https://learn.microsoft.com/en-us/legal/cognitive-services/openai/data-privacy?tabs=azure-portal)
@@ -104,24 +85,20 @@ If using **OpenAI** as the LLM provider, the corresponding terms of service shou
 
 A useful additional resource for understanding the privacy implications of specific LLM providers is PhysioNet's [Responsible use of MIMIC data with online services like GPT](https://physionet.org/news/post/gpt-responsible-use). PhysioNet is the provider of the MIMIC datasets, a set of widely-used open access datasets in clinical research.
 
-<!-- exclude_docs -->
-> [!TIP]
-> Data [anonymization and pseudonymization](https://www.ucl.ac.uk/data-protection/guidance-staff-students-and-researchers/practical-data-protection-guidance-notices/anonymisation-and) are important techniques for maintaining compatibility with GDPR and similar regulations, and these are generally advised when using CliMB with clinical data.
-<!-- exclude_docs_end -->
-<!-- include_docs
+
 ```{admonition} Tip
 :class: tip
 
 Data [anonymization and pseudonymization](https://www.ucl.ac.uk/data-protection/guidance-staff-students-and-researchers/practical-data-protection-guidance-notices/anonymisation-and) are important techniques for maintaining compatibility with GDPR and similar regulations, and these are generally advised when using CliMB with clinical data.
 ```
-include_docs_end -->
+
 
 
 ## 📦 Installation
 In order to use CliMB, you need to accomplish the following three steps:
-1. [🐍 Set up the `conda` environments](#1--set-up-the-conda-environments)
-2. [🔑 Obtain the API keys for the third-party LLM](#2--obtain-the-api-keys-for-the-third-party-llm) ([OpenAI](https://platform.openai.com/) or[Azure OpenAI Service](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview))
-3. [📈 Install the CliMB package](#3--install-the-climb-package)
+1. [🐍 Set up the `conda` environments](#set-up-the-conda-environments)
+2. [🔑 Obtain the API keys for the third-party LLM](#obtain-the-api-keys-for-the-third-party-llm) ([OpenAI](https://platform.openai.com/) or[Azure OpenAI Service](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview))
+3. [📈 Install the CliMB package](#install-the-climb-package)
 
 ### 1. 🐍 Set up the `conda` environments
 CliMB uses [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/getting-started.html) to manage the Python environments. Before installing CliMB, you need to set up two `conda` environments as follows.
@@ -154,17 +131,13 @@ CliMB uses [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/g
     CliMB will automatically use this environment when executing the generated code.
 
 ### 2. 🔑 Obtain the API keys for the third-party LLM
-<!-- exclude_docs -->
-> [!WARNING]  
-> Please read the [🔏 Data Privacy](#-data-privacy) section before proceeding with this step, in order to make an informed decision about which LLM provider is suitable for your use case.
-<!-- exclude_docs_end -->
-<!-- include_docs
+
 ```{admonition} Warning
 :class: attention
 
-Please read the [🔏 Data Privacy](#-data-privacy) section before proceeding with this step, in order to make an informed decision about which LLM provider is suitable for your use case.
+Please read the [🔏 Data Privacy](#data-privacy) section before proceeding with this step, in order to make an informed decision about which LLM provider is suitable for your use case.
 ```
-include_docs_end -->
+
 
 #### Option 1: OpenAI
 1. Sign up for OpenAI platform [here](https://platform.openai.com/signup).
@@ -180,7 +153,7 @@ include_docs_end -->
     * When you are deploying the model, make note of the **① deployment name** that you use as it is needed later.
 3. In [Azure OpenAI Studio](https://oai.azure.com/), click the resource name at the top right of the screen to find: **② endpoint** and **③ key**, make note of these as they are needed later.
     
-    <img src="docs/assets/installation-az-info.png" height=450 alt="CliMB Clinical Figure">
+    <img src="assets/installation-az-info.png" height=450 alt="CliMB Clinical Figure">
 
 
 
@@ -202,7 +175,7 @@ include_docs_end -->
     pip install -e .
     ```
 3. Finally, you need to set up the configuration file for the LLM provider you chose.
-    * Copy the [Example `.env`](./config/.env) file to the **repo directory**.
+    * Copy the [Example `.env`](https://github.com/vanderschaarlab/climb/tree/main/config/.env) file to the **repo directory**.
     On Windows you may wish to rename it to `keys.env` to avoid the file being hidden / extension confusion.
     * **Option 1: OpenAI**:
         * Open the `.env`/`keys.env` file in the **repo directory** and replace the value of
@@ -220,7 +193,7 @@ include_docs_end -->
                 ```ini
                 AZURE_OPENAI_API_KEY__my-clinic="your actual ③ key"
                 ```
-        * Copy the [Example `az_openai_config.yml`](./config/az_openai_config.yml) file to the **repo directory**.
+        * Copy the [Example `az_openai_config.yml`](https://github.com/vanderschaarlab/climb/tree/main/config/az_openai_config.yml) file to the **repo directory**.
         * Open the `az_openai_config.yml` file in the **repo directory**:
             ```yaml
             models:

@@ -4,7 +4,7 @@
 [![Documentation Status](https://readthedocs.org/projects/climb-ai/badge/?version=latest)](https://climb-ai.readthedocs.io/en/latest/?badge=latest)
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/release/python-370/)
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE.txt)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://github.com/vanderschaarlab/climb/tree/main/LICENSE.txt)
 <!-- [![PyPI-Server](https://img.shields.io/pypi/v/climb-ai?color=blue)](https://pypi.org/project/climb-ai/) -->
 <!-- [![Downloads](https://static.pepy.tech/badge/climb-ai)](https://pepy.tech/project/climb-ai) -->
 
@@ -13,13 +13,13 @@
 <!-- exclude_docs_end -->
 
 
-# <img src="docs/assets/climb-logo-no-text.png" height=25> CliMB
+# <img src='https://raw.githubusercontent.com/vanderschaarlab/climb/main/docs/assets/climb-logo-no-text.png' height=25> CliMB
 
 > **CliMB**: **Cli**nical **M**achine learning **B**uilder
 
 This repository is the implementation of the system as described in the preprint [CliMB: An AI-enabled Partner for Clinical Predictive Modeling](http://arxiv.org/abs/2410.03736).
 
-[<img src="docs/assets/play.svg" height=12> Watch the demo](https://www.youtube.com/watch?v=76XuR0K3F5Y)
+[<img src='https://raw.githubusercontent.com/vanderschaarlab/climb/main/docs/assets/play.svg' height=12> Watch the demo](https://www.youtube.com/watch?v=76XuR0K3F5Y)
 
 [![Demo Video](docs/assets/video-demo.gif)](https://www.youtube.com/watch?v=76XuR0K3F5Y)
 
@@ -28,7 +28,7 @@ This repository is the implementation of the system as described in the preprint
 ## 🏥 Overview
 CliMB is an AI-enabled partner designed to empower clinician scientists to create predictive models from real-world clinical data, all within a single conversation. With its no-code, natural language interface, CliMB guides you through the entire data science pipeline, from data exploration and engineering to model building and interpretation. The intuitive interface combines an interactive chat with a dashboard that displays project progress, data transformations, and visualizations, making it easy to follow along. Leveraging state-of-the-art methods in AutoML, data-centric AI, and interpretability tools, CliMB offers a streamlined solution for developing robust, clinically relevant predictive models.
 
-<img src="docs/assets/climb-fig-clinical.png" width=45% alt="CliMB Clinical Figure"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <img src="docs/assets/climb-fig-main.png" width=45% alt="CliMB Conceptual Figure">
+<img src='https://raw.githubusercontent.com/vanderschaarlab/climb/main/docs/assets/climb-fig-clinical.png' width=45% alt="CliMB Clinical Figure"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <img src='https://raw.githubusercontent.com/vanderschaarlab/climb/main/docs/assets/climb-fig-main.png' width=45% alt="CliMB Conceptual Figure">
 
 Our vision is for CliMB to integrate seamlessly into the clinician's workflow, supporting the complete cycle of clinical predictive modeling, and ultimately democratizing machine learning and AI utilization in healthcare.
 
@@ -180,7 +180,7 @@ include_docs_end -->
     * When you are deploying the model, make note of the **① deployment name** that you use as it is needed later.
 3. In [Azure OpenAI Studio](https://oai.azure.com/), click the resource name at the top right of the screen to find: **② endpoint** and **③ key**, make note of these as they are needed later.
     
-    <img src="docs/assets/installation-az-info.png" height=450 alt="CliMB Clinical Figure">
+    <img src='https://raw.githubusercontent.com/vanderschaarlab/climb/main/docs/assets/installation-az-info.png' height=450 alt="CliMB Clinical Figure">
 
 
 
@@ -202,7 +202,7 @@ include_docs_end -->
     pip install -e .
     ```
 3. Finally, you need to set up the configuration file for the LLM provider you chose.
-    * Copy the [Example `.env`](./config/.env) file to the **repo directory**.
+    * Copy the [Example `.env`](https://github.com/vanderschaarlab/climb/tree/main/config/.env) file to the **repo directory**.
     On Windows you may wish to rename it to `keys.env` to avoid the file being hidden / extension confusion.
     * **Option 1: OpenAI**:
         * Open the `.env`/`keys.env` file in the **repo directory** and replace the value of
@@ -220,7 +220,7 @@ include_docs_end -->
                 ```ini
                 AZURE_OPENAI_API_KEY__my-clinic="your actual ③ key"
                 ```
-        * Copy the [Example `az_openai_config.yml`](./config/az_openai_config.yml) file to the **repo directory**.
+        * Copy the [Example `az_openai_config.yml`](https://github.com/vanderschaarlab/climb/tree/main/config/az_openai_config.yml) file to the **repo directory**.
         * Open the `az_openai_config.yml` file in the **repo directory**:
             ```yaml
             models:

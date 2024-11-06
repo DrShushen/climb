@@ -74,7 +74,7 @@ def check_user_hardware(tc: ToolCommunicator) -> None:
     """Gather information about the user's CPU, RAM, and GPU (if available).
 
     The report will be as follows:
-    ```text
+    ```
     CPU Information:
     - Physical Cores: <value>
     - Total Cores: <value>

@@ -9,7 +9,15 @@
 
 import os
 import shutil
+import subprocess
 import sys
+
+# -- Custom pre-build steps --------------------------------------------------
+
+# Run python docs/pre_build.py using subprocess.
+# This does various automatic preprocessing, e.g. converting README.md to overview.md.
+# Note that the path is relative to docs/.
+subprocess.run(["python", "pre_build.py"], check=True)
 
 # -- Path setup --------------------------------------------------------------
 
@@ -28,7 +36,7 @@ sys.path.insert(0, os.path.join(__location__, "../src"))
 # setup.py install" in the RTD Advanced Settings.
 # Additionally it helps us to avoid running apidoc manually
 
-from sphinx.ext import apidoc
+from sphinx.ext import apidoc  # noqa: E402
 
 output_dir = os.path.join(__location__, "api")
 module_dir = os.path.join(__location__, "../src/climb")
@@ -102,7 +110,7 @@ source_suffix = [".rst", ".md"]
 master_doc = "index"
 
 # General information about the project.
-project = "climb-ai"
+project = "climb"
 copyright = "2024, Evgeny Saveliev"
 
 # The version info for the project you're documenting, acts as replacement for
@@ -168,12 +176,15 @@ todo_emit_warnings = True
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = "alabaster"
+html_theme = "furo"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-html_theme_options = {"sidebar_width": "300px", "page_width": "1200px"}
+html_theme_options = {
+    "light_logo": "climb-logo.png",
+    "dark_logo": "climb-logo-light.png",
+}
 
 # Add any paths that contain custom themes here, relative to this directory.
 # html_theme_path = []
@@ -187,7 +198,8 @@ html_theme_options = {"sidebar_width": "300px", "page_width": "1200px"}
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-# html_logo = ""
+# html_logo = "assets/climb-logo.png"
+# NOTE: Not set, as using two logos (light and dark) in the theme options.
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
