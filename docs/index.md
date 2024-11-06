@@ -20,6 +20,7 @@ CliMB: An AI-enabled Partner for Clinical Predictive Modeling
 :maxdepth: 2
 
 Overview <overview>
+Installation <installation>
 Contributions & Help <contributing>
 Developer's Guide <devguide>
 License <license>
