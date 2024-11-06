@@ -147,3 +147,20 @@ Please select between the tabs ("OpenAI", "Azure OpenAI Service" etc.) below to 
         * Make sure the `api_version` field matches one of the [versions available](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#api-specs), it is best practice to use the latest version available.
         * The `name` field can be anything you want, it is used to identify the model in the UI.
     ```
+
+(updating-climb)=
+## 📦⬆️ Updating CliMB
+
+To update to the latest version of CliMB, navigate to the **repo directory**, then follow these steps:
+
+1. Pull the latest changes by running:
+    ```bash
+    git pull
+    ```
+1. Update the package:
+    ```bash
+    # Activate the environment:
+    conda activate climb
+    # Update the package:
+    pip install -U -e .
+    ```

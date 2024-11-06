@@ -140,6 +140,8 @@ Please read the [🔏 Data Privacy](#data-privacy) section before proceeding wit
 
 Please follow the steps in [📦 Installation](docs/installation.md) section in the documentation to install CliMB.
 
+To update to the latest version of CliMB, please follow [📦⬆️ Updating CliMB](docs/installation.md#updating-climb)
+
 
 
 ## 🚀 Usage
@@ -164,24 +166,6 @@ The **working directory** of CliMB will be:
 ```
 
 CliMB will put all the various data and model files there. Each research session will have its own subdirectory inside the `wd` directory. If you delete a session, the corresponding subdirectory will be deleted as well.
-
-
-
-## 📦⬆️ Updating CliMB
-
-To update to the latest version of CliMB, navigate to the **repo directory**, then follow these steps:
-
-1. Pull the latest changes by running:
-    ```bash
-    git pull
-    ```
-1. Update the package:
-    ```bash
-    # Activate the environment:
-    conda activate climb
-    # Update the package:
-    pip install -U -e .
-    ```
 
 
 
