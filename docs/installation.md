@@ -10,8 +10,49 @@ In order to use CliMB, you need to accomplish the following three steps:
 ## 1. 🐍 Set up the `conda` environments
 
 CliMB uses [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/getting-started.html) to manage the Python environments. Before installing CliMB, you need to set up two `conda` environments as follows.
-1. If you do not have `conda` installed on your system, follow [these instructions](https://docs.anaconda.com/free/miniconda/) to install `miniconda`.
+1. If you do not have `conda` ("Anaconda") installed on your system, you should install the [`miniconda`]((https://docs.anaconda.com/free/miniconda/)) distribution by following the appropriate instructions below.
+    ```{tab} Windows
+    * Follow the [Installing on Windows](https://docs.conda.io/projects/conda/en/latest/user-guide/install/windows.html) guide.
+    * We recommed you use the ["Miniconda" installer](https://docs.anaconda.com/miniconda/).
+    * "Verify your installer hashes" step is optional.
+    ```
+    ```{tab} macOS
+    * Follow the [Installing on macOS](https://docs.conda.io/projects/conda/en/latest/user-guide/install/macos.html) guide.
+    * We recommed you use the ["Miniconda" installer](https://docs.anaconda.com/miniconda/).
+    * "Verify your installer hashes" step is optional.
+    ```
+    ```{tab} Linux
+    * Follow the [Installing on Linux](https://docs.conda.io/projects/conda/en/latest/user-guide/install/linux.html) guide.
+    * We recommed you use the ["Miniconda" installer](https://docs.anaconda.com/miniconda/).
+    * "Verify your installer hashes" step is optional.
+    ```
 2. Create the *main* conda environment for CliMB:
+    :::{admonition} Running commands
+    :class: tip
+
+    If you are not familiar with running commands in a terminal (a.k.a. command prompt, command line interface etc.), please see this tip box for a quick overview of the appropriate terminal to use on your operating system. The commands shown in CliMB documentation should work with the terminals described here.
+
+    You do not need to type in the comment lines, e.g. `# Create the environment:`, these are for your information only.
+
+    ```{tab} Windows
+    * On Windows, you should use **Anaconda PowerShell Prompt**.
+    * You can find this by searching for "Anaconda PowerShell Prompt" in the Start menu.
+        ![Anaconda PowerShell Prompt](assets/anaconda-prompt.png){width="75%"}
+    ```
+
+    ```{tab} macOS
+    * To launch a command line terminal, you can follow this [**Execute commands and run tools in Terminal on Mac**](https://support.apple.com/en-gb/guide/terminal/apdb66b5242-0d18-49fc-9c47-a2498b7c91d5/mac).
+    * For more details, see the [**Terminal User Guide**](https://support.apple.com/guide/terminal).
+    ```
+
+    ```{tab} Linux
+    * The specifics of launching the terminal differs between different versions of Linux.
+    * E.g. on Ubuntu, follow [this guide](https://ubuntu.com/tutorials/command-line-for-beginners#3-opening-a-terminal).
+    * For other distributions, please find the appropriate giude online.
+    ```
+
+    :::
+
     ```bash
     # Create the environment:
     conda create -n climb python=3.9 -y
@@ -87,7 +128,7 @@ Please select between the tabs ("OpenAI", "Azure OpenAI Service" etc.) below to 
 1. Clone the CliMB repository and navigate to the directory (we will call this the **repo directory**)
     ```bash
     # Clone the repository:
-    git clone <get the URL from github>
+    git clone https://github.com/vanderschaarlab/climb.git
 
     # Navigate inside the repo directory:
     cd climb
@@ -146,6 +187,23 @@ Please select between the tabs ("OpenAI", "Azure OpenAI Service" etc.) below to 
         * Make sure th `model` field matches the model type you deployed in the Azure OpenAI Portal.
         * Make sure the `api_version` field matches one of the [versions available](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#api-specs), it is best practice to use the latest version available.
         * The `name` field can be anything you want, it is used to identify the model in the UI.
+    ```
+
+    At the end of the configuration, your repo directory should looks something like this:
+    ```bash
+    climb/
+    ├─ config_examples/
+    ├─ docs/
+    ├─ ...
+    ├─ tests/
+    .coveragerc
+    .gitignore
+    ...
+    .env  # Or, keys.env. The main configuration file.
+    az_openai_config.yml  # If using Azure OpenAI Service, its configuration file.
+    ...
+    setup.py
+    tox.ini
     ```
 
 (updating-climb)=

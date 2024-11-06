@@ -90,6 +90,7 @@ extensions.append("myst_parser")
 # Configure MyST-Parser
 myst_enable_extensions = [
     "amsmath",
+    "attrs_inline",
     "colon_fence",
     "deflist",
     "dollarmath",

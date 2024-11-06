@@ -158,14 +158,13 @@ This will show the output like:
   Network URL: http://192.168.0.68:8501
 ```
 
-Navigate to the `Local URL` in your browser ([Chrome](https://www.google.com/intl/en_uk/chrome/) is recommended for UI compatibility reasons) to start using CliMB.
 
-The **working directory** of CliMB will be:
-```bash
-<repo_directory>/wd/
-```
 
-CliMB will put all the various data and model files there. Each research session will have its own subdirectory inside the `wd` directory. If you delete a session, the corresponding subdirectory will be deleted as well.
+<!-- exclude_docs -->
+## 📚 Documentation
+
+You will find much more useful information in the [project documentation](https://climb-ai.readthedocs.io/).
+<!-- exclude_docs_end -->
 
 
 
