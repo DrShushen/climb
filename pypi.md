@@ -133,11 +133,17 @@ include_docs_end -->
 
 ## 📦 Installation
 
+<!-- exclude_docs -->
+> [!WARNING]  
+> Please read the [🔏 Data Privacy](#data-privacy) section before proceeding with this step, in order to understand whether CliMB is compatible with your data and use case.
+<!-- exclude_docs_end -->
+<!-- include_docs
 ```{admonition} Warning
 :class: attention
 
 Please read the [🔏 Data Privacy](#data-privacy) section before proceeding with this step, in order to understand whether CliMB is compatible with your data and use case.
 ```
+include_docs_end -->
 
 Please follow the steps in [📦 Installation](docs/installation.md) section in the documentation to install CliMB.
 

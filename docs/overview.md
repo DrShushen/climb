@@ -104,11 +104,13 @@ Data [anonymization and pseudonymization](https://www.ucl.ac.uk/data-protection/
 
 ## 📦 Installation
 
+
 ```{admonition} Warning
 :class: attention
 
 Please read the [🔏 Data Privacy](#data-privacy) section before proceeding with this step, in order to understand whether CliMB is compatible with your data and use case.
 ```
+
 
 Please follow the steps in [📦 Installation](installation.md) section in the documentation to install CliMB.
 
