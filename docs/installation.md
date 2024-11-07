@@ -61,9 +61,22 @@ CliMB uses [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/g
     conda install conda-forge::weasyprint
     ```
     Python `3.9` or newer should be set.
+
+    ```{admonition} Known installation issue on Windows systems
+    :class: note
+
+    There is a known installation issue on Windows systems related to the WeasyPrint package, which can cause the PDF
+    report generation functionality to not work. This can be resolved by following
+    [this troubleshooting step](troubleshooting.md#windows-pangoft2).
+    ```
+
 3. Create a *separate* `conda` environment that will be used for *code execution*:
 
-    > ⚠️ The exact environment name `climb-code` must be used.
+    ```{admonition} Caution
+    :class: caution
+
+    The exact environment name `climb-code` must be used.
+    ```
 
     ```bash
     # Create and activate the environment, Python `3.9` or newer should be set:
