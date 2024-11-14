@@ -152,7 +152,20 @@ To update to the latest version of CliMB, please follow [📦⬆️ Updating Cli
 
 
 ## 🚀 Usage
-To launch CliMB UI, from the **repo directory**, run:
+First, navigate to the the CliMB **repo directory** in the terminal.
+<!-- exclude_docs -->
+> [!TIP]
+> The location of the **repo directory** is explained in the [📈 Install the CliMB package](https://climb-ai.readthedocs.io/en/latest/installation.html#install-the-climb-package) section of the documentation. Don't forget to run `cd climb` to change to the repo directory.
+<!-- exclude_docs_end -->
+<!-- include_docs
+```{admonition} Tip
+:class: tip
+
+The location of the **repo directory** is explained in the [📈 Install the CliMB package](https://climb-ai.readthedocs.io/en/latest/installation.html#install-the-climb-package) section of the documentation. Don't forget to run `cd climb` to change to the repo directory.
+```
+include_docs_end -->
+
+To launch CliMB UI, run the command:
 ```bash
 streamlit run entry/st/app.py
 ```
