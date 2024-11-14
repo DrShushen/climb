@@ -1,8 +1,11 @@
 import os
+import warnings
 from typing import Dict, List
 
 import pydantic
 import yaml
+
+from climb.common.exc import ClimbConfigurationError
 
 from .const import ALLOWED_MODELS
 
@@ -26,13 +29,38 @@ class AzureOpenAIConfig(pydantic.BaseModel):
 
 def load_azure_openai_configs(config_path: str) -> List[AzureOpenAIConfig]:
     if not os.path.exists(config_path):
+        # Print a UserWarning
+        warnings.warn(
+            f"Azure OpenAI config file not found at {os.path.abspath(config_path)}. "
+            "If you wish to use Azure OpenAI Service, make sure to place the config file at this location."
+        )
         return []
     # pylint: disable-next=unspecified-encoding
     with open(config_path, "r") as f:
         yaml_config = yaml.safe_load(f)
     azure_openai_config = []
     for item in yaml_config["models"]:
-        azure_openai_config.append(AzureOpenAIConfig(**item))
+        try:
+            azure_openai_config.append(AzureOpenAIConfig(**item))
+        except pydantic.ValidationError as e:
+            raise ClimbConfigurationError(
+                f"""Error parsing Azure OpenAI config file {config_path}. \
+Ensure that the file is in the correct format, like in this example:
+
+models:
+  - name: "model-A"
+    endpoint: "https://testlocation1.openai.azure.com/"
+    deployment_name: "test-deployment-A"
+    api_version: "2024-02-01"
+    model: "gpt-4-0125-preview"
+  - name: "model-B"
+    endpoint: "https://testlocation2.openai.azure.com/"
+    deployment_name: "test-deployment-B"
+    api_version: "2024-02-01"
+    model: "gpt-4o-2024-05-13"
+  - ...
+"""
+            ) from e
     return azure_openai_config
 
 
@@ -41,7 +69,9 @@ def load_azure_openai_config_item(config_path: str, config_item_name: str) -> Az
     try:
         az_config = [x for x in configs if x.name == config_item_name][0]
     except IndexError as e:
-        raise ValueError(f"Azure OpenAI config with name '{config_item_name}' not found in file {config_path}") from e
+        raise ClimbConfigurationError(
+            f"Azure OpenAI config with name '{config_item_name}' not found in file {config_path}"
+        ) from e
     return az_config
 
 
@@ -52,7 +82,7 @@ def get_api_key_for_azure_openai(azure_openai_config: AzureOpenAIConfig, dotenv:
     try:
         api_key = dotenv[f"AZURE_OPENAI_API_KEY__{endpoint_id}"]
     except KeyError as e:
-        raise ValueError(
+        raise ClimbConfigurationError(
             f"API key not found in the .env file for Azure OpenAI endpoint: {azure_openai_config.endpoint}. "
             f"Check that an entry AZURE_OPENAI_API_KEY__{endpoint_id} exists in your .env file."
         ) from e
