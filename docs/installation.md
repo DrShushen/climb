@@ -32,6 +32,8 @@ CliMB uses [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/g
 
     If you are not familiar with running commands in a terminal (a.k.a. command prompt, command line interface etc.), please see this tip box for a quick overview of the appropriate terminal to use on your operating system. The commands shown in CliMB documentation should work with the terminals described here.
 
+    **Note:** these are terminal commands, and **not** Python shell (REPL) commands.
+
     You do not need to type in the comment lines, e.g. `# Create the environment:`, these are for your information only.
 
     ```{tab} Windows
@@ -156,7 +158,9 @@ Please select between the tabs ("OpenAI", "Azure OpenAI Service" etc.) below to 
     ```
 3. Finally, you need to set up the configuration file for the LLM provider you chose.
     * Copy the [Example `.env`](https://github.com/vanderschaarlab/climb/tree/main/config_examples/.env) file to the **repo directory**.
-    On Windows you may wish to rename it to `keys.env` to avoid the file being hidden / extension confusion.
+    Note that it should be placed directly inside the `climb` folder, **not** inside any subfolder; please see the end of this subsection below
+    to check what your repo directory should contain at the end of the configuration process. On Windows you may wish to rename this file to `keys.env`
+    to avoid the file being hidden / extension confusion.
 
     * Configure CliMB to work with the LLM provider you chose by following the instructions in the appropriate tab below.
     ```{tab} OpenAI
