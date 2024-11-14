@@ -61,6 +61,7 @@ class SessionSettings(pydantic.BaseModel):
 
 class UserSettings(pydantic.BaseModel):
     user_name: str = getpass.getuser()
+    disclaimer_shown: bool = False
 
     # UI default settings:
     default_session_settings: SessionSettings = SessionSettings()

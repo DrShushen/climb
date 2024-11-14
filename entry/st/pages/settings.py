@@ -18,6 +18,9 @@ user_settings = db.get_user_settings()
 # Display the user settings.
 user_settings.user_name = st.text_input("User Name", user_settings.user_name)
 
+# For debugging:
+# user_settings.disclaimer_shown = st.checkbox("Disclaimer shown", value=user_settings.disclaimer_shown, disabled=False)
+
 st.markdown(
     """
     #### Default conversation view settings

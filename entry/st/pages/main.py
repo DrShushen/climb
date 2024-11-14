@@ -833,6 +833,11 @@ def modal_disclaimer():
     st.markdown(
         DISCLAIMER_TEXT.replace("# Disclaimer:\n", ""),  # Remove the title line, as it's already in the modal title.
     )
+    user_settings.disclaimer_shown = True
+    db.update_user_settings(user_settings)
+    # Add an "Accept" button to close the modal.
+    if st.button("Accept", type="primary"):
+        st.rerun()
 
 
 @st.dialog(modal_settings_title)
@@ -910,7 +915,7 @@ with top_col_buttons:
     c1, c2, _ = st.columns([1.5, 1.5, 9])
 
     with c1:
-        if st.button(modal_disclaimer_title, type="primary"):
+        if user_settings.disclaimer_shown is False or st.button(modal_disclaimer_title, type="primary"):
             modal_disclaimer()
     with c2:
         if st.button(modal_settings_title):
