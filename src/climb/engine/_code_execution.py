@@ -6,6 +6,7 @@ from typing import Iterable, List, Literal, Optional, Tuple, Union
 
 import pydantic
 
+from climb.common.exc import EXC_DOCS_REFS, ClimbConfigurationError
 from climb.common.utils import make_filename_path_safe
 
 CodeExecStatus = Literal["success", "error"]
@@ -104,9 +105,17 @@ def get_conda_env_libraries(
 ) -> List[str]:
     try:
         # Running the `conda list` command for the specified environment
-        result = subprocess.run(
-            [conda_path, "list", "--name", conda_env_name], capture_output=True, text=True, check=True
-        )
+        try:
+            result = subprocess.run(
+                [conda_path, "list", "--name", conda_env_name], capture_output=True, text=True, check=True
+            )
+        except FileNotFoundError as e:
+            raise ClimbConfigurationError(
+                f"Could not execute `conda` using the command {conda_path}. "
+                "Make sure that the `conda` command is available. "
+                "Please refer to the following documentation section for troubleshooting:\n"
+                f"{EXC_DOCS_REFS['troubleshooting_conda_not_founc']}"
+            ) from e
 
         # Parsing the output to extract package names
         packages = result.stdout.split("\n")
