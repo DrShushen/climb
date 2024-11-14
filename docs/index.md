@@ -21,6 +21,16 @@ Changelog <changelog>
 API Reference <api/modules>
 ```
 
+```{toctree}
+---
+hidden:
+caption: Project Links
+---
+
+GitHub <https://github.com/vanderschaarlab/climb>
+Slack <https://join.slack.com/t/vanderschaarlab/shared_invite/zt-1u2rmhw06-sHS5nQDMN3Ka2Zer6sAU6Q>
+```
+
 
 
 ## Indices and tables

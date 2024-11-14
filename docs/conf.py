@@ -188,7 +188,28 @@ html_theme_options = {
     "dark_logo": "climb-logo-light.png",
     "sidebar_hide_name": True,
     "source_repository": "https://github.com/vanderschaarlab/climb",
+    "footer_icons": [
+        {
+            "name": "Slack",
+            "url": "https://join.slack.com/t/vanderschaarlab/shared_invite/zt-1u2rmhw06-sHS5nQDMN3Ka2Zer6sAU6Q",
+            "html": "",
+            "class": "fa-brands fa-solid fa-slack fa-lg",
+        },
+        {
+            "name": "GitHub",
+            "url": "https://github.com/vanderschaarlab/climb",
+            "html": "",
+            "class": "fa-brands fa-solid fa-github fa-lg",
+        },
+    ],
 }
+
+# HTML CSS files:
+html_css_files = [
+    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/fontawesome.min.css",
+    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/solid.min.css",
+    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/brands.min.css",
+]
 
 # Add any paths that contain custom themes here, relative to this directory.
 # html_theme_path = []
@@ -208,7 +229,7 @@ html_title = "CliMB documentation"
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-# html_favicon = None
+html_favicon = "climb.ico"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
