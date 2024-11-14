@@ -24,7 +24,7 @@ from climb.db import DB
 from climb.tool import ToolBase, ToolReturnIter, UserInputRequest
 
 from ._code_execution import CodeExecReturn
-from .common import get_dotenv_config
+from ._config import get_dotenv_config
 
 dotenv_config = get_dotenv_config()
 

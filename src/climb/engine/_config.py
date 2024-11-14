@@ -3,6 +3,8 @@ from typing import Dict, List, Union
 
 from dotenv import dotenv_values
 
+from climb.common.exc import ClimbConfigurationError
+
 TRY_DOTENV_PATHS = [
     ".env",
     "keys.env",
@@ -22,6 +24,6 @@ def get_dotenv_config(try_dotenv_files: List[str] = TRY_DOTENV_PATHS) -> Dict[st
             dotenv_found = True
             break
     if not dotenv_found:
-        raise FileNotFoundError(dotenv_found_error_msg + "No more acceptable .env paths to try.")
+        raise ClimbConfigurationError(dotenv_found_error_msg + "No more acceptable .env paths to try.")
 
     return dotenv_config

@@ -36,14 +36,14 @@ models:
 
 @pytest.fixture
 def test_azure_openai_config(tmp_path: pathlib.Path) -> pathlib.Path:
-    test_file = tmp_path / "test.txt"
+    test_file = tmp_path / "az_openai_config.txt"
     test_file.write_text(TEST_AZURE_OPENAI_CONFIG)
     return test_file
 
 
 @pytest.fixture
 def test_azure_openai_wrong_format(tmp_path: pathlib.Path) -> pathlib.Path:
-    test_file = tmp_path / "test.txt"
+    test_file = tmp_path / "az_openai_config.txt"
     test_file.write_text(TEST_AZURE_OPENAI_WRONG_FORMAT)
     return test_file
 
