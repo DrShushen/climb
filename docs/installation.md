@@ -1,4 +1,11 @@
 # 📦 Installation
+
+```{admonition} Warning
+:class: attention
+
+Please read the [🔏 Data Privacy](dataprivacy.md) section before proceeding with this step, in order to understand whether CliMB is compatible with your data and use case.
+```
+
 In order to use CliMB, you need to accomplish the following three steps:
 1. [🐍 Set up the `conda` environments](#set-up-the-conda-environments)
 2. [🔑 Obtain the API keys for the third-party LLM](#obtain-the-api-keys-for-the-third-party-llm)
@@ -10,7 +17,7 @@ In order to use CliMB, you need to accomplish the following three steps:
 ## 1. 🐍 Set up the `conda` environments
 
 CliMB uses [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/getting-started.html) to manage the Python environments. Before installing CliMB, you need to set up two `conda` environments as follows.
-1. If you do not have `conda` ("Anaconda") installed on your system, you should install the [`miniconda`]((https://docs.anaconda.com/free/miniconda/)) distribution by following the appropriate instructions below.
+1. If you do not have `conda` ("Anaconda") installed on your system, you should install the [`miniconda`](https://docs.anaconda.com/free/miniconda/) distribution by following the appropriate instructions below.
     ```{tab} Windows
     * Follow the [Installing on Windows](https://docs.conda.io/projects/conda/en/latest/user-guide/install/windows.html) guide.
     * We recommed you use the ["Miniconda" installer](https://docs.anaconda.com/miniconda/).
@@ -102,7 +109,7 @@ CliMB uses [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/g
 ```{admonition} Warning
 :class: attention
 
-Please read the [🔏 Data Privacy](overview.md#data-privacy) section before proceeding with this step, in order to make an informed decision about which LLM provider is suitable for your use case.
+Please read the [🔏 Data Privacy](dataprivacy.md) section before proceeding with this step, in order to make an informed decision about which LLM provider is suitable for your use case.
 ```
 
 CliMB currently supports the following third-party LLM providers:

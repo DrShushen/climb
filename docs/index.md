@@ -10,6 +10,7 @@
 :maxdepth: 2
 
 Overview <overview>
+Data Privacy <dataprivacy>
 Installation <installation>
 Troubleshooting <troubleshooting>
 Contributing Guide <contributing>
