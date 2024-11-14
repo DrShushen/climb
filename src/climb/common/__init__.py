@@ -1,5 +1,6 @@
 """Common data structures and functions used by climb."""
 
+from . import disclaimer, exc
 from .data_structures import (
     Agent,
     EngineParameter,
@@ -24,9 +25,11 @@ from .data_structures import (
 __all__ = [
     "Agent",
     "create_new_session",
+    "disclaimer",
     "EngineParameter",
     "EngineParameterValue",
     "EngineState",
+    "exc",
     "FileInfo",
     "KeyGeneration",
     "Message",

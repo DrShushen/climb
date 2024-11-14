@@ -11,6 +11,8 @@ finally:
 
 from . import common, db, engine, tool, ui
 
+print(common.disclaimer.DISCLAIMER_SECTION)
+
 __all__ = [
     "common",
     "db",
