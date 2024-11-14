@@ -10,13 +10,23 @@ import plotly.graph_objects as go
 import streamlit as st
 import streamlit_antd_components as sac
 
+from climb.common.exc import EXC_DOCS_REFS
+
 try:
     from weasyprint import HTML
 
+    raise ImportError("Weasyprint is not installed")
+
+    WEASYPRINT_WARNING_FULL = ""
     WEASYPRINT_WORKING = True
 except Exception as ex:
-    print(f"Error importing weasyprint:\n{ex}")
-    print("PDF report generation will not be supported but you can still use CliMB.")
+    WEASYPRINT_WARNING_FULL = (
+        f"Error importing weasyprint:\n{ex}\n"
+        "PDF report generation will not be supported but you can still use CliMB.\n"
+        "For a possible resolution, see the troubleshooting documentation page:\n"
+        f"{EXC_DOCS_REFS['troubleshooting_win_pangoft']}"
+    )
+    print(WEASYPRINT_WARNING_FULL)
     WEASYPRINT_WORKING = False
 
 from climb.common import Message, create_new_session
@@ -1088,7 +1098,8 @@ with main_col_2:
                             )
                 else:
                     st.warning(
-                        "WeasyPrint import failed. Please check the troubleshooting section in the documentation."
+                        "WeasyPrint import failed. Please check the troubleshooting section in the documentation.\n\n"
+                        "---\n\n" + WEASYPRINT_WARNING_FULL.replace("\n", "\n\n")
                     )
 
             # Bottom spacer.
