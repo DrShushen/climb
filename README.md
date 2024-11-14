@@ -37,10 +37,15 @@ Our vision is for CliMB to integrate seamlessly into the clinician's workflow, s
 
 ## 🔏 Data Privacy
 <!-- exclude_docs -->
-It is crucial to understand the data privacy and confidentiality implications of using CliMB. Please ensure to read and understand the [Data Privacy documentation section](https://climb-ai.readthedocs.io/en/latest/dataprivacy.html) in full prior to installing and using the system.
+> [!WARNING]  
+> It is crucial to understand the data privacy and confidentiality implications of using CliMB. Please ensure to read and understand the [Data Privacy documentation section](https://climb-ai.readthedocs.io/en/latest/dataprivacy.html) in full prior to installing and using the system.
 <!-- exclude_docs_end -->
 <!-- include_docs
+```{admonition} Warning
+:class: attention
+
 It is crucial to understand the data privacy and confidentiality implications of using CliMB. Please ensure to read and understand the [Data Privacy documentation section](dataprivacy.md) in full prior to installing and using the system.
+```
 include_docs_end -->
 
 When using CliMB with real-world clinical data, you as the clinician scientist act as the data steward, and are responsible for ensuring that the use of the data complies with all the relevant laws and regulations, as well as ethical considerations. CliMB aims to provide a secure and privacy-preserving environment for data exploration and model building, while balancing this with leveraging the capabilities of the most advanced large language models (LLMs).
@@ -48,10 +53,10 @@ When using CliMB with real-world clinical data, you as the clinician scientist a
 We provide a detailed section in the documentation, which summarizes the data privacy fundamentals of CliMB and should allow you to make an informed decision about using the system with your data. It is essential that you read and understand this prior to using CliMB, please find the link below:
 
 <!-- exclude_docs -->
-#### [🔏 **Essential:** Data Privacy documentation](https://climb-ai.readthedocs.io/en/latest/dataprivacy.html)
+#### [📕 **Must-read:** Data Privacy documentation](https://climb-ai.readthedocs.io/en/latest/dataprivacy.html)
 <!-- exclude_docs_end -->
 <!-- include_docs
-#### [🔏 **Essential:** Data Privacy documentation](dataprivacy.md)
+#### [📕 **Must-read:** Data Privacy documentation](dataprivacy.md)
 include_docs_end -->
 
 
