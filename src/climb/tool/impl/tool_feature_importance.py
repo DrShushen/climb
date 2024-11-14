@@ -28,7 +28,15 @@ def process_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     categorical_cols = df.select_dtypes(include=["object", "category"]).columns
 
     # Initialize a OneHotEncoder
-    encoder = OneHotEncoder(sparse=False, drop="if_binary")
+    try:
+        # Scikit-learn <1.4 uses `sparse` parameter.
+        encoder = OneHotEncoder(sparse=False, drop="if_binary")
+    except TypeError as e:
+        if "sparse" in str(e):
+            # Scikit-learn >=1.4 uses `sparse_output` parameter.
+            encoder = OneHotEncoder(sparse_output=False, drop="if_binary")
+        else:
+            raise
 
     # Process each categorical column
     for col in categorical_cols:
@@ -69,7 +77,7 @@ def shap_explainer(
     else:
         model = LinearRegression()
     model.fit(X, y)
-    explainer = shap.Explainer(model.predict, X)
+    explainer = shap.Explainer(model.predict, X, max_evals=1000)
     shap_values = explainer(X)
 
     # Get numerical values for the mean absolute SHAP values per feature.
@@ -117,7 +125,7 @@ class ShapExplainer(ToolBase):
         target_variable = kwargs["target_variable"]
         problem_type = kwargs["problem_type"]
         thrd, out_stream = execute_tool(
-            shap_explainer,  # TODO
+            shap_explainer,  # TODOpermutation
             wd=self.working_directory,
             data_file_path=real_path,
             target_variable=target_variable,
