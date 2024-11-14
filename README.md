@@ -85,9 +85,23 @@ It is critical that you understand the terms of service of the LLM provider you 
 * **OpenAI**:
     * [OpenAI Platform - How we use your data](https://platform.openai.com/docs/models/how-we-use-your-data)
     * [Privacy Policy](https://openai.com/policies/row-privacy-policy/)
+    * [Terms of use](https://openai.com/policies/row-terms-of-use/)
 * **Azure OpenAI Service**:
     * [Data, privacy, and security for Azure OpenAI Service](https://learn.microsoft.com/en-us/legal/cognitive-services/openai/data-privacy?tabs=azure-portal)
     * [Privacy in Azure](https://azure.microsoft.com/en-gb/explore/trusted-cloud/privacy)
+    * [Product Terms](https://www.microsoft.com/licensing/terms/search?term=OpenAI)
+
+<!-- exclude_docs -->
+> [!WARNING]  
+> Any specific information quoted in this section was accurate as of `November 2024`, but this is not static and is likely to change. For the up-to-date details, you **must** refer to the up-to-date terms of use and privacy policies of the third-party proprietary LLM provider. The *links provided above* are a good starting point, but are not meant to be an exhaustive list. 
+<!-- exclude_docs_end -->
+<!-- include_docs
+```{admonition} Warning
+:class: attention
+
+Any specific information quoted in this section was accurate as of `November 2024`, but this is not static and is likely to change. For the up-to-date details, you **must** refer to the up-to-date terms of use and privacy policies of the third-party proprietary LLM provider. The *links provided above* are a good starting point, but are not meant to be an exhaustive list. 
+```
+include_docs_end -->
 
 For instance, in case of **Azure OpenAI Service**, the following applies:
 > Your prompts (inputs) and completions (outputs), your embeddings, and your training data:
@@ -104,12 +118,12 @@ However, the following points regarding data storage and human review for purpos
 * [How can customers get an exemption from abuse monitoring and human review?](https://learn.microsoft.com/en-us/legal/cognitive-services/openai/data-privacy?tabs=azure-portal#how-can-customers-get-an-exemption-from-abuse-monitoring-and-human-review)
 
 <!-- exclude_docs -->
-> [!WARNING]  
-> If using **OpenAI** as the LLM provider, the corresponding terms of service should be reviewed in detail.
+> [!NOTE]  
+> If using **OpenAI** as the LLM provider, the corresponding terms of service and privacy policies should be reviewed in detail.
 <!-- exclude_docs_end -->
 <!-- include_docs
-```{admonition} Warning
-:class: attention
+```{admonition} Note
+:class: note
 
 If using **OpenAI** as the LLM provider, the corresponding terms of service should be reviewed in detail.
 ```
