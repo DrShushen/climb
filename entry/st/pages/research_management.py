@@ -167,9 +167,6 @@ else:
 st.write("")
 st.write("")
 st.markdown("#### 🕹️ Start a new session")
-st.markdown("""
-> ⛔ Advanced section for early testing only, this will be simplified or removed in the future.
-""")
 st.write("")
 
 col1b, col2b = st.columns(2)
