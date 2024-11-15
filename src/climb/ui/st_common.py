@@ -21,7 +21,7 @@ PAGE_TITLES = {
 }
 
 TITLE = PAGE_TITLES["main_plain"]
-VERSION = "pre-alpha"
+VERSION = "alpha"
 
 SHOW_ROLES = ["user", "assistant", "tool", "code_execution"]  # "system"
 SHOW_VISIBILITIES = ["all", "ui_only"]
