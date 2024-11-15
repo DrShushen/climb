@@ -60,10 +60,10 @@ We provide a detailed section in the documentation, which summarizes the data pr
 Please read the [🔏 Data Privacy](dataprivacy.md) section before proceeding with this step, in order to understand whether CliMB is compatible with your data and use case.
 ```
 
-
 Please follow the steps in [📦 Installation](installation.md) section in the documentation to install CliMB.
 
 To update to the latest version of CliMB, please follow [📦⬆️ Updating CliMB](installation.md#updating-climb)
+
 
 
 
@@ -90,7 +90,11 @@ This will show the output like:
   Network URL: http://192.168.0.68:8501
 ```
 
+
+The best way to get started with CliMB is to follow the [**🚀 Quickstart Guide**](quickstart.md) in the documentation.
+
 If you encounter errors or problems when running CliMB for the first time, please check out the [🛠️ Troubleshooting](troubleshooting.md) section, as it has the resoulutions steps for some common intallation and set up problems. For any other problems, please submit a GitHub issue [here](https://github.com/vanderschaarlab/climb/issues), or ask us on [Slack](https://join.slack.com/t/vanderschaarlab/shared_invite/zt-1u2rmhw06-sHS5nQDMN3Ka2Zer6sAU6Q).
+
 
 
 

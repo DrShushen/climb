@@ -12,6 +12,7 @@
 Overview <overview>
 Data Privacy <dataprivacy>
 Installation <installation>
+Quickstart Guide <quickstart>
 Troubleshooting <troubleshooting>
 FAQ <faq>
 Contributing Guide <contributing>

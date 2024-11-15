@@ -80,6 +80,10 @@ include_docs_end -->
 <!-- exclude_docs -->
 > [!WARNING]  
 > Please read the [🔏 Data Privacy](https://climb-ai.readthedocs.io/en/latest/dataprivacy.htmldata-privacy) documentation section before proceeding with this step, in order to understand whether CliMB is compatible with your data and use case.
+
+Please follow the steps in [📦 Installation](https://climb-ai.readthedocs.io/en/latest/installation.html) section in the documentation to install CliMB.
+
+To update to the latest version of CliMB, please follow [📦⬆️ Updating CliMB](https://climb-ai.readthedocs.io/en/latest/installation.html#updating-climb)
 <!-- exclude_docs_end -->
 <!-- include_docs
 ```{admonition} Warning
@@ -87,11 +91,11 @@ include_docs_end -->
 
 Please read the [🔏 Data Privacy](dataprivacy.md) section before proceeding with this step, in order to understand whether CliMB is compatible with your data and use case.
 ```
-include_docs_end -->
 
 Please follow the steps in [📦 Installation](docs/installation.md) section in the documentation to install CliMB.
 
 To update to the latest version of CliMB, please follow [📦⬆️ Updating CliMB](docs/installation.md#updating-climb)
+include_docs_end -->
 
 
 
@@ -122,7 +126,16 @@ This will show the output like:
   Network URL: http://192.168.0.68:8501
 ```
 
-If you encounter errors or problems when running CliMB for the first time, please check out the [🛠️ Troubleshooting](docs/troubleshooting.md) section, as it has the resoulutions steps for some common intallation and set up problems. For any other problems, please submit a GitHub issue [here](https://github.com/vanderschaarlab/climb/issues), or ask us on [Slack](https://join.slack.com/t/vanderschaarlab/shared_invite/zt-1u2rmhw06-sHS5nQDMN3Ka2Zer6sAU6Q).
+<!-- exclude_docs -->
+The best way to get started with CliMB is to follow the [**🚀 Quickstart Guide**](https://climb-ai.readthedocs.io/en/latest/quickstart.html) in the documentation.
+
+If you encounter errors or problems when running CliMB for the first time, please check out the [🛠️ Troubleshooting](https://climb-ai.readthedocs.io/en/latest/troubleshooting.html) section, as it has the resoulutions steps for some common intallation and set up problems. For any other problems, please submit a GitHub issue [here](https://github.com/vanderschaarlab/climb/issues), or ask us on [Slack](https://join.slack.com/t/vanderschaarlab/shared_invite/zt-1u2rmhw06-sHS5nQDMN3Ka2Zer6sAU6Q).
+<!-- exclude_docs_end -->
+<!-- include_docs
+The best way to get started with CliMB is to follow the [**🚀 Quickstart Guide**](quickstart.md) in the documentation.
+
+If you encounter errors or problems when running CliMB for the first time, please check out the [🛠️ Troubleshooting](troubleshooting.md) section, as it has the resoulutions steps for some common intallation and set up problems. For any other problems, please submit a GitHub issue [here](https://github.com/vanderschaarlab/climb/issues), or ask us on [Slack](https://join.slack.com/t/vanderschaarlab/shared_invite/zt-1u2rmhw06-sHS5nQDMN3Ka2Zer6sAU6Q).
+include_docs_end -->
 
 
 
