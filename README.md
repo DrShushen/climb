@@ -143,6 +143,8 @@ include_docs_end -->
 ## 📚 Documentation
 
 You will find much more useful information in the [project documentation](https://climb-ai.readthedocs.io/).
+
+We have compiled some of the most common questions in the [FAQ](https://climb-ai.readthedocs.io/en/latest/faq.html) section, so please do check it out.
 <!-- exclude_docs_end -->
 
 
