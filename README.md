@@ -106,7 +106,7 @@ First, navigate to the the CliMB **repo directory** in the terminal.
 > The location of the **repo directory** is explained in the [📈 Install the CliMB package](https://climb-ai.readthedocs.io/en/latest/installation.html#install-the-climb-package) section of the documentation. Don't forget to run `cd climb` to change to the repo directory.
 <!-- exclude_docs_end -->
 <!-- include_docs
-```{admonition} Tip
+```{admonition} Repo directory
 :class: tip
 
 The location of the **repo directory** is explained in the [📈 Install the CliMB package](installation.md#install-the-climb-package) section of the documentation. Don't forget to run `cd climb` to change to the repo directory.

@@ -70,7 +70,7 @@ To update to the latest version of CliMB, please follow [📦⬆️ Updating Cli
 ## 🚀 Usage
 First, navigate to the the CliMB **repo directory** in the terminal.
 
-```{admonition} Tip
+```{admonition} Repo directory
 :class: tip
 
 The location of the **repo directory** is explained in the [📈 Install the CliMB package](installation.md#install-the-climb-package) section of the documentation. Don't forget to run `cd climb` to change to the repo directory.
