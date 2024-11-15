@@ -22,6 +22,15 @@ CliMB is an AI-enabled partner designed to empower clinician scientists to creat
 Our vision is for CliMB to integrate seamlessly into the clinician's workflow, supporting the complete cycle of clinical predictive modeling, and ultimately democratizing machine learning and AI utilization in healthcare.
 
 
+```{admonition} Target audience
+:class: note
+
+The intended target audience of CliMB is a clinician scientists with some basic Python and AI knowledge.
+If you do not consider yourself "tech-savvy", the installation and configuration steps in particular may require assistance from your IT department.
+```
+
+
+
 
 ## 🔏 Data Privacy
 
