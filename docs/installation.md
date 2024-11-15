@@ -6,6 +6,12 @@
 Please read the [🔏 Data Privacy](dataprivacy.md) section before proceeding with this step, in order to understand whether CliMB is compatible with your data and use case.
 ```
 
+```{admonition} Installation on company/organization systems
+:class: seealso
+
+It is common within organizations to have certain restrictions on installing software on their systems, or to impose some restricions on accessible URLs through VPNs or firewalls. If you are facing such restrictions when trying to install CliMB by following the steps below, please ask your IT department for assistance.
+```
+
 In order to use CliMB, you need to accomplish the following three steps:
 1. [🐍 Set up the `conda` environments](#set-up-the-conda-environments)
 2. [🔑 Obtain the API keys for the third-party LLM](#obtain-the-api-keys-for-the-third-party-llm)
