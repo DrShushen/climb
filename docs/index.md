@@ -13,6 +13,7 @@ Overview <overview>
 Data Privacy <dataprivacy>
 Installation <installation>
 Troubleshooting <troubleshooting>
+FAQ <faq>
 Contributing Guide <contributing>
 Developer's Guide <devguide>
 License <license>

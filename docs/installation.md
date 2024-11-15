@@ -230,6 +230,8 @@ Please select between the tabs ("OpenAI", "Azure OpenAI Service" etc.) below to 
     tox.ini
     ```
 
+
+
 (updating-climb)=
 ## 📦⬆️ Updating CliMB
 
@@ -246,3 +248,19 @@ To update to the latest version of CliMB, navigate to the **repo directory**, th
     # Update the package:
     pip install -U -e .
     ```
+
+
+(system-requirements)=
+## 🖥️ System Requirements
+
+CliMB is compatible with Windows, MacOS, and Linux operating systems.
+
+CliMB and the tools it uses can work on a range of hardware configurations, but we recommend the following rough minimum
+requirements for a smooth experience:
+* a CPU with at least 4 cores,
+* 16GB of RAM,
+* NVIDIA GPU with at least 4GB of memory (not strictly necessary, but recommended for much faster performance).
+
+Better hardware will provide a more performant experience, especially when working with large datasets or complex models.
+
+Particularly large datasets will push the RAM and GPU RAM requirements higher, so please keep this in mind when working with your data.
