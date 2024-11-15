@@ -9,21 +9,30 @@ from ._azure_config import (
     get_api_key_for_azure_openai,
     load_azure_openai_config_item,
 )
+from ._config import get_dotenv_config
 from ._engine import EngineBase
 from .engine_openai_min_baseline import AzureOpenAIMinBaselineEngine, OpenAIMinBaselineEngine
 from .engine_openai_nextgen import AzureOpenAINextGenEngine, OpenAINextGenEngine
 
+dotenv_config = get_dotenv_config()
+
+
 ENGINE_MAP = {
-    # Minimal baseline versions:
-    OpenAIMinBaselineEngine.get_engine_name(): OpenAIMinBaselineEngine,
-    AzureOpenAIMinBaselineEngine.get_engine_name(): AzureOpenAIMinBaselineEngine,
-    # ---
-    # New versions:
+    # Current engines:
     OpenAINextGenEngine.get_engine_name(): OpenAINextGenEngine,
     AzureOpenAINextGenEngine.get_engine_name(): AzureOpenAINextGenEngine,
     # ---
     # Add more here...
 }
+
+if dotenv_config.get("BASELINE_METHODS", "False") == "True":
+    ENGINE_MAP.update(
+        {
+            # Minimal baseline versions:
+            OpenAIMinBaselineEngine.get_engine_name(): OpenAIMinBaselineEngine,
+            AzureOpenAIMinBaselineEngine.get_engine_name(): AzureOpenAIMinBaselineEngine,
+        }
+    )
 
 azure_engines = [engine_name for engine_name in ENGINE_MAP.keys() if "azure" in engine_name]
 non_azure_engines = [engine_name for engine_name in ENGINE_MAP.keys() if "azure" not in engine_name]
