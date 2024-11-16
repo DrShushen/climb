@@ -23,7 +23,7 @@ You will not be able to generate a PDF report if you are encountering this.
 To fix this error, you can follow the following steps:
 1. Locate your `climb` environment's directory. You can find it by e.g. running `conda env list`. Then, locate the binary libraries directory - e.g. if your environment is at `C:\Users\<username>\miniconda3\envs\climb`, the binary libraries directory will be `C:\Users\<username>\miniconda3\envs\climb\Libraries\bin`.
 2. Download the missing `pangoft2-1.0` DLL file from [this DLLme link](https://www.dllme.com/dll/files/pangoft2-1_0-0/versions?sort=version&arch=0x8664).
-    * Please use the dropdown menu to choose the appropriate architecture (most machines are `x86-64 (64 bit)`), and then donload the highest version file from the list.
+    * Please use the dropdown menu to choose the appropriate architecture (most machines are `x86-64 (64 bit)`), and then download the highest version file from the list.
     * It is best practice to do a security scan on this file, e.g. with Windows Defender.
 3. Place this downloaded `pangoft2-1.0-0.dll` file into your CliMB environment's binary libraries directory (typically `C:\Users\<username>\miniconda3\envs\climb\Libraries\bin`).
 

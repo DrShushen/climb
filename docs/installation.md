@@ -9,7 +9,7 @@ Please read the [🔏 Data Privacy](dataprivacy.md) section before proceeding wi
 ```{admonition} Installation on company/organization systems
 :class: seealso
 
-It is common within organizations to have certain restrictions on installing software on their systems, or to impose some restricions on accessible URLs through VPNs or firewalls. If you are facing such restrictions when trying to install CliMB by following the steps below, please ask your IT department for assistance.
+It is common within organizations to have certain restrictions on installing software on their systems, or to impose some restrictions on accessible URLs through VPNs or firewalls. If you are facing such restrictions when trying to install CliMB by following the steps below, please ask your IT department for assistance.
 ```
 
 In order to use CliMB, you need to accomplish the following three steps:
@@ -26,17 +26,17 @@ CliMB uses [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/g
 1. If you do not have `conda` ("Anaconda") installed on your system, you should install the [`miniconda`](https://docs.anaconda.com/free/miniconda/) distribution by following the appropriate instructions below.
     ```{tab} Windows
     * Follow the [Installing on Windows](https://docs.conda.io/projects/conda/en/latest/user-guide/install/windows.html) guide.
-    * We recommed you use the ["Miniconda" installer](https://docs.anaconda.com/miniconda/).
+    * We recommend you use the ["Miniconda" installer](https://docs.anaconda.com/miniconda/).
     * "Verify your installer hashes" step is optional.
     ```
     ```{tab} macOS
     * Follow the [Installing on macOS](https://docs.conda.io/projects/conda/en/latest/user-guide/install/macos.html) guide.
-    * We recommed you use the ["Miniconda" installer](https://docs.anaconda.com/miniconda/).
+    * We recommend you use the ["Miniconda" installer](https://docs.anaconda.com/miniconda/).
     * "Verify your installer hashes" step is optional.
     ```
     ```{tab} Linux
     * Follow the [Installing on Linux](https://docs.conda.io/projects/conda/en/latest/user-guide/install/linux.html) guide.
-    * We recommed you use the ["Miniconda" installer](https://docs.anaconda.com/miniconda/).
+    * We recommend you use the ["Miniconda" installer](https://docs.anaconda.com/miniconda/).
     * "Verify your installer hashes" step is optional.
     ```
 2. Create the *main* conda environment for CliMB:
@@ -63,7 +63,7 @@ CliMB uses [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/g
     ```{tab} Linux
     * The specifics of launching the terminal differs between different versions of Linux.
     * E.g. on Ubuntu, follow [this guide](https://ubuntu.com/tutorials/command-line-for-beginners#3-opening-a-terminal).
-    * For other distributions, please find the appropriate giude online.
+    * For other distributions, please find the appropriate guide online.
     ```
 
     :::
@@ -130,23 +130,55 @@ More LLM providers and open source models will be supported in the future.
 Please select between the tabs ("OpenAI", "Azure OpenAI Service" etc.) below to see the instructions for the LLM provider you have chosen.
 ```
 
-```{tab} OpenAI
+:::{tab} OpenAI
+<p style="height: 0px;"></p>
+
+```{admonition} Enterprise subscriptions
+:class: note
+
+Your organization may have an enterprise subscription with OpenAI. If so, please follow the instructions provided by your IT department to obtain the API key. The instructions in this section are for a personal OpenAI account.
+```
+
 1. Sign up for OpenAI platform [here](https://platform.openai.com/signup).
 2. Fund your account by following [this guide](https://help.openai.com/en/articles/8264644-what-is-prepaid-billing).
 3. Follow [this guide](https://help.openai.com/en/articles/4936850-where-do-i-find-my-openai-api-key) to get your API key.
     * ⚠️ Never share your API key with anyone and treat it as a "password". A reminder to developers to to never commit your API keys to a public repository!
     * Make note of this **key** as it is needed later.
+:::
+
+:::{tab} Azure OpenAI Service
+<p style="height: 0px;"></p>
+
+```{admonition} Enterprise subscriptions
+:class: note
+
+Your organization may have an enterprise Azure subscription. If so, please contact your IT department to obtain access to the Azure Portal, and discuss with them the process of setting up an Azure OpenAI Service resource and deploying models on it. The instructions in this section are for a personal Azure account.
 ```
 
-```{tab} Azure OpenAI Service
-1. Create an Azure account [here](https://azure.microsoft.com/en-gb/pricing/purchase-options/azure-account?icid=azurefreeaccount).
-2. Create an Azure OpenAI Service resource by following [this guide](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/create-resource).
-    * At the final **"Deploy a model"** step, we recommend selecting `gpt-4` or `gpt-4o`. More specifically, please select one of these [versions](https://github.com/vanderschaarlab/climb/blob/main/src/climb/engine/const.py#L1-L8).
-    * When you are deploying the model, make note of the **① deployment name** that you use as it is needed later.
-3. In [Azure OpenAI Studio](https://oai.azure.com/), click the resource name at the top right of the screen to find: **② endpoint** and **③ key**, make note of these as they are needed later.
-    
-    <img src="assets/installation-az-info.png" height=450 alt="CliMB Clinical Figure">
+```{admonition} Caution
+:class: caution
+
+This set of steps may be tricky for non-technical users. If you are not comfortable with these steps, please ask your IT department for assistance.
+
+The screenshots representing Azure's UI/interface in Azure's guides referred to here may not be exactly the same as what you see in your Azure Portal. This is because Azure's UI is updated frequently. The steps should be similar, but the exact appearance may differ. Carefully following the text instructions should still allow you to complete the process successfully.
 ```
+
+1. Create an Azure account [here](https://azure.microsoft.com/en-gb/pricing/purchase-options/azure-account?icid=azurefreeaccount).
+2. Create an Azure OpenAI Service resource by following the steps in the [official guide](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/create-resource) and [**this user-friendly unofficial guide**](https://ivanatilca.medium.com/a-step-by-step-guide-to-deploying-open-ai-models-on-microsoft-azure-cab86664fbb4).
+    * At the **Configure network security** step, **Allow all networks** is easiest and should be acceptable for most users.
+    * At the final **"Deploy a model"** step, we recommend selecting `gpt-4`, `gpt-4o`, or better (`gpt-3.5` is not recommended due to poor performance). More specifically, please select one of these [supported versions](https://github.com/vanderschaarlab/climb/blob/main/src/climb/engine/const.py#L2).
+        * For instance: `gpt-4o-2024-08-06` in supported versions list means **model** `gpt-4` and **model version** `2024-08-06` in Azure.
+        * Make note of the **⓪ model type and version** (e.g. `gpt-4o-2024-08-06`) you set up here as it is needed later.
+    * When you are deploying the model, make note of the **① deployment name** that you use as it is needed later.
+3. In [Azure OpenAI Studio](https://oai.azure.com/):
+    * *New UI as of Nov 2024*: click the resource name at the top right of the screen to find: **② endpoint** and **③ key**, make note of these as they are needed later.
+        ![Azure info new UI](assets/installation-az-info.png){height=450}
+
+    * *Old UI as of Nov 2024*: click the gear icon near the top right of the screen to reveal the "Resource" panel. In the list of resources, you will see the row with the current resource. Copy and make a note of: **② endpoint** and **③ key**.
+        ![Azure info old UI](assets/installation-az-info-old.png)
+
+* ⚠️ Never share your API key **③** with anyone and treat it as a "password". A reminder to developers to to never commit your API keys to a public repository!
+:::
 
 
 
@@ -176,15 +208,25 @@ Please select between the tabs ("OpenAI", "Azure OpenAI Service" etc.) below to 
     to avoid the file being hidden / extension confusion.
 
     * Configure CliMB to work with the LLM provider you chose by following the instructions in the appropriate tab below.
-    ```{tab} OpenAI
+    :::{tab} OpenAI
     * Open the `.env`/`keys.env` file in the **repo directory** and replace the value of
         ```ini
         OPENAI_API_KEY="API_KEY_FOR_OPENAI"
         ```
-    with the **key** you obtained.
+    with the **key** you obtained. Make sure to replace the text `API_KEY_FOR_OPENAI` but **keep the quotes** (e.g.
+    if your key is `abc123`, the line should look like `OPENAI_API_KEY="abc123"`).
+    :::
+
+    :::{tab} Azure OpenAI Service
+    
+    ```{admonition} Tip
+    :class: tip
+
+    For any values that you need to replace in this section, make sure to **keep the quotes**.
+
+    For example, if you need to replace `API_KEY_FOR_AZURE_ENDPOINT_1` with `abc123`, the line should look like: `AZURE_OPENAI_API_KEY__my-endpoint-1="abc123"`.
     ```
 
-    ```{tab} Azure OpenAI Service
     1. Open the `.env`/`keys.env` file in the **repo directory**.
         ```ini
         AZURE_OPENAI_API_KEY__my-endpoint-1="API_KEY_FOR_AZURE_ENDPOINT_1"
@@ -194,30 +236,32 @@ Please select between the tabs ("OpenAI", "Azure OpenAI Service" etc.) below to 
             ```ini
             AZURE_OPENAI_API_KEY__my-clinic="your actual ③ key"
             ```
-    2. Copy the [Example `az_openai_config.yml`](https://github.com/vanderschaarlab/climb/tree/main/config_examples/az_openai_config.yml) file to the **repo directory**.
+    2. Copy the [Example `az_openai_config.yml`](https://github.com/vanderschaarlab/climb/tree/main/config_examples/az_openai_config.yml) file to the **repo directory**. Note that it should be placed directly inside the `climb` folder, **not** inside any subfolder; please see the end of this subsection below to check what your repo directory should contain at the end of the configuration process.
     3. Open the `az_openai_config.yml` file in the **repo directory**:
         ```yaml
         models:
             - name: "your-custom-name"
-            # ^ This is to identify the model in the UI, it can be anything.
             endpoint: "https://my-endpoint-1.openai.azure.com/"
-            # ^ The endpoint of azure openai service you are using.
             deployment_name: "your-deployment-name"
-            # ^ The deployment name of the model you are using.
             api_version: "2024-02-01"
-            # ^ The api version, see
-            # - https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#api-specs
-            # - https://learn.microsoft.com/en-us/azure/ai-services/openai/api-version-deprecation
             model: "gpt-4-0125-preview"
-            # ^ This needs to match the model type you set up in the Azure OpenAI Portal.
-            # See the allowed options here:
-            # - https://github.com/vanderschaarlab/climb/blob/main/src/climb/engine/const.py#L1-L8
+            # Any lines with a '#' are comments and are just for your information.
         ```
-        * You need to set the value of `endpoint` to **② endpoint** and `deployment_name` to **① deployment name**.
-        * Make sure th `model` field matches the model type you deployed in the Azure OpenAI Portal.
-        * Make sure the `api_version` field matches one of the [versions available](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#api-specs), it is best practice to use the latest version available.
-        * The `name` field can be anything you want, it is used to identify the model in the UI.
-    ```
+        The fields in this file are explained below. What you need to set the values to is shown *in italics below*. **Note:** you should not remove the quotation marks around the values. 
+        * `name`: This is used to identify the model in the UI.
+        It will appear as `config_item_name` when you select the `azure_openai_nextgen` engine in  **🗨️ Research Management** (see [🚀 Quickstart Guide - Start a new session](quickstart.md#start-a-new-session)).
+        *You can set this to any value you like.*
+        * `endpoint`: This identifies a URL needed to connect to the API.
+        *Set this to the **② endpoint** you obtained.*
+        * `deployment_name`: This is the name of the deployment you set up in the Azure OpenAI Portal. *Set this to the **① deployment name** you obtained.*
+        * `api_version`: This is the version of the API protocol you are using.
+        You can find the possible values for this field [here](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#api-specs) ([more info here](https://learn.microsoft.com/en-us/azure/ai-services/openai/api-version-deprecation))
+        *It is recommended to set this to **the latest version available**.*
+        * `model`: This needs to match the **model type and version** you set up in the Azure OpenAI Portal.
+        It should be formatted exactly as the matching version from [supported versions](https://github.com/vanderschaarlab/climb/blob/main/src/climb/engine/const.py#L2).
+        For example, use `gpt-4-0125-preview` if you deployed a `gpt-4` model and set the version to `0125-preview`.
+        *This field should be set to **⓪ model type and version** from earlier.*
+    :::
 
     At the end of the configuration, your repo directory should looks something like this:
     ```bash
@@ -239,7 +283,7 @@ Please select between the tabs ("OpenAI", "Azure OpenAI Service" etc.) below to 
 
 
 (updating-climb)=
-## 📦⬆️ Updating CliMB
+## 📦⏫ Updating CliMB
 
 To update to the latest version of CliMB, navigate to the **repo directory**, then follow these steps:
 

@@ -35,6 +35,9 @@ This will show the output like:
 
 ## Start a new session
 
+Navigate to the **Local URL** from the terminal output in your browser.
+We have tested CliMB on [Google Chrome](https://www.google.com/intl/en_uk/chrome/), so it is recommended for best UI compatibility.
+
 You will land to the CliMB UI as shown below:
 
 ![First Launch](assets/quickstart/q01_first_launch.png)

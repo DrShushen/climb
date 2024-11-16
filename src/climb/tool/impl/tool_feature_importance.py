@@ -14,75 +14,116 @@ from joblib import Parallel, delayed
 from matplotlib import pyplot as plt
 from sklearn.ensemble._bagging import _generate_indices  # pyright: ignore
 from sklearn.inspection._permutation_importance import _create_importances_bunch, _weights_scorer  # pyright: ignore
-from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.model_selection._validation import _aggregate_score_dicts  # pyright: ignore
-from sklearn.preprocessing import OneHotEncoder
 from sklearn.utils import _safe_indexing, check_array, check_random_state  # pyright: ignore
 
 from ..tool_comms import ToolCommunicator, ToolReturnIter, execute_tool
 from ..tools import ToolBase
 
+# def process_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+#     # Identify categorical columns
+#     categorical_cols = df.select_dtypes(include=["object", "category"]).columns
+#     # Initialize a OneHotEncoder
+#     try:
+#         # Scikit-learn <1.4 uses `sparse` parameter.
+#         encoder = OneHotEncoder(sparse=False, drop="if_binary")
+#     except TypeError as e:
+#         if "sparse" in str(e):
+#             # Scikit-learn >=1.4 uses `sparse_output` parameter.
+#             encoder = OneHotEncoder(sparse_output=False, drop="if_binary")
+#         else:
+#             raise
+#     # Process each categorical column
+#     for col in categorical_cols:
+#         if df[col].nunique() < 5:
+#             # Perform one-hot encoding
+#             encoded_df = pd.DataFrame(encoder.fit_transform(df[[col]]))
+#             encoded_df.columns = encoder.get_feature_names_out([col])
+#             # Drop the original column from df
+#             df = df.drop(col, axis=1)
+#             # Join the encoded DataFrame with the original DataFrame
+#             df = pd.concat([df, encoded_df], axis=1)
+#         else:
+#             # Drop the column if it has 5 or more categories
+#             df = df.drop(col, axis=1)
+#     return df
 
-def process_dataframe(df: pd.DataFrame) -> pd.DataFrame:
-    # Identify categorical columns
-    categorical_cols = df.select_dtypes(include=["object", "category"]).columns
 
-    # Initialize a OneHotEncoder
-    try:
-        # Scikit-learn <1.4 uses `sparse` parameter.
-        encoder = OneHotEncoder(sparse=False, drop="if_binary")
-    except TypeError as e:
-        if "sparse" in str(e):
-            # Scikit-learn >=1.4 uses `sparse_output` parameter.
-            encoder = OneHotEncoder(sparse_output=False, drop="if_binary")
-        else:
-            raise
+class ShapCompatibleWrapper:
+    """A wrapper class to make a model compatible with SHAP explainer.
 
-    # Process each categorical column
-    for col in categorical_cols:
-        if df[col].nunique() < 5:
-            # Perform one-hot encoding
-            encoded_df = pd.DataFrame(encoder.fit_transform(df[[col]]))
-            encoded_df.columns = encoder.get_feature_names_out([col])
+    The ``register_categorical`` method registers the categorical columns in the data and encodes them as integer
+    values. The ``predict`` method takes a DataFrame as input and maps the integer values back to the original
+    categorical values before making predictions.
 
-            # Drop the original column from df
-            df = df.drop(col, axis=1)
+    Usage:
+    ```
+    # Assuming `model` is the original fitted model that has a `predict` method.
+    # Prepare a wrapped model and the data compatible with SHAP explainer as follows:
+    shap_compatible_model = ShapCompatibleWrapper(model)
+    X_for_shap = shap_compatible_model.register_categorical(X)
 
-            # Join the encoded DataFrame with the original DataFrame
-            df = pd.concat([df, encoded_df], axis=1)
-        else:
-            # Drop the column if it has 5 or more categories
-            df = df.drop(col, axis=1)
+    # Then run SHAP explainer as follows:
+    explainer = shap.Explainer(shap_compatible_model.predict, X_for_shap, ...)
+    shap_values = explainer(X_for_shap)
+    ```
+    """
 
-    return df
+    def __init__(self, model):
+        self.model = model
+
+    def register_categorical(self, X: pd.DataFrame) -> pd.DataFrame:
+        self.categorical_cols = X.select_dtypes(include=["object", "category"]).columns
+        X_encoded = X.copy()
+        self.mapping = dict()
+        for col in self.categorical_cols:
+            categories = X[col].astype("category").cat.categories
+            category_indices = list(range(len(X[col].astype("category").cat.categories)))
+            self.mapping[col] = dict(zip(category_indices, categories))
+            X_encoded[col] = X[col].astype("category").cat.codes
+        return X_encoded
+
+    def predict(self, X: pd.DataFrame):
+        X = X.copy()
+        for col in self.categorical_cols:
+            X[col] = X[col].map(self.mapping[col])
+        return self.model.predict(X)
 
 
 def shap_explainer(
     tc: ToolCommunicator,
     data_file_path: str,
+    model_path: str,
     target_variable: str,
-    problem_type: str,
+    problem_type: str,  # NOTE: currently unused.
     workspace: str,
 ) -> None:
     tc.print("Loading the data...")
     df = pd.read_csv(data_file_path)
-    df = process_dataframe(df)
-    X, y = df[[c for c in df.columns if c != target_variable]], df[target_variable]
+
+    X, y = df[[c for c in df.columns if c != target_variable]], df[target_variable]  # noqa: F841
 
     tc.print("Setting up the SHAP explainer...")
-
     tc.print("Running the SHAP explainer, this can take a while...")
-    if problem_type == "classification":
-        model = LogisticRegression()
-    else:
-        model = LinearRegression()
-    model.fit(X, y)
-    explainer = shap.Explainer(model.predict, X, max_evals=1000)
-    shap_values = explainer(X)
+
+    tc.print("Loading the model from file...")
+    model = load_model_from_file(model_path)
+    tc.print("Model loaded successfully.")
+
+    # Set up the model and data to be SHAP compatible.
+    shap_compatible_model = ShapCompatibleWrapper(model)
+    X_for_shap = shap_compatible_model.register_categorical(X)
+
+    DEFAULT_MAX_EVALS = 500
+    n_features = X_for_shap.shape[1]
+    max_evals = max(DEFAULT_MAX_EVALS, 2 * n_features + 1)  # Exception raised by shap if max_evals < n_features + 1
+    explainer = shap.Explainer(shap_compatible_model.predict, X_for_shap, max_evals=max_evals)
+
+    shap_values = explainer(X_for_shap)
 
     # Get numerical values for the mean absolute SHAP values per feature.
     mean_abs_shap_values = np.abs(shap_values.values).mean(axis=0)  # pylint: disable=no-member
-    shap_df = pd.DataFrame(mean_abs_shap_values, index=X.columns, columns=["Mean Abs SHAP Value"])
+    shap_df = pd.DataFrame(mean_abs_shap_values, index=X_for_shap.columns, columns=["Mean Abs SHAP Value"])
     shap_df.sort_values(by="Mean Abs SHAP Value", ascending=False, inplace=True)
     shap_info_str = shap_df.to_json(indent=2)
     tc.print(f"SHAP values:\n{shap_info_str}")
@@ -117,19 +158,17 @@ def shap_explainer(
     )
 
 
-# TODO: THIS IS A DUMMY EXPLAINER - THIS NEEDS TO BE MADE WORK WITH THE AUTOPROGNOSIS MODEL!
-# TODO: Also give the model the shap values / summary of the important features.
 class ShapExplainer(ToolBase):
     def _execute(self, **kwargs: Any) -> ToolReturnIter:
-        real_path = os.path.join(self.working_directory, kwargs["data_file_path"])
-        target_variable = kwargs["target_variable"]
-        problem_type = kwargs["problem_type"]
+        data_file_path = os.path.join(self.working_directory, kwargs["data_file_path"])
+        model_path = os.path.join(self.working_directory, kwargs["model_path"])
         thrd, out_stream = execute_tool(
-            shap_explainer,  # TODOpermutation
+            shap_explainer,
             wd=self.working_directory,
-            data_file_path=real_path,
-            target_variable=target_variable,
-            problem_type=problem_type,
+            data_file_path=data_file_path,
+            model_path=model_path,
+            target_variable=kwargs["target_variable"],
+            problem_type=kwargs["problem_type"],
             workspace=self.working_directory,
         )
         self.tool_thread = thrd

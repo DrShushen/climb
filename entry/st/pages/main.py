@@ -16,8 +16,6 @@ from climb.common.exc import EXC_DOCS_REFS
 try:
     from weasyprint import HTML
 
-    raise ImportError("Weasyprint is not installed")
-
     WEASYPRINT_WARNING_FULL = ""
     WEASYPRINT_WORKING = True
 except Exception as ex:

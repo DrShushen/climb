@@ -129,12 +129,14 @@ This will show the output like:
 <!-- exclude_docs -->
 The best way to get started with CliMB is to follow the [**🚀 Quickstart Guide**](https://climb-ai.readthedocs.io/en/latest/quickstart.html) in the documentation.
 
-If you encounter errors or problems when running CliMB for the first time, please check out the [🛠️ Troubleshooting](https://climb-ai.readthedocs.io/en/latest/troubleshooting.html) section, as it has the resoulutions steps for some common intallation and set up problems. For any other problems, please submit a GitHub issue [here](https://github.com/vanderschaarlab/climb/issues), or ask us on [Slack](https://join.slack.com/t/vanderschaarlab/shared_invite/zt-1u2rmhw06-sHS5nQDMN3Ka2Zer6sAU6Q).
+### Troubleshooting and getting help
+
+If you encounter errors or problems when running CliMB for the first time, please check out the [🛠️ Troubleshooting](https://climb-ai.readthedocs.io/en/latest/troubleshooting.html) section, as it has the resolution steps for some common installation and set up problems. For any other problems, please submit a GitHub issue [here](https://github.com/vanderschaarlab/climb/issues), or ask us on [Slack](https://join.slack.com/t/vanderschaarlab/shared_invite/zt-1u2rmhw06-sHS5nQDMN3Ka2Zer6sAU6Q), `#climb` channel.
 <!-- exclude_docs_end -->
 <!-- include_docs
 The best way to get started with CliMB is to follow the [**🚀 Quickstart Guide**](quickstart.md) in the documentation.
 
-If you encounter errors or problems when running CliMB for the first time, please check out the [🛠️ Troubleshooting](troubleshooting.md) section, as it has the resoulutions steps for some common intallation and set up problems. For any other problems, please submit a GitHub issue [here](https://github.com/vanderschaarlab/climb/issues), or ask us on [Slack](https://join.slack.com/t/vanderschaarlab/shared_invite/zt-1u2rmhw06-sHS5nQDMN3Ka2Zer6sAU6Q).
+If you encounter errors or problems when running CliMB for the first time, please check out the [🛠️ Troubleshooting](troubleshooting.md) section, as it has the resolution steps for some common installation and set up problems. For any other problems, please submit a GitHub issue [here](https://github.com/vanderschaarlab/climb/issues), or ask us on [Slack](https://join.slack.com/t/vanderschaarlab/shared_invite/zt-1u2rmhw06-sHS5nQDMN3Ka2Zer6sAU6Q).
 include_docs_end -->
 
 
@@ -157,6 +159,13 @@ This software is provided on an "as-is" basis without any warranties, expressed 
 
 **Data Privacy and Confidentiality:**  
 You are solely responsible for ensuring that any data entered into this system complies with relevant confidentiality and data privacy regulations, including HIPAA, GDPR, or any other applicable standards. As this software utilizes third-party, proprietary large language model (LLM) APIs, the copyright holders and contributors are not responsible for data security or regulatory compliance in relation to the use of these external APIs. It is the user's responsibility to anonymize data as required and to ensure that data-sharing practices align with the applicable privacy laws and institutional policies.
+
+<!-- exclude_docs -->
+You acknowledge that you have read and understood the [Data Privacy documentation](https://climb-ai.readthedocs.io/en/latest/dataprivacy.html) and the implications of using this software with your data described therein.
+<!-- exclude_docs_end -->
+<!-- include_docs
+You acknowledge that you have read and understood the [Data Privacy documentation](dataprivacy.md) and the implications of using this software with your data described therein.
+include_docs_end -->
 
 By proceeding to use this software, you agree to these terms and accept full responsibility for your use and management of any data within this system.
 

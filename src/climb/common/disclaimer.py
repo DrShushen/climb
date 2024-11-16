@@ -9,6 +9,8 @@ This software is provided on an "as-is" basis without any warranties, expressed 
 
 You are solely responsible for ensuring that any data entered into this system complies with relevant confidentiality and data privacy regulations, including HIPAA, GDPR, or any other applicable standards. As this software utilizes third-party, proprietary large language model (LLM) APIs, the copyright holders and contributors are not responsible for data security or regulatory compliance in relation to the use of these external APIs. It is the user's responsibility to anonymize data as required and to ensure that data-sharing practices align with the applicable privacy laws and institutional policies.
 
+You acknowledge that you have read and understood the Data Privacy documentation (https://climb-ai.readthedocs.io/en/latest/dataprivacy.html) and the implications of using this software with your data described therein.
+
 By proceeding to use this software, you agree to these terms and accept full responsibility for your use and management of any data within this system.
 """
 
