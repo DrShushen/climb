@@ -1955,32 +1955,31 @@ def handle_reason_stream() -> None:
         spinner_message = "Responding..."
         if engine().get_state().agent == "coordinator":
             spinner_message = "Planning..."
-        elif engine().get_state().agent == "supervisor":
-            spinner_message = "Checking work..."
-        try:
-            # Text stream, stream it as normal.
-            with st.chat_message("assistant"):
-                placeholder = st.empty()
+        with st.chat_message("assistant"):
+            placeholder = st.empty()
+            try:
                 with placeholder.container():
+                    # Text stream, stream it as normal.
                     with st.spinner(spinner_message):
                         stream_out = st.write_stream(handle_stream(stream))
                 fully_clear_placeholder(placeholder)
                 create_keep_displaying_content(store_under_key="reason_text", content=stream_out)
-        except ValueError as e:
-            if str(e) == LOADING_INDICATOR_EXC_MSG:
-                # If we happen to detect the LoadingIndicator during handling the stream, show the spinner
-                # with the appropriate message (it is going to be a tool request case) and list the stream,
-                # that is, process it under the hood without streaming anything.
-                with st.chat_message("assistant"):
-                    placeholder = st.empty()
+            except ValueError as e:
+                if str(e) == LOADING_INDICATOR_EXC_MSG:
+                    # If we happen to detect the LoadingIndicator during handling the stream, show the spinner
+                    # with the appropriate message (it is going to be a tool request case) and list the stream,
+                    # that is, process it under the hood without streaming anything.
+                    fully_clear_placeholder(placeholder)  # Clear the old placeholder with "Reasoning..." spinner.
                     with placeholder.container():
                         with st.spinner("Choosing tools..."):
                             list(stream)
                     fully_clear_placeholder(placeholder)
-                    create_keep_displaying_content(store_under_key="reason_choosing_tools", content="Choosing tools...")
-            else:
-                # If it's any other exception, raise it as normal.
-                raise e
+                    create_keep_displaying_content(
+                        store_under_key="reason_choosing_tools", content="⟳ Choosing tools..."
+                    )
+                else:
+                    # If it's any other exception, raise it as normal.
+                    raise e
 
     else:
         ui_log("In main_flow > stream is None")
