@@ -148,8 +148,23 @@ def engine() -> EngineBase:
     return st.session_state.engine
 
 
+# Streamlit state initializations.
+
 if "active_dashboard_tab" not in st.session_state:
     st.session_state.active_tab = "tab_session"
+
+if "keep_displaying_content" not in st.session_state:
+    # st.session_state.keep_displaying_content stores streamlit content that is displayed for some time
+    # after streaming has finished, until a streamlit rerun. It's typically the full streaming output.
+    # The reason for the need for the temporary display is prevent content from disappearing and reappearing too much.
+    keep_displaying_content = {
+        "exec_tool": [],
+        "reason_text": [],
+        "reason_choosing_tools": [],
+        "code_exec": [],
+    }
+    st.session_state.keep_displaying_content = keep_displaying_content
+
 
 # Get this value near the start of this streamlit script in order to avoid triggering unnecessary reruns later.
 active_agent = engine().get_state().agent
@@ -306,6 +321,31 @@ def update_debug_panel_ui_comm() -> None:
         cont_uicomm.code(engine().get_state())
 
 
+def fully_clear_placeholder(placeholder: Any) -> None:
+    placeholder.markdown("")
+    placeholder.empty()
+
+
+def create_keep_displaying_content(store_under_key: str, content: str) -> None:
+    # Create a streamlit empty -> container element and store it in st.session_state.keep_displaying_content.
+    # In the container, place st.markdown(content) to display.
+    # The clear_keep_displaying_content() will clear all of the containers stored thusly.
+    placeholder = st.empty()
+    st.session_state.keep_displaying_content[store_under_key].append(placeholder)
+    with placeholder.container():
+        st.markdown(content)
+        # st.markdown("KEEP ON SCREEN CONTENT")
+
+
+def clear_keep_displaying_content() -> None:
+    # Clear the temporarily displayed content stored in st.session_state.keep_displaying_content.
+    for placeholders in st.session_state.keep_displaying_content.values():
+        for placeholder in placeholders:
+            fully_clear_placeholder(placeholder)
+    for key in st.session_state.keep_displaying_content:
+        st.session_state.keep_displaying_content[key] = []
+
+
 # Tab warnings mechanism-related functions.
 
 tab_warning_areas = dict()
@@ -333,6 +373,9 @@ def show_tab_warnings(warning: str = tab_warning_tool_exec) -> None:
 def show_tab_warnings_if_tool_running():
     if engine().get_state().executing_tool:
         show_tab_warnings()
+
+
+# Tab warnings mechanism-related functions [END].
 
 
 # TODO: Needs to be tidied up.
@@ -520,9 +563,6 @@ def prepare_report(working_dir: str) -> str:
     return output_pdf
 
 
-# Tab warnings mechanism-related functions [END].
-
-
 def df_from_plan(plan_list_of_dicts: List[dict]) -> pd.DataFrame:
     COLS = ["Project Stage", "Task", "Subtask", "Status"]
     STATUS_MAP = {
@@ -708,7 +748,7 @@ def run_markdown_css_hack() -> None:
 
     /* A hack to dim out the stale messages _completely_. */
     div .stChatMessage [data-stale="true"] {
-        opacity: 0.0;
+        /*opacity: 0.0;*/
     }
 
     /* Chat box, make it fixed height. */
@@ -823,6 +863,9 @@ def rerun_with_state(state: Optional[InteractionStage] = None) -> None:
         state = engine().get_state().ui_controlled.interaction_stage
     engine().get_state().ui_controlled.interaction_stage = state
     engine().update_state()
+
+    ui_log(f"Rerunning with state: {state}")
+
     st.rerun()
 
 
@@ -1489,8 +1532,14 @@ with container_chat:
         )
     # --- --- ---
 
-    for message in history:
+    n_messages = len(history)
+    for idx, message in enumerate(history, 1):
         message = cast(Message, message)
+
+        if idx == n_messages:
+            # Once we reach the last message, clear any "keep displaying content" placeholders, as it will be replaced
+            # by the "permanent" version of the content from the message history.
+            clear_keep_displaying_content()
 
         with st.chat_message(name=message.role, avatar=AVATAR_MAP[message.role]):
             # 1. Show the message.text.
@@ -1766,31 +1815,39 @@ def user_input_box(disabled: bool = False, **kwargs: Any) -> Optional[str]:
 def execute_tool(tool_request) -> None:
     ui_log("In execute_tool")
     with st.chat_message("assistant"):
-        with st.spinner("Executing tool..."):
-            # Live stream the tool output.
-            return_ = ToolOutput()
-            # print(engine().get_state().ui_controlled.input_request)
-            tool_out = engine().execute_tool_call(
-                tool_request,
-                user_input=engine().get_state().ui_controlled.input_request,  # type: ignore
-            )
-            # print("tool_out", tool_out)
+        # st.empty() used to solve double message ghosting issue.
+        # https://discuss.streamlit.io/t/ghost-double-text-bug/68765/14
+        placeholder = st.empty()
+        with placeholder.container():
+            with st.spinner("Executing tool..."):
+                # Live stream the tool output.
+                return_ = ToolOutput()
+                # print(engine().get_state().ui_controlled.input_request)
+                tool_out = engine().execute_tool_call(
+                    tool_request,
+                    user_input=engine().get_state().ui_controlled.input_request,  # type: ignore
+                )
+                # print("tool_out", tool_out)
 
-            tool_out_stream = tool_out_wrapper(
-                tool_out,
-                return_,
-                hook_pre_fns=[
-                    update_debug_panel_ui_comm,
-                    show_tab_warnings_if_tool_running,
-                ],
-            )
-            # ^ Keep only strings in stream, exclude the final Return object (put value into `return_` instead).
+                tool_out_stream = tool_out_wrapper(
+                    tool_out,
+                    return_,
+                    hook_pre_fns=[
+                        update_debug_panel_ui_comm,
+                        show_tab_warnings_if_tool_running,
+                    ],
+                )
+                # ^ Keep only strings in stream, exclude the final Return object (put value into `return_` instead).
 
-            with st.expander(TOOL_LOGS_PREFIX, expanded=engine().session.session_settings.show_tool_call_logs):
-                st.write_stream(tool_out_stream)
+                with st.expander(TOOL_LOGS_PREFIX, expanded=engine().session.session_settings.show_tool_call_logs):
+                    stream_out = st.write_stream(tool_out_stream)
 
-            list(tool_out_stream)  # Just in case.
-            update_debug_panel_ui_comm()
+        fully_clear_placeholder(placeholder)
+
+        create_keep_displaying_content(store_under_key="exec_tool", content=stream_out)
+
+        list(tool_out_stream)  # Just in case.
+        update_debug_panel_ui_comm()
 
 
 def handle_user_input() -> None:
@@ -1895,26 +1952,35 @@ def handle_reason_stream() -> None:
     # Handle the incoming stream.
     if stream is not None:
         # ui_log("In main_flow > stream is not None")
-        with st.chat_message("assistant"):
-            spinner_message = "Responding..."
-            if engine().get_state().agent == "coordinator":
-                spinner_message = "Planning..."
-            elif engine().get_state().agent == "supervisor":
-                spinner_message = "Checking work..."
-            try:
-                # Text stream, stream it as normal.
-                with st.spinner(spinner_message):
-                    st.write_stream(handle_stream(stream))
-            except ValueError as e:
-                if str(e) == LOADING_INDICATOR_EXC_MSG:
-                    # If we happen to detect the LoadingIndicator during handling the stream, show the spinner
-                    # with the appropriate message (it is going to be a tool request case) and list the stream,
-                    # that is, process it under the hood without streaming anything.
-                    with st.spinner("Choosing tools..."):
-                        list(stream)
-                else:
-                    # If it's any other exception, raise it as normal.
-                    raise e
+        spinner_message = "Responding..."
+        if engine().get_state().agent == "coordinator":
+            spinner_message = "Planning..."
+        elif engine().get_state().agent == "supervisor":
+            spinner_message = "Checking work..."
+        try:
+            # Text stream, stream it as normal.
+            with st.chat_message("assistant"):
+                placeholder = st.empty()
+                with placeholder.container():
+                    with st.spinner(spinner_message):
+                        stream_out = st.write_stream(handle_stream(stream))
+                fully_clear_placeholder(placeholder)
+                create_keep_displaying_content(store_under_key="reason_text", content=stream_out)
+        except ValueError as e:
+            if str(e) == LOADING_INDICATOR_EXC_MSG:
+                # If we happen to detect the LoadingIndicator during handling the stream, show the spinner
+                # with the appropriate message (it is going to be a tool request case) and list the stream,
+                # that is, process it under the hood without streaming anything.
+                with st.chat_message("assistant"):
+                    placeholder = st.empty()
+                    with placeholder.container():
+                        with st.spinner("Choosing tools..."):
+                            list(stream)
+                    fully_clear_placeholder(placeholder)
+                    create_keep_displaying_content(store_under_key="reason_choosing_tools", content="Choosing tools...")
+            else:
+                # If it's any other exception, raise it as normal.
+                raise e
 
     else:
         ui_log("In main_flow > stream is None")
@@ -1943,11 +2009,16 @@ def handle_output_code_generation() -> None:
 
     finished_sentinel = CodeExecFinishedSentinel(status="success")
     with st.chat_message("code_execution", avatar=AVATAR_MAP["code_execution"]):
-        with st.spinner("Executing code..."):
-            output = engine().execute_generated_code()
-            with st.expander(CODE_EXECUTION_OUT_PREFIX, expanded=engine().session.session_settings.show_code_out):
-                st.write_stream(code_out_wrapper(output, finished_stl=finished_sentinel))
-            list(output)  # Just in case.
+        placeholder = st.empty()
+        with placeholder.container():
+            with st.spinner("Executing code..."):
+                output = engine().execute_generated_code()
+                with st.expander(CODE_EXECUTION_OUT_PREFIX, expanded=engine().session.session_settings.show_code_out):
+                    stream_out = st.write_stream(code_out_wrapper(output, finished_stl=finished_sentinel))
+
+        fully_clear_placeholder(placeholder)
+        create_keep_displaying_content(store_under_key="code_exec", content=stream_out)
+        list(output)  # Just in case.
 
     rerun_with_state(state="reason")
 
