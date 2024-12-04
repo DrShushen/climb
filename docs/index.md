@@ -20,6 +20,7 @@ Developer's Guide <devguide>
 License <license>
 Authors <authors>
 Changelog <changelog>
+Tool Reference <tool>
 API Reference <api/modules>
 ```
 

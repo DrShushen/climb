@@ -3,10 +3,14 @@
 The code will:
 * Update ``docs/overview.md`` based on the main ``README.md`` (carries out some string substitutions etc.).
 * Create the PyPI version of ``README.md``, ``pypi.md``, with image links fixed.
+* Update ``docs/tool.md`` to include ``description_for_user`` for all tools under ``src/climb/tool/impl/``.
 """
 
+import inspect
 import os
 import re
+
+import climb.tool
 
 print("=" * 80)
 print("Running `pre_build.py`...")
@@ -85,6 +89,26 @@ for source, destination in convert.items():
 
 with open(PYPI_README_PATH, "w", encoding="utf8") as file:
     file.write(readme_content)
+
+# -- Editing `tools.md` to include `description_for_user` as overview for all tools`.
+print("Working on `tools.md`...")
+
+TOOL_PATH = os.path.join(os.path.dirname(__file__), "tool.md")
+
+tool_content = "# \N{PICK} Tools Reference\n\n"
+
+# Classes to exclude because no description for user / is an abstract method
+CLASSES_TO_EXCLUDE = ["ToolBase", "UserInputRequest", "ToolCommunicator", "ToolOutput"]
+
+for t in [c for c in inspect.getmembers(climb.tool, inspect.isclass)]:
+    if t[0] not in CLASSES_TO_EXCLUDE:
+        tool_content += f"### {t[0]}\n"
+        toolstring = f"{t[1]().description_for_user}\n\n"
+        toolstring = str.upper(toolstring[0]) + toolstring[1:]
+        tool_content += toolstring
+
+with open(TOOL_PATH, "w", encoding="utf8") as file:
+    file.write(tool_content)
 
 print("=" * 80)
 print("Running `pre_build.py` complete.")

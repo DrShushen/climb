@@ -117,9 +117,9 @@ def shap_explainer(
     DEFAULT_MAX_EVALS = 500
     n_features = X_for_shap.shape[1]
     max_evals = max(DEFAULT_MAX_EVALS, 2 * n_features + 1)  # Exception raised by shap if max_evals < n_features + 1
-    explainer = shap.Explainer(shap_compatible_model.predict, X_for_shap, max_evals=max_evals)
+    explainer = shap.Explainer(shap_compatible_model.predict, X_for_shap)
 
-    shap_values = explainer(X_for_shap)
+    shap_values = explainer(X_for_shap, max_evals=max_evals)
 
     # Get numerical values for the mean absolute SHAP values per feature.
     mean_abs_shap_values = np.abs(shap_values.values).mean(axis=0)  # pylint: disable=no-member
@@ -182,8 +182,8 @@ class ShapExplainer(ToolBase):
     def description(self) -> str:
         return """
         Performs SHAP analysis on the user's data and the model from the library AutoPrognosis 2.0.
-        
-        Must ONLY be called AFTER `autoprognosis_regression` or `autoprognosis_classification` has been called. 
+
+        Must ONLY be called AFTER `autoprognosis_regression` or `autoprognosis_classification` has been called.
         This tool DOES NOT work for survival analysis tasks and should NEVER be used for survival tasks.
         """
 
@@ -425,7 +425,7 @@ def permutation_importance_explainer(
     tc.print("Running the permutation explainer, this can take a while...")
     tc.print("""
         This tool takes approximately 1 minute per column. If this is too slow, consider reducing the number of columns.
-        Reducing the number of column can be done with the feature selection tool. You can cancel this tool with the 
+        Reducing the number of column can be done with the feature selection tool. You can cancel this tool with the
         `Restart from last reasoning step` button. Then use the feature selection tool to reduce the number of columns.""")
 
     result = permutation_importance(
@@ -505,7 +505,7 @@ class PermutationExplainer(ToolBase):
     def description(self) -> str:
         return """
         Performs permutation analysis on the user's data and the model from the library AutoPrognosis 2.0. It is used for feature importance analysis on survival models.
-        
+
         Must ONLY be called AFTER `autoprognosis_survival` has been called.
         This tool should not be used for classification or regression tasks.
         """
