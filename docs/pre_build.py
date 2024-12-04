@@ -95,17 +95,21 @@ print("Working on `tools.md`...")
 
 TOOL_PATH = os.path.join(os.path.dirname(__file__), "tool.md")
 
-tool_content = "# \N{PICK} Tools Reference\n\n"
+tool_content = "# 🛠️ Tools Reference\n\n"
 
 # Classes to exclude because no description for user / is an abstract method
 CLASSES_TO_EXCLUDE = ["ToolBase", "UserInputRequest", "ToolCommunicator", "ToolOutput"]
 
 for t in [c for c in inspect.getmembers(climb.tool, inspect.isclass)]:
     if t[0] not in CLASSES_TO_EXCLUDE:
-        tool_content += f"### {t[0]}\n"
+        tool_content += f"### `{t[0]}`\n"
         toolstring = f"{t[1]().description_for_user}\n\n"
         toolstring = str.upper(toolstring[0]) + toolstring[1:]
         tool_content += toolstring
+# Remove the last newline to avoid extra space at the end of `tool.md`.
+print(tool_content[-1])
+assert tool_content[-1] == "\n", "Expected newline at the end of `tool_content`."
+tool_content = tool_content[:-1]
 
 with open(TOOL_PATH, "w", encoding="utf8") as file:
     file.write(tool_content)

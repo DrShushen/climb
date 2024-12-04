@@ -1,43 +1,43 @@
-# ⛏ Tools Reference
+# 🛠️ Tools Reference
 
-### AutoprognosisClassification
+### `AutoprognosisClassification`
 Uses the **AutoPrognosis `2.0`** library to automatically run a classification study on your data and returns and evaluates the best model
 
-### AutoprognosisRegression
+### `AutoprognosisRegression`
 Uses the **AutoPrognosis `2.0`** library to automatically run a regression study on your data and returns and evaluates the best model
 
-### AutoprognosisSubgroupEvaluation
+### `AutoprognosisSubgroupEvaluation`
 Uses the **AutoPrognosis `2.0`** library to automatically run a subgroup evaluation of your data and returns the evaluation results
 
-### AutoprognosisSurvival
+### `AutoprognosisSurvival`
 Uses the **AutoPrognosis `2.0`** library to automatically run a survival analysis study on your data and returns and evaluates the best model
 
-### BorutaFeatureSelection
+### `BorutaFeatureSelection`
 Uses the **automated feature selection** library to automatically find the most important features in your data.
 
-### DataIQInsights
+### `DataIQInsights`
 Provides insights for your classification task - which samples were 'easy', 'hard' or 'ambiguous' for classification.
 
-### DescriptiveStatistics
+### `DescriptiveStatistics`
 Produce medical paper -style descriptive statistics table for the dataset.
 
-### ExploratoryDataAnalysis
+### `ExploratoryDataAnalysis`
 Performs exploratory data analysis on your data, providing a summary of its characteristics.
 
-### HardwareInfo
+### `HardwareInfo`
 Gather information about your hardware (CPU, RAM, and GPU).
 
-### HyperImputeImputation
+### `HyperImputeImputation`
 Uses the **HyperImpute** library to automatically impute missing values in your data.
 
-### PermutationExplainer
+### `PermutationExplainer`
 Performs permutation feature importance analysis with the prediction model and your data
 
-### ShapExplainer
+### `ShapExplainer`
 Performs SHAP feature importance analysis with the prediction model and your data
 
-### UploadAndSummarizeExamplePaper
+### `UploadAndSummarizeExamplePaper`
 Allows you to upload an example paper in PDF format.
 
-### UploadDataFile
+### `UploadDataFile`
 Allows you to upload your data file in CSV format.

@@ -15,12 +15,12 @@ Installation <installation>
 Quickstart Guide <quickstart>
 Troubleshooting <troubleshooting>
 FAQ <faq>
+Tools Reference <tool>
 Contributing Guide <contributing>
 Developer's Guide <devguide>
 License <license>
 Authors <authors>
 Changelog <changelog>
-Tool Reference <tool>
 API Reference <api/modules>
 ```
 
