@@ -1,0 +1,10 @@
+SHAP explainer completed. Mean absolute SHAP values are:
+{
+  "Mean Abs SHAP Value":{
+    "X2":0.2787245,
+    "X1":0.1299303333,
+    "X5":0.0717373333,
+    "X4":0.0246276667,
+    "X3":0.0220908333
+  }
+}. The user can see the SHAP bar plot and beeswarm plot in the UI.

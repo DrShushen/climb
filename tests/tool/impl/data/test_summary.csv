@@ -1,0 +1,15 @@
+Variable,Summary
+int_categorical,
+<<int_categorical>> 0,125/1000 (12.5)
+<<int_categorical>> 2,125/1000 (12.5)
+<<int_categorical>> 3,125/1000 (12.5)
+<<int_categorical>> 4,125/1000 (12.5)
+<<int_categorical>> 1,125/1000 (12.5)
+<<int_categorical>> Other,375/1000 (37.5)
+int_numerical,4.00 (2.00 - 249.25)
+floats,0.0495 ± 0.9945
+strings,
+<<strings>> a,250/1000 (25.0)
+<<strings>> b,250/1000 (25.0)
+<<strings>> c,250/1000 (25.0)
+<<strings>> d,250/1000 (25.0)
