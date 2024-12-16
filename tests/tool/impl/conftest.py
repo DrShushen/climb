@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-DATA_PATH = "./tests/tool/impl/data/"
 N_SAMPLES = 1000
 
 
@@ -164,29 +163,3 @@ def df_missing_path(tmp_workspace) -> pd.DataFrame:
     df.to_csv(filepath, index=False)
 
     return filepath
-
-
-@pytest.fixture(scope="session")
-def eda_output() -> str:
-    """Expected EDA output for df_eda for exploratory_data_analysis()"""
-    with open(os.path.join(DATA_PATH, "test_eda.output")) as f:
-        eda_output = f.read()
-
-    return eda_output
-
-
-@pytest.fixture(scope="session")
-def shap_output() -> str:
-    """Expected output for df_classification for shap_explainer()"""
-    with open(os.path.join(DATA_PATH, "test_shap_explainer.output")) as f:
-        eda_output = f.read()
-
-    return eda_output
-
-
-@pytest.fixture
-def test_summary_df() -> str:
-    """Expected dataframe output for summarize_dataframe()"""
-
-    summary_df = pd.read_csv(os.path.join(DATA_PATH, "test_summary.csv"), index_col=0).fillna("")
-    return summary_df
