@@ -41,4 +41,4 @@ def get_tool_output(tc: ToolCommunicator) -> ToolOutput:
     if isinstance(p, ToolOutput):
         return p
     else:
-        raise ValueError("ToolCommunciator missing ToolOutput")
+        raise ValueError("ToolCommunicator missing ToolOutput")

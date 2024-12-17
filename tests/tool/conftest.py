@@ -11,5 +11,5 @@ def tool_return():
 
 @pytest.fixture
 def user_report_outputs():
-    """ToolOutput.user_report_oututs could be a str, matplotlib graph, or plotly graph"""
+    """ToolOutput.user_report_outputs could be a str, matplotlib graph, or plotly graph"""
     return ["Foobar", plt.Figure(), go.Figure()]

@@ -53,7 +53,7 @@ def test_check_normal_distribution(df_numerical):
 
 
 def test_top_n_with_other(df_mixed_types):
-    """Test modiifed value counts from top_n_with_other"""
+    """Test modified value counts from top_n_with_other"""
     modified_value_counts = top_n_with_other(df_mixed_types, "int_categorical")
 
     for i in range(5):
