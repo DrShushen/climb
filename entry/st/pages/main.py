@@ -1585,6 +1585,9 @@ with container_chat:
                     if (
                         engine().session.session_settings.show_planning_details is False
                         and message.agent == "coordinator"
+                        and not message.engine_state.agent_state.get("coordinator", {}).get(
+                            "show_message_to_user", False
+                        )
                     ):
                         ui_log(f"PLANNING:\n{content}")
                         content = "💡 `Planning step`"
@@ -1699,6 +1702,7 @@ def handle_stream(stream: StreamLike) -> Iterable[str]:
     # This currently contains:
     #     - the code block detection and hiding logic (if code hidden option is set).
     active_agent = engine().get_state().agent
+    active_agent_state = engine().get_state().agent_state.get(active_agent, {})
 
     so_far = ""  # Accumulator for the stream.
 
@@ -1751,7 +1755,13 @@ def handle_stream(stream: StreamLike) -> Iterable[str]:
                 # No code block detected, pass the stream on as normal.
                 to_yield = item
 
-        if engine().session.session_settings.show_planning_details is False and active_agent == "coordinator":
+        if (
+            engine().session.session_settings.show_planning_details is False
+            and active_agent == "coordinator"
+            # NOTE: The below condition doesn't actually work currently, as the "show_message_to_user" is not set
+            # before the streaming stage. Too annoying to fix, so leaving it as is.
+            and not active_agent_state.get("show_message_to_user", False)
+        ):
             if dummy_issued_coordinator_plan is False:
                 # If we haven't issued the dummy message yet, do so now.
                 to_yield = f" ...\n\n {COORDINATOR_PLAN_DUMMY_MESSAGE} \n\n"
