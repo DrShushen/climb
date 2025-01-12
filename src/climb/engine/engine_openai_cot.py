@@ -67,6 +67,7 @@ PLAN_COMPLETED_REPLACE_MARKER = "{PLAN_COMPLETED}"
 PLAN_REMAINING_REPLACE_MARKER = "{PLAN_REMAINING}"
 LAST_EPISODE_REPLACE_MARKER = "{LAST_EPISODE}"
 REASONING_STEP_REPLACE_MARKER = "{REASONING_STEP}"
+CANDIDATE_EPISODES_REPLACE_MARKER = "{CANDIDATE_EPISODES}"
 
 MAX_CHARS_REPLACE_MARKER = "{MAX_CHARS}"
 
@@ -167,8 +168,7 @@ they left off!
 EPISODE_DB = [
     {
         "episode_id": "ENV_1",
-        "selection_condition": None,
-        "status_reason": None,
+        "selection_condition": "Always",
         "episode_name": "Upload data file",
         "episode_details": """
 - Introduce yourself as an AI assistant that will help the user with their clinical machine learning study.
@@ -180,9 +180,22 @@ EPISODE_DB = [
         "tools": ["upload_data_file"],
     },
     {
+        "episode_id": "INFO_1",
+        "selection_condition": "Always",
+        "episode_name": "Gather key project information",
+        "episode_details": """
+- Explain briefly to the user what classification and regression are.
+- Ask the user whether their task is classification or regression and what the target column is.
+""",
+        "coordinator_guidance": None,
+        "worker_guidance": None,
+        "tools": ["upload_data_file"],
+    },
+    {
         "episode_id": "D_1",
-        "selection_condition": None,
-        "status_reason": None,
+        "selection_condition": """
+- INFO_1 completed successfully.
+""",
         "episode_name": "Print data types",
         "episode_details": """
 - Print the data types of all the columns in the dataset.
@@ -194,7 +207,10 @@ EPISODE_DB = [
     },
     {
         "episode_id": "D_2",
-        "selection_condition": "If the user wants to handle non-numeric columns by removing them",
+        "selection_condition": """
+- D_1 completed successfully.
+- The user has explicitly confirmed they want to remove all non-numeric type columns.
+""",
         "status_reason": None,
         "episode_name": "Remove all non-numeric type columns",
         "episode_details": """
@@ -207,7 +223,10 @@ EPISODE_DB = [
     },
     {
         "episode_id": "D_3",
-        "selection_condition": "If the user wants to handle non-numeric columns by converting them to numeric",
+        "selection_condition": """
+- D_1 completed successfully.
+- The user has explicitly confirmed they want to convert all non-numeric type columns to numeric.
+""",
         "status_reason": None,
         "episode_name": "Work with user to convert non-numeric columns to numeric",
         "episode_details": """
@@ -217,6 +236,77 @@ EPISODE_DB = [
 - After the conversion(s), print the data types of all the columns in the dataset.
 - IF there are still non-numeric columns, keep working with the user to convert them.
 - ONLY finish the task when all columns are numeric (or STOP if it is not possible).
+""",
+        "coordinator_guidance": None,
+        "worker_guidance": None,
+        "tools": [],
+    },
+    {
+        "episode_id": "M_CLF",
+        "selection_condition": """
+- D_2 or D_3 completed successfully.
+- The user has explicitly that their task is classification.
+""",
+        "status_reason": None,
+        "episode_name": "Fit a logistic regression model to the user's data",
+        "episode_details": """
+- Generate code to fit a logistic regression model to the user's data.
+- Print relevant performance metrics.
+- Save the model to a file.
+- Save the predictions to a file.
+""",
+        "coordinator_guidance": None,
+        "worker_guidance": None,
+        "tools": [],
+    },
+    {
+        "episode_id": "M_REG",
+        "selection_condition": """
+- D_2 or D_3 completed successfully.
+- The user has explicitly that their task is regression.
+""",
+        "status_reason": None,
+        "episode_name": "Fit a linear regression model to the user's data",
+        "episode_details": """
+- Generate code to fit a linear regression model to the user's data.
+- Print relevant performance metrics.
+- Save the model to a file.
+- Save the predictions to a file.
+""",
+        "coordinator_guidance": None,
+        "worker_guidance": None,
+        "tools": [],
+    },
+    {
+        "episode_id": "M_ITER",
+        "selection_condition": """
+- M_CLF or M_REG completed successfully.
+- The user has explicitly that they would like to iterate training with the user to improve model performance.
+""",
+        "status_reason": None,
+        "episode_name": "Iterate training with the user to improve model performance",
+        "episode_details": """
+REPEAT UTIL USER IS SATISFIED:
+- Discuss with the user how they would like to improve the model performance.
+- Generate code to iterate the training of the model.
+- Print relevant performance metrics.
+- Save the model to a file.
+""",
+        "coordinator_guidance": None,
+        "worker_guidance": None,
+        "tools": [],
+    },
+    {
+        "episode_id": "M_FI",
+        "selection_condition": """
+- M_CLF or M_REG completed successfully.
+- The user has explicitly confirmed they want to generate feature importances.
+""",
+        "status_reason": None,
+        "episode_name": "Generate feature importances",
+        "episode_details": """
+Generate code to calculate and print feature importances using sklearn's permutation importance method.
+Summarize the feature importances for the user.
 """,
         "coordinator_guidance": None,
         "worker_guidance": None,
@@ -957,8 +1047,10 @@ outcomes of previous tasks or episodes.
 
 PLAN = [
     "ENV_1",
+    "INFO_1",
     "D_1",
     "D_2",
+    "M_CLF",
 ]
 
 
@@ -993,300 +1085,312 @@ PLAN = [
 # ]
 
 
-COORDINATOR_EXAMPLES = f"""
-### Examples
+# COORDINATOR_EXAMPLES = f"""
+# ### Examples
 
-Here are several examples of how you should think about the coordination and reasoning process.
-These are just examples, NOT the actual project.
+# Here are several examples of how you should think about the coordination and reasoning process.
+# These are just examples, NOT the actual project.
 
-You should respond EXACTLY in the format you see between the markers:
-[Your response]
-<YOUR ACTUAL MESSAGE>
-[Your response ends]
+# You should respond EXACTLY in the format you see between the markers:
+# [Your response]
+# <YOUR ACTUAL MESSAGE>
+# [Your response ends]
 
-The number of episodes to analyze in Step 3 in these examples is limited (usually only 2) for demonstration purposes.
-In your actual work, you will analyze the number of episodes as instructed.
+# The number of episodes to analyze in Step 3 in these examples is limited (usually only 2) for demonstration purposes.
+# In your actual work, you will analyze the number of episodes as instructed.
 
-**VERY IMPORTANT**: Step1, Step 2, Step 3, and Step 4 are separate steps, and you will issue SEPARATE MESSAGES for each!
+# **VERY IMPORTANT**: Step1, Step 2, Step 3, and Step 4 are separate steps, and you will issue SEPARATE MESSAGES for each!
 
-======================================
-WE DON'T HAVE AN EXAMPLE OF STEP 3 with {USER_INPUT_NEEDED_MARKER}.
-USE YOUR OWN JUDGEMENT AND ANALYSIS FOR SUCH SCENARIOS.
-======================================
+# ======================================
+# WE DON'T HAVE AN EXAMPLE OF STEP 3 with {USER_INPUT_NEEDED_MARKER}.
+# USE YOUR OWN JUDGEMENT AND ANALYSIS FOR SUCH SCENARIOS.
+# ======================================
 
-=== SCENARIO 1: Simple Progress, No Changes Needed ===
-Context:
-- Project Description: Setting up a basic website for a small business
-- Episodes Database Excerpt:
-    WEBSITE_BASICS_1:
-        name: "Set up HTML structure"
-        selection_condition: None
-    WEBSITE_BASICS_2:
-        name: "Add basic content structure" 
-        selection_condition: None
-    WEBSITE_STYLING_1:
-        name: "Add CSS styling"
-        selection_condition: "HTML structure must be complete"
-    WEBSITE_STYLING_2:
-        name: "Add advanced styling effects"
-        selection_condition: "Basic CSS must be in place"
+# === SCENARIO 1: Simple Progress, No Changes Needed ===
+# Context:
+# - Project Description: Setting up a basic website for a small business
+# - Episodes Database Excerpt:
+#     WEBSITE_BASICS_1:
+#         name: "Set up HTML structure"
+#         selection_condition: None
+#     WEBSITE_BASICS_2:
+#         name: "Add basic content structure" 
+#         selection_condition: None
+#     WEBSITE_STYLING_1:
+#         name: "Add CSS styling"
+#         selection_condition: "HTML structure must be complete"
+#     WEBSITE_STYLING_2:
+#         name: "Add advanced styling effects"
+#         selection_condition: "Basic CSS must be in place"
 
-- Current Plan: ["WEBSITE_BASICS_1", "WEBSITE_BASICS_2", "WEBSITE_STYLING_1"]
-- Last Episode: WEBSITE_BASICS_1 
-- Full Record Summary:
-    * WEBSITE_BASICS_1 was completed successfully
-    * User message: "Great, the HTML structure looks good. Ready for the next step."
+# - Current Plan: ["WEBSITE_BASICS_1", "WEBSITE_BASICS_2", "WEBSITE_STYLING_1"]
+# - Last Episode: WEBSITE_BASICS_1 
+# - Full Record Summary:
+#     * WEBSITE_BASICS_1 was completed successfully
+#     * User message: "Great, the HTML structure looks good. Ready for the next step."
 
-Step 1:
-[Your response]
-Based on the project record, I observe that:
-1. The HTML structure setup (WEBSITE_BASICS_1) was completed successfully without any issues
-2. The user has explicitly expressed satisfaction with the HTML structure
-3. The work quality meets the prerequisites for the upcoming content structure step
-4. There are no indications of any problems or need for changes to the planned approach
-[Your response ends]
+# Step 1:
+# [Your response]
+# Based on the project record, I observe that:
+# 1. The HTML structure setup (WEBSITE_BASICS_1) was completed successfully without any issues
+# 2. The user has explicitly expressed satisfaction with the HTML structure
+# 3. The work quality meets the prerequisites for the upcoming content structure step
+# 4. There are no indications of any problems or need for changes to the planned approach
+# [Your response ends]
 
-Step 2:
-[Your response]
-{NO_BACKTRACKING_MARKER}
-[Your response ends]
+# Step 2:
+# [Your response]
+# {NO_BACKTRACKING_MARKER}
+# [Your response ends]
 
-Step 3:
-[Your response]
-* === EPISODE ===
+# Step 3:
+# [Your response]
+# * === EPISODE ===
 
-- Episode ID: WEBSITE_BASICS_2
-- Selection Condition: None
-- Name: Add basic content structure
+# - Episode ID: WEBSITE_BASICS_2
+# - Selection Condition: None
+# - Name: Add basic content structure
 
-Analysis:
-1. Necessity: Essential step to add content sections after HTML setup - required for any functional website
-2. Appropriateness: Perfect timing as HTML structure is complete and verified by user
+# Analysis:
+# 1. Necessity: Essential step to add content sections after HTML setup - required for any functional website
+# 2. Appropriateness: Perfect timing as HTML structure is complete and verified by user
 
-Episode Conclusion: Keep - naturally follows completed HTML setup
+# Episode Conclusion: Keep - naturally follows completed HTML setup
 
-* === END EPISODE ===
+# * === END EPISODE ===
 
-* === EPISODE ===
+# * === EPISODE ===
 
-- Episode ID: WEBSITE_STYLING_1 
-- Selection Condition: HTML structure must be complete
-- Name: Add CSS styling
+# - Episode ID: WEBSITE_STYLING_1 
+# - Selection Condition: HTML structure must be complete
+# - Name: Add CSS styling
 
-Analysis:
-1. Necessity: Required to style the website and meets user's project goals
-2. Appropriateness: Selection condition will be met after WEBSITE_BASICS_2
+# Analysis:
+# 1. Necessity: Required to style the website and meets user's project goals
+# 2. Appropriateness: Selection condition will be met after WEBSITE_BASICS_2
 
-Episode Conclusion: Keep - appropriate sequence for website development
+# Episode Conclusion: Keep - appropriate sequence for website development
 
-* === END EPISODE ===
+# * === END EPISODE ===
 
-Overall Conclusion: Both upcoming episodes remain necessary and appropriately sequenced. WEBSITE_BASICS_2 provides \
-the content structure needed before styling, and WEBSITE_STYLING_1 will have its prerequisite met.
+# Overall Conclusion: Both upcoming episodes remain necessary and appropriately sequenced. WEBSITE_BASICS_2 provides \
+# the content structure needed before styling, and WEBSITE_STYLING_1 will have its prerequisite met.
 
-REQUIRES PLAN UPDATE?: NO
+# REQUIRES PLAN UPDATE?: NO
 
-{NO_USER_INPUT_NEEDED_MARKER}
-[Your response ends]
+# {NO_USER_INPUT_NEEDED_MARKER}
+# [Your response ends]
 
-Step 4:
-[Your response]
-{NO_PLAN_UPDATE_MARKER}
-[Your response ends]
+# Step 4:
+# [Your response]
+# CANDIDATE EPISODES: [WEBSITE_STYLING_2]
+# * WEBSITE_STYLING_2: This episode should be included if advanced styling effects are desired. It does not appear to be \
+# desired, so we will not include it in the plan.
 
-=== SCENARIO 2: Backtracking Required ===
-Context:
-- Project Description: Creating a data analysis script for customer transaction data
-- Episodes Database Excerpt:
-    DATA_BASICS_1:
-        name: "Load and validate data format"
-        selection_condition: None
-    DATA_PROCESS_1:
-        name: "Define data cleaning strategy"
-        selection_condition: None
-    DATA_PROCESS_2:
-        name: "Implement data cleaning"
-        selection_condition: "Cleaning strategy must be defined"
-    DATA_PROCESS_3:
-        name: "Handle missing values"
-        selection_condition: "Basic cleaning must be complete"
-    DATA_VISUAL_1:
-        name: "Create basic visualizations"
-        selection_condition: "Data must be clean"
+# {NO_PLAN_UPDATE_MARKER}
+# [Your response ends]
 
-- Current Plan: ["DATA_BASICS_1", "DATA_PROCESS_1", "DATA_PROCESS_2", "DATA_VISUAL_1"]
-- Last Episode: DATA_PROCESS_2
-- Full Record Summary:
-    * DATA_BASICS_1 completed: Data loaded successfully, CSV format validated
-    * DATA_PROCESS_1 completed: Defined strategy to clean by removing all rows with any missing values
-    * DATA_PROCESS_2 completed: Implemented cleaning by dropping rows with missing values
-    * User message: "Wait, we can't just remove all rows with missing values - that's throwing away 40% of our \
-transaction data. We need a more nuanced approach to handle missing values."
+# === SCENARIO 2: Backtracking Required ===
+# Context:
+# - Project Description: Creating a data analysis script for customer transaction data
+# - Episodes Database Excerpt:
+#     DATA_BASICS_1:
+#         name: "Load and validate data format"
+#         selection_condition: None
+#     DATA_PROCESS_1:
+#         name: "Define data cleaning strategy"
+#         selection_condition: None
+#     DATA_PROCESS_2:
+#         name: "Implement data cleaning"
+#         selection_condition: "Cleaning strategy must be defined"
+#     DATA_PROCESS_3:
+#         name: "Handle missing values"
+#         selection_condition: "Basic cleaning must be complete"
+#     DATA_VISUAL_1:
+#         name: "Create basic visualizations"
+#         selection_condition: "Data must be clean"
 
-Step 1:
-[Your response]
-Based on the project record, I observe several critical issues:
-1. The chosen data cleaning strategy (removing all rows with missing values) is inappropriate for this dataset
-2. The user has identified that this approach results in significant data loss (40% of transactions)
-3. The completed DATA_PROCESS_2 episode implemented this incorrect strategy
-4. The user's feedback indicates we need a more sophisticated approach to handle missing values
-5. This issue needs to be addressed before any visualization can proceed
-[Your response ends]
+# - Current Plan: ["DATA_BASICS_1", "DATA_PROCESS_1", "DATA_PROCESS_2", "DATA_VISUAL_1"]
+# - Last Episode: DATA_PROCESS_2
+# - Full Record Summary:
+#     * DATA_BASICS_1 completed: Data loaded successfully, CSV format validated
+#     * DATA_PROCESS_1 completed: Defined strategy to clean by removing all rows with any missing values
+#     * DATA_PROCESS_2 completed: Implemented cleaning by dropping rows with missing values
+#     * User message: "Wait, we can't just remove all rows with missing values - that's throwing away 40% of our \
+# transaction data. We need a more nuanced approach to handle missing values."
 
-Step 2:
-[Your response]
-The data cleaning strategy implemented in DATA_PROCESS_2 is fundamentally flawed and resulted in unacceptable data \
-loss. We need to go back to DATA_PROCESS_1 to redefine the cleaning strategy with a more nuanced approach to handling \
-missing values.
+# Step 1:
+# [Your response]
+# Based on the project record, I observe several critical issues:
+# 1. The chosen data cleaning strategy (removing all rows with missing values) is inappropriate for this dataset
+# 2. The user has identified that this approach results in significant data loss (40% of transactions)
+# 3. The completed DATA_PROCESS_2 episode implemented this incorrect strategy
+# 4. The user's feedback indicates we need a more sophisticated approach to handle missing values
+# 5. This issue needs to be addressed before any visualization can proceed
+# [Your response ends]
 
-{BACKTRACKING_MARKER} DATA_PROCESS_1
-[Your response ends]
+# Step 2:
+# [Your response]
+# The data cleaning strategy implemented in DATA_PROCESS_2 is fundamentally flawed and resulted in unacceptable data \
+# loss. We need to go back to DATA_PROCESS_1 to redefine the cleaning strategy with a more nuanced approach to handling \
+# missing values.
 
-Step 3:
-[Your response]
-* === EPISODE ===
+# {BACKTRACKING_MARKER} DATA_PROCESS_1
+# [Your response ends]
 
-- Episode ID: DATA_PROCESS_1
-- Selection Condition: None
-- Name: Define data cleaning strategy
+# Step 3:
+# [Your response]
+# * === EPISODE ===
 
-Analysis:
-1. Necessity: Essential to define a proper cleaning strategy that preserves data integrity
-2. Appropriateness: Need to revise with focus on sophisticated missing value handling
+# - Episode ID: DATA_PROCESS_1
+# - Selection Condition: None
+# - Name: Define data cleaning strategy
 
-Episode Conclusion: Keep - but needs to be redone with new approach
+# Analysis:
+# 1. Necessity: Essential to define a proper cleaning strategy that preserves data integrity
+# 2. Appropriateness: Need to revise with focus on sophisticated missing value handling
 
-* === END EPISODE ===
+# Episode Conclusion: Keep - but needs to be redone with new approach
 
-* === EPISODE ===
+# * === END EPISODE ===
 
-- Episode ID: DATA_PROCESS_2
-- Selection Condition: Cleaning strategy must be defined
-- Name: Implement data cleaning
+# * === EPISODE ===
 
-Analysis:
-1. Necessity: Required but must follow new strategy
-2. Appropriateness: Will need to be reimplemented based on new strategy
+# - Episode ID: DATA_PROCESS_2
+# - Selection Condition: Cleaning strategy must be defined
+# - Name: Implement data cleaning
 
-Episode Conclusion: Keep - will implement revised strategy
+# Analysis:
+# 1. Necessity: Required but must follow new strategy
+# 2. Appropriateness: Will need to be reimplemented based on new strategy
 
-* === END EPISODE ===
+# Episode Conclusion: Keep - will implement revised strategy
 
-Overall Conclusion: Both episodes need to be redone with a new approach focusing on proper missing value handling. \
-Need to ensure we preserve data integrity while cleaning. The current sequence is correct but content needs updating.
+# * === END EPISODE ===
 
-REQUIRES PLAN UPDATE?: YES
+# Overall Conclusion: Both episodes need to be redone with a new approach focusing on proper missing value handling. \
+# Need to ensure we preserve data integrity while cleaning. The current sequence is correct but content needs updating.
 
-{NO_USER_INPUT_NEEDED_MARKER}
-[Your response ends]
+# REQUIRES PLAN UPDATE?: YES
 
-Step 4:
-[Your response]
-The current plan lacks explicit handling of missing values, which has been identified as a critical requirement. \
-We need to insert the missing value handling episode before visualization.
+# {NO_USER_INPUT_NEEDED_MARKER}
+# [Your response ends]
 
-{PLAN_UPDATE_MARKER} ["DATA_BASICS_1", "DATA_PROCESS_1", "DATA_PROCESS_2", "DATA_PROCESS_3", "DATA_VISUAL_1"]
-[Your response ends]
+# Step 4:
+# [Your response]
+# CANDIDATE EPISODES: ["DATA_PROCESS_3"]
+# * DATA_PROCESS_3: This episode should be included when handling missing is needed. We should add this episode.
 
-=== SCENARIO 3: Complex Replanning with Multiple Changes ===
-Context:
-- Project Description: Creating a mobile app for restaurant menu management
-- Episodes Database Excerpt:
-    APP_UI_1:
-        name: "Implement basic UI layout"
-        selection_condition: None
-    APP_UI_2:
-        name: "Add complex UI animations"
-        selection_condition: "Basic UI must be complete"
-    APP_UI_3:
-        name: "Implement simplified UI version"
-        selection_condition: None
-    APP_BACKEND_1:
-        name: "Set up basic backend"
-        selection_condition: None
-    APP_BACKEND_AUTH_1:
-        name: "Add user authentication"
-        selection_condition: "Basic backend must be ready"
-    APP_BACKEND_AUTH_2:
-        name: "Add role-based access"
-        selection_condition: "User authentication must be complete"
-    APP_DEPLOY_1:
-        name: "Deploy to app stores"
-        selection_condition: "All core features must be complete"
+# The current plan lacks explicit handling of missing values, which has been identified as a critical requirement. \
+# We need to insert the missing value handling episode before visualization.
 
-- Current Plan: ["APP_UI_1", "APP_UI_2", "APP_BACKEND_1", "APP_DEPLOY_1"]
-- Last Episode: APP_UI_1
-- Full Record Summary:
-    * APP_UI_1 completed: Basic UI implemented for menu management
-    * User messages: 
-        - "The UI layout works but we need something simpler - let's remove the complex animations."
-        - "Also, I just realized we need user authentication - restaurant staff should login before editing menus."
+# {PLAN_UPDATE_MARKER} ["DATA_BASICS_1", "DATA_PROCESS_1", "DATA_PROCESS_2", "DATA_PROCESS_3", "DATA_VISUAL_1"]
+# [Your response ends]
 
-Step 1:
-[Your response]
-Based on the project record, I observe critical changes needed:
-1. User has explicitly requested simpler UI without complex animations
-2. A new requirement for user authentication has been identified
-3. The basic UI and backend foundations are in place to support these changes
-4. Current plan lacks authentication but includes unnecessary UI complexity
-[Your response ends]
+# === SCENARIO 3: Complex Replanning with Multiple Changes ===
+# Context:
+# - Project Description: Creating a mobile app for restaurant menu management
+# - Episodes Database Excerpt:
+#     APP_UI_1:
+#         name: "Implement basic UI layout"
+#         selection_condition: None
+#     APP_UI_2:
+#         name: "Add complex UI animations"
+#         selection_condition: "Basic UI must be complete"
+#     APP_UI_3:
+#         name: "Implement simplified UI version"
+#         selection_condition: None
+#     APP_BACKEND_1:
+#         name: "Set up basic backend"
+#         selection_condition: None
+#     APP_BACKEND_AUTH_1:
+#         name: "Add user authentication"
+#         selection_condition: "Basic backend must be ready"
+#     APP_BACKEND_AUTH_2:
+#         name: "Add role-based access"
+#         selection_condition: "User authentication must be complete"
+#     APP_DEPLOY_1:
+#         name: "Deploy to app stores"
+#         selection_condition: "All core features must be complete"
 
-Step 2:
-[Your response]
-{NO_BACKTRACKING_MARKER}
-[Your response ends]
+# - Current Plan: ["APP_UI_1", "APP_UI_2", "APP_BACKEND_1", "APP_DEPLOY_1"]
+# - Last Episode: APP_UI_1
+# - Full Record Summary:
+#     * APP_UI_1 completed: Basic UI implemented for menu management
+#     * User messages: 
+#         - "The UI layout works but we need something simpler - let's remove the complex animations."
+#         - "Also, I just realized we need user authentication - restaurant staff should login before editing menus."
 
-Step 3:
-[Your response]
-* === EPISODE ===
+# Step 1:
+# [Your response]
+# Based on the project record, I observe critical changes needed:
+# 1. User has explicitly requested simpler UI without complex animations
+# 2. A new requirement for user authentication has been identified
+# 3. The basic UI and backend foundations are in place to support these changes
+# 4. Current plan lacks authentication but includes unnecessary UI complexity
+# [Your response ends]
 
-- Episode ID: APP_UI_2
-- Selection Condition: Basic UI must be complete
-- Name: Add complex UI animations
+# Step 2:
+# [Your response]
+# {NO_BACKTRACKING_MARKER}
+# [Your response ends]
 
-Analysis:
-1. Necessity: User explicitly requested removal of complex animations
-2. Appropriateness: Conflicts with requirement for simpler UI
+# Step 3:
+# [Your response]
+# * === EPISODE ===
 
-Episode Conclusion: Remove - contradicts new requirement for simplicity
+# - Episode ID: APP_UI_2
+# - Selection Condition: Basic UI must be complete
+# - Name: Add complex UI animations
 
-* === END EPISODE ===
+# Analysis:
+# 1. Necessity: User explicitly requested removal of complex animations
+# 2. Appropriateness: Conflicts with requirement for simpler UI
 
-* === EPISODE ===
+# Episode Conclusion: Remove - contradicts new requirement for simplicity
 
-- Episode ID: APP_BACKEND_1
-- Selection Condition: None
-- Name: Set up basic backend
+# * === END EPISODE ===
 
-Analysis:
-1. Necessity: Essential foundation for all backend features including auth
-2. Appropriateness: Correctly positioned but needs auth steps after it
+# * === EPISODE ===
 
-Episode Conclusion: Keep - required for authentication implementation
+# - Episode ID: APP_BACKEND_1
+# - Selection Condition: None
+# - Name: Set up basic backend
 
-* === END EPISODE ===
+# Analysis:
+# 1. Necessity: Essential foundation for all backend features including auth
+# 2. Appropriateness: Correctly positioned but needs auth steps after it
 
-Overall Conclusion: Major restructuring needed. APP_UI_2 should be removed as complex animations are no longer wanted. \
-Authentication episodes need to be added between backend setup and deployment. The current sequence misses critical \
-authentication requirements.
+# Episode Conclusion: Keep - required for authentication implementation
 
-REQUIRES PLAN UPDATE?: YES
+# * === END EPISODE ===
 
-{NO_USER_INPUT_NEEDED_MARKER}
-[Your response ends]
+# Overall Conclusion: Major restructuring needed. APP_UI_2 should be removed as complex animations are no longer wanted. \
+# Authentication episodes need to be added between backend setup and deployment. The current sequence misses critical \
+# authentication requirements.
 
-Step 4:
-[Your response]
-Multiple changes are needed:
-1. Remove complex UI animations as per user request
-2. Add authentication steps after backend setup
-3. Ensure proper sequencing of auth features before deployment
+# REQUIRES PLAN UPDATE?: YES
 
-{PLAN_UPDATE_MARKER} ["APP_UI_1", "APP_UI_3", "APP_BACKEND_1", "APP_BACKEND_AUTH_1", "APP_BACKEND_AUTH_2", "APP_DEPLOY_1"]
-[Your response ends]
-"""
+# {NO_USER_INPUT_NEEDED_MARKER}
+# [Your response ends]
 
-# COORDINATOR_EXAMPLES = "Use your best judgement, we do not have examples at the moment."
+# Step 4:
+# [Your response]
+# CANDIDATE EPISODES: ["APP_UI_3", "APP_BACKEND_AUTH_1", "APP_BACKEND_AUTH_2"]
+# * APP_UI_3: This episode should be included to implement the simplified UI version as per user request.
+# * APP_BACKEND_AUTH_1: This episode should be included to add user authentication after backend setup.
+# * APP_BACKEND_AUTH_2: This episode should be included to add role-based access after user authentication.
+
+# Multiple changes are needed:
+# 1. Remove complex UI animations as per user request
+# 2. Add authentication steps after backend setup
+# 3. Ensure proper sequencing of auth features before deployment
+
+# {PLAN_UPDATE_MARKER} ["APP_UI_1", "APP_UI_3", "APP_BACKEND_1", "APP_BACKEND_AUTH_1", "APP_BACKEND_AUTH_2", "APP_DEPLOY_1"]
+# [Your response ends]
+# """
+
+COORDINATOR_EXAMPLES = "Use your best judgement, we do not have examples at the moment."
 
 
 COORDINATOR_ACTUAL_PROJECT_DESCRIPTION = """
@@ -1317,6 +1421,7 @@ right direction.
 demonstration purposes.
 """
 
+# TODO: The feedback seeking at the CANDIDATE stage not implemented - the whole thing probably needs redoing anyway.
 COORDINATOR_REMINDER = f"""
 # Reminder - PLAN:
 ```text
@@ -1336,8 +1441,16 @@ COORDINATOR_REMINDER = f"""
 # Reminder - LAST EPISODE:
 * {LAST_EPISODE_REPLACE_MARKER}
 
+
 # Reminder -CURRENT REASONING STEP:
 * {REASONING_STEP_REPLACE_MARKER}
+
+
+### Reminder - CANDIDATE EPISODES NOT CURRENTLY IN THE PLAN:
+```text
+{CANDIDATE_EPISODES_REPLACE_MARKER}
+```
+
 
 # Reminder - Current working directory contents:
 For your information, do not send this to the user
@@ -1351,6 +1464,8 @@ the PLAN in Step 4 "Check plan".
 - When writing out the updated plan, you must keep the "past" episodes in the plan, and only update the future episodes. \
 For example, if the plan was ["A", "B", "C", "D"], and you are replanning after "B", and you decide to replace "C" with "E", \
 the new plan should be ["A", "B", "E", "D"].
+- When planning some steps ahead, IT IS NORMAL to not YET know whether a certain task is needed. Always bear this in mind \
+and avoid assuming a task is not needed. It's always better to ask the user for the necessary information.
 ====================
 """
 
@@ -1473,8 +1588,9 @@ using this exact format:
 Analysis:
 1. Necessity: <Analysis of whether the episode is still needed and what value it adds>
 2. Appropriateness: <Analysis of fit with current state and any risks/dependencies>
+3. Information needed: <Is there anything I need to ask the user RIGHT NOW to make a decision about this episode?>
 
-Episode Conclusion: <Keep/Replace/Remove and why>
+Episode Conclusion: <Keep/Remove/To be determined>
 
 * === END EPISODE ===
 
@@ -1484,14 +1600,19 @@ After analyzing all episodes, provide, in this exact format:
 
 Overall Conclusion: <Summary of cross-episode issues and specific recommendations>
 
-You should then ask yourself: in order to coordinate the next steps of the project, do I need some information from the user?
-- If yes: write the marker:
+Then think:
+* Before the NEXT EPISODE is started is there any information you definitely need from the user?
+Write out, in this exact format:
+
+Immediately needed information: [None/<description of information needed>]
+
+- If information needed immediately: write the marker:
 {USER_INPUT_NEEDED_MARKER}
-- If no: write the marker:
+- If not: write the marker:
 {NO_USER_INPUT_NEEDED_MARKER}
 You must include one the above two markers in your response.
 
-REQUIRES PLAN UPDATE?: <YES/NO>
+REQUIRES PLAN UPDATE?: <YES/NO/DEPENDS>
 
 **IMPORTANT**: Like all other steps, Step 3 must be issued as a separate message. Do not combine it with 
 Steps 1, 2, or 4. The system needs to process each step separately.
@@ -1504,37 +1625,99 @@ If your response format is incorrect, you will receive:
 
 #### Step 4. Check the plan.
 
-Is the plan appropriate given the current state of the PROJECT? Consider:
-- If you have backtracked, is the plan appropriate from the point you have backtracked to? It is likely that you will \
-want to update the plan.
-- If you have not backtracked, is the plan appropriate given the LAST EPISODE that was completed and all the information \
-you have about the project so far?
+For each episode in the EPISODES DATABASE that is NOT CURRENTLY IN THE PLAN (we call these CANDIDATE EPISODES):
+Write out your reasoning as follows:
 
-If you decide that the plan is not appropriate, you will need to update the plan. You will need to issue a message \
-structured like so:
-[Your response]
-<explanation of the problem with the plan and what needs to be changed>
+* === CANDIDATE ===
+
+- Episode ID: <ID>
+- Selection Condition: <"None" or condition text>
+- Name: <NAME>
+
+Analysis:
+1. Condition: <Is the selection condition currently met?>
+2. Information forthcoming: <Will the upcoming steps in our CURRENT PLAN help us gather the information to be able to know if the condition is met?>
+3. Information needed: <Is there anything I need to ask the user RIGHT NOW to make a decision about this candidate episode?> 
+
+Do we need to add this episode to the plan?: <YES/NO/DEPENDS>
+
+* === END CANDIDATE ===
+
+[Repeat for each candidate episode...]
+
+Overall Conclusion: <Summary of which episodes should be added and where, if any>
+
+You should then ask yourself: 
+1. In order to coordinate the next steps of the project, do I need some information from the user?
+2. Do I need to ask this information RIGHT NOW, or does it make more sense to ask it at a later stage (after some episodes)?
+- If yes: write the marker:
+{USER_INPUT_NEEDED_MARKER}
+- If no: write the marker:
+{NO_USER_INPUT_NEEDED_MARKER}
+You must include one the above two markers in your response.
 
 {PLAN_UPDATE_MARKER} <NEW_PLAN>
 [Your response ends]
 
 Example:
 [Your response]
-The user wants to set up a clothing store, but the plan currently includes tasks for setting up a bakery. We need to \
-update the bakery tasks to clothing store tasks.
 
-{PLAN_UPDATE_MARKER} ["BASICS_1", "BASICS_2", "CLOTHING_STORE_1", "CLOTHING_STORE_2"]
+* === CANDIDATE ===
+
+- Episode ID: CLOTHING_STORE_1
+- Selection Condition: The project requires setting up a clothing store.
+- Name: Set up the website structure for a clothing store
+
+Analysis:
+1. Condition: The selection condition is met as the user wants to set up a clothing store.
+2. Information forthcoming: We already have confirmed that the user wants to set up a clothing store.
+3. Information needed: None
+
+Do we need to add this episode to the plan?: YES
+
+* === END CANDIDATE ===
+
+* === CANDIDATE ===
+
+- Episode ID: CAR_STORE_1
+- Selection Condition: The project requires setting up a car store.
+- Name: Set up the website structure for a car store
+
+Analysis:
+1. Condition: The selection condition not met as the user wants to set up a clothing store.
+2. Information forthcoming: We have already confirmed that the user's desired store is a clothing store.
+3. Information needed: None
+
+Do we need to add this episode to the plan?: NO
+
+* === END CANDIDATE ===
+
+* === CANDIDATE ===
+
+- Episode ID: AUTH_1
+- Selection Condition: The project requires user authentication.
+- Name: Add user authentication to the website
+
+Analysis:
+1. Condition: We don't know yet whether user authentication is needed.
+2. Information forthcoming: The episode "GATHER_WEBSITE_REQUIREMENTS" will help us know if this is needed.
+3. Information needed: Not needed as we will know after the "GATHER_WEBSITE_REQUIREMENTS" episode.
+
+Do we need to add this episode to the plan?: DEPENDS
+
+* === END CANDIDATE ===
+
+Overall Conclusion: We need to add the episode "CLOTHING_STORE_1" to the plan.
+
+{PLAN_UPDATE_MARKER} ["BASICS_1", "BASICS_2", "CLOTHING_STORE_1", "GATHER_WEBSITE_REQUIREMENTS", "DESIGN_1"]
 [Your response ends]
 
-If you decide that the plan is appropriate, issue the following marker:
-[Your response]
+If you decide that the plan is appropriate, issue the following marker instead:
 {NO_PLAN_UPDATE_MARKER}
-[Your response ends]
+The CANDIDATE EPISODES analysis should still be included!
 
 Special case: If the project is completed, you will need to issue the following marker:
-[Your response]
 {PROJECT_END_MARKER}
-[Your response ends]
 
 Your response format will be checked by the system. If there is a problem, you will receive a message:
 [Your response]
@@ -1579,6 +1762,11 @@ These examples are for your reference, DO NOT confuse them with the ACTUAL PROJE
 ### PLAN:
 ```text
 {PLAN_REPLACE_MARKER}
+```
+
+### CANDIDATE EPISODES NOT CURRENTLY IN THE PLAN:
+```text
+{CANDIDATE_EPISODES_REPLACE_MARKER}
 ```
 
 * Completed episodes:
@@ -2393,87 +2581,6 @@ def get_task_from_subtask_id(structured_plan: List[Dict[str, Any]], subtask_id: 
     raise ValueError(f"Could not find a task with the subtask ID:\n{subtask_id}")
 
 
-def validate_subtask_selection(subtask_selection: Any) -> List[str]:
-    # TODO
-    # if not isinstance(subtask_selection, list):
-    #     raise ValueError(f"The subtask selection list was not a list:\n{subtask_selection}")
-    # if not all(isinstance(item, str) for item in subtask_selection):
-    #     raise ValueError(f"Not all items in the subtask selection list were strings:\n{subtask_selection}")
-
-    # possible_subtask_ids = get_all_subtasks(STRUCTURED_PLAN)
-    # for subtask_id in subtask_selection:
-    #     if subtask_id not in possible_subtask_ids:
-    #         raise ValueError(
-    #             f"An invalid subtask ID was found in the subtask selection list:\n{subtask_selection}. "
-    #             f"Possible subtask IDs are:\n{possible_subtask_ids}"
-    #         )
-
-    # # Get all subtasks that have "needs_redoing" status:
-    # needs_redoing_subtasks = [
-    #     subtask["subtask_id"]
-    #     for task in STRUCTURED_PLAN
-    #     for subtask in task["subtasks"]
-    #     if subtask["subtask_status"] == "needs_redoing"
-    # ]
-    # if len(needs_redoing_subtasks) > 0:
-    #     # Raise exception if any of the subtasks that need redoing are not in the subtask selection list:
-    #     if not all(subtask_id in subtask_selection for subtask_id in needs_redoing_subtasks):
-    #         raise ValueError(
-    #             f"Not all subtasks that need redoing were included in the subtask selection list:\n"
-    #             f"Subtasks with 'needs_redoing' status: {needs_redoing_subtasks}\n"
-    #             f"Subtasks selected: {subtask_selection}"
-    #         )
-
-    # if len(subtask_selection) == 0:
-    #     raise ValueError(f"The subtask selection list was empty:\n{subtask_selection}\nAt least one subtask is needed.")
-
-    return subtask_selection
-
-
-def gather_missed_not_started_subtasks(structured_plan: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    # Get all the unique subtask statuses:
-    subtask_statuses = set(subtask["subtask_status"] for task in structured_plan for subtask in task["subtasks"])
-    # Check if all the statuses are "not_started":
-    all_not_started = all(status == "not_started" for status in subtask_statuses)
-    missed_not_started = []
-    if not all_not_started:
-        # Get the task ID of the LAST task that is NOT not_started:
-        last_task_id = [
-            subtask["subtask_id"]
-            for task in structured_plan
-            for subtask in task["subtasks"]
-            if subtask["subtask_status"] != "not_started"
-        ][-1]
-        # Iterate the subtasks, and break at `last_task_id`:
-        done = False
-        for task in structured_plan:
-            if done:
-                break
-            for subtask in task["subtasks"]:
-                if done:
-                    break
-                if subtask["subtask_status"] == "not_started":
-                    missed_not_started.append({subtask["subtask_id"], subtask["subtask_name"]})
-                if subtask["subtask_id"] == last_task_id:
-                    done = True
-    return missed_not_started
-
-
-def update_task_statuses_in_structured_plan(structured_plan: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    # If all subtasks are "not_started", set the task status to "not_started".
-    # If all subtasks are "completed", set the task status to "completed".
-    # Otherwise, set the task status to "in_progress".
-    for task in structured_plan:
-        subtask_statuses = [subtask["subtask_status"] for subtask in task["subtasks"]]
-        if all(status == "not_started" for status in subtask_statuses):
-            task["task_status"] = "not_started"
-        elif all(status == "completed" for status in subtask_statuses):
-            task["task_status"] = "completed"
-        else:
-            task["task_status"] = "in_progress"
-    return structured_plan
-
-
 def filter_messages_by_agent(
     messages: List[Message],
     agent_or_tuple: Union[Agent, Union[Tuple[Agent], List[Agent]]],
@@ -2734,6 +2841,14 @@ def format_episodes_id_name(
         episode = [s for s in episode_db if s["episode_id"] == episode_id][0]
         formatted += f"- {episode['episode_id']}: {episode['episode_name']}\n"
     return formatted
+
+
+def get_episodes_not_in_plan(
+    episode_db: List[Dict[str, Any]],
+    plan: List[str],
+):
+    episode_ids = [episode["episode_id"] for episode in episode_db]
+    return [episode_id for episode_id in episode_ids if episode_id not in plan]
 
 
 def create_worker_actual_task(
@@ -3091,6 +3206,7 @@ class OpenAICotEngine(OpenAIEngineBase):
         completed_episodes, remaining_episodes = get_completed_and_remaining_episodes(
             PLAN, self.get_current_last_episode()
         )
+        candidate_episodes = get_episodes_not_in_plan(EPISODE_DB, PLAN)
         system_message_text = update_templates(
             body_text=agent.system_message_template,
             templates={
@@ -3099,6 +3215,7 @@ class OpenAICotEngine(OpenAIEngineBase):
                 PLAN_REPLACE_MARKER: format_episodes_id_name(EPISODE_DB, PLAN),
                 PLAN_COMPLETED_REPLACE_MARKER: format_episodes_id_name(EPISODE_DB, completed_episodes),
                 PLAN_REMAINING_REPLACE_MARKER: format_episodes_id_name(EPISODE_DB, remaining_episodes),
+                CANDIDATE_EPISODES_REPLACE_MARKER: format_episodes_id_name(EPISODE_DB, candidate_episodes),
                 WORKER_ACTUAL_TASK_REPLACE_MARKER: str(delegated_content),  # Only applicable for worker.
                 MAX_CHARS_REPLACE_MARKER: str(self.max_tokens_per_message),
                 # Privacy mode templates:
@@ -3177,6 +3294,7 @@ class OpenAICotEngine(OpenAIEngineBase):
         completed_episodes, remaining_episodes = get_completed_and_remaining_episodes(
             self.get_current_plan(), self.get_current_last_episode()
         )
+        candidate_episodes = get_episodes_not_in_plan(EPISODE_DB, self.get_current_plan())
         coordinator_state = d2m(self.get_state().agent_state["coordinator"], CoordinatorCotState)
         coordinator_system_message = last_coordinator_messages[0]
         coordinator_system_message.text = update_templates(
@@ -3187,6 +3305,7 @@ class OpenAICotEngine(OpenAIEngineBase):
                 PLAN_REPLACE_MARKER: format_episodes_id_name(EPISODE_DB, self.get_current_plan()),
                 PLAN_COMPLETED_REPLACE_MARKER: format_episodes_id_name(EPISODE_DB, completed_episodes),
                 PLAN_REMAINING_REPLACE_MARKER: format_episodes_id_name(EPISODE_DB, remaining_episodes),
+                CANDIDATE_EPISODES_REPLACE_MARKER: format_episodes_id_name(EPISODE_DB, candidate_episodes),
                 LAST_EPISODE_REPLACE_MARKER: self.get_current_last_episode(),
                 REASONING_STEP_REPLACE_MARKER: COORDINATOR_REASONING_COT_STAGE_MAP[
                     coordinator_state.coordinator_reasoning_stage
@@ -3254,6 +3373,7 @@ class OpenAICotEngine(OpenAIEngineBase):
         completed_episodes, remaining_episodes = get_completed_and_remaining_episodes(
             self.get_current_plan(), self.get_current_last_episode()
         )
+        candidate_episodes = get_episodes_not_in_plan(EPISODE_DB, self.get_current_plan())
         reminder_message_text = update_templates(
             body_text=MESSAGE_OPTIONS["coordinator"]["reminder"],
             templates={
@@ -3262,6 +3382,7 @@ class OpenAICotEngine(OpenAIEngineBase):
                 PLAN_REPLACE_MARKER: format_episodes_id_name(EPISODE_DB, self.get_current_plan()),
                 PLAN_COMPLETED_REPLACE_MARKER: format_episodes_id_name(EPISODE_DB, completed_episodes),
                 PLAN_REMAINING_REPLACE_MARKER: format_episodes_id_name(EPISODE_DB, remaining_episodes),
+                CANDIDATE_EPISODES_REPLACE_MARKER: format_episodes_id_name(EPISODE_DB, candidate_episodes),
                 LAST_EPISODE_REPLACE_MARKER: self.get_current_last_episode(),
                 REASONING_STEP_REPLACE_MARKER: COORDINATOR_REASONING_COT_STAGE_MAP[
                     coordinator_state.coordinator_reasoning_stage
@@ -3595,6 +3716,13 @@ class OpenAICotEngine(OpenAIEngineBase):
                 plan_update_true, updated_plan = parse_plan_update(
                     message_text, PLAN_UPDATE_MARKER, NO_PLAN_UPDATE_MARKER
                 )
+
+                if "* === CANDIDATE ===" not in message_text:
+                    raise ValueError(
+                        "The message does not contain any candidate episode analysis: '* === CANDIDATE === [...]' sections.\n"
+                        "It is critical to reason about potential candidate episodes, so this section must be included.\n"
+                        "Please retry including the candidate episode analysis."
+                    )
 
                 # TODO: Validate the updated plan.
 
