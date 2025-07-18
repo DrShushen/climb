@@ -2444,6 +2444,13 @@ PossibleEpisodesParam = EngineParameter(
     records_disabled_keys=["episode_id", "episode_name"],
 )
 
+UseSummarizationParam = EngineParameter(
+    name="use_summarization",
+    description="Whether to use summarization for better longer context management.",
+    kind="bool",
+    default=False,
+)
+
 
 def get_all_episode_ids_from_db(episodes_db: List[Dict]) -> List[str]:
     return [ep["episode_id"] for ep in episodes_db]
@@ -3153,7 +3160,7 @@ class OpenAIDCEngine(OpenAIEngineBase):
     @staticmethod
     def get_engine_parameters() -> List[EngineParameter]:
         parent_params = OpenAIEngineBase.get_engine_parameters()
-        return parent_params + [ToolSetParameter, PossibleEpisodesParam]
+        return parent_params + [ToolSetParameter, PossibleEpisodesParam, UseSummarizationParam]
 
     def get_plan_for_display(self):
         completed_episodes, remaining_episodes = get_completed_and_remaining_episodes(
@@ -3254,6 +3261,13 @@ class OpenAIDCEngine(OpenAIEngineBase):
         if not last_coordinator_messages[0].agent == "coordinator" and last_coordinator_messages[0].role == "system":
             raise ValueError("The last message set did not begin with a coordinator system message.")
 
+        if self.session.engine_params["use_summarization"]:
+            summary_messages = [m for m in last_coordinator_messages if m.summary_message]
+            if len(summary_messages) > 1:
+                raise ValueError(f"There should only be one summary message but found {len(summary_messages)}.")
+        else:
+            summary_messages = []
+
         historic_messages, last_worker_messages = split_message_list_by_last_new_reasoning_cycle_marker(
             historic_messages
         )
@@ -3304,6 +3318,48 @@ class OpenAIDCEngine(OpenAIEngineBase):
         messages_to_process.append(coordinator_system_message)
 
         if historic_messages:
+            if self.session.engine_params["use_summarization"]:
+                if  not summary_messages:
+                    # ---
+                    # TODO: This too will eventually become too long. Need *progressive summarization*.
+                    summarize_system_message_text = """
+                    Below you will be given a history of messages between previous rounds of worker agents and coordinator agent interacting with a user.
+                    Your goal is to summarize this history in a clear way that is useful for the current coordinator agent.
+                    RULES:
+                    1. Begin your summary with the following text: ### Summary of previous messages.
+                    2. Do NOT talk about anything regarding what next steps are, or should be - your ONLY goal is to summarize the messages.
+
+                    NOW STARTS THE MESSAGE HISTORY:
+                    """
+                    messages_to_send_to_openai = [{"role": "system", "content": summarize_system_message_text}]
+                    messages_to_send_to_openai += [
+                        self._handle_openai_message_format(m)  # type: ignore
+                        for m in historic_messages
+                        if m.visibility not in ("ui_only", "system_only", "llm_only_ephemeral")
+                    ]
+                    messages_to_send_to_openai += [
+                        {"role": "system", "content": "END OF MESSAGE HISTORY.\nBegin summarizing."}
+                    ]
+                    completion_kwargs = dict(
+                        messages=messages_to_send_to_openai,
+                        stream=False,
+                    )
+                    print(completion_kwargs)
+                    out = self.initialize_completion()(**completion_kwargs)
+                    summary_text = out.choices[0].message.content
+                    # Record summary.
+                    _summary_message = Message(
+                        key=KeyGeneration.generate_message_key(),
+                        role="system",
+                        visibility="llm_only",
+                        agent="coordinator",
+                        text=summary_text,
+                        summary_message=True,
+                    )
+                    self._append_message(_summary_message)
+                    summary_messages = [_summary_message]
+                    # ---
+
             # <separator>
             messages_to_process.append(
                 # NOTE: This is a FULLY EPHEMERAL message, not stored in the DB.
@@ -3315,7 +3371,10 @@ class OpenAIDCEngine(OpenAIEngineBase):
                 )
             )
             # [historic record] - w/o system messages.
-            messages_to_process.extend(historic_messages)
+            if self.session.engine_params["use_summarization"]:
+                messages_to_process.extend(summary_messages)
+            else:
+                messages_to_process.extend(historic_messages)
 
         if last_worker_messages:
             # <separator>
@@ -3443,6 +3502,14 @@ class OpenAIDCEngine(OpenAIEngineBase):
         )
 
         historic_worker_messages = self.exclude_system_messages(historic_worker_messages)
+
+        if self.session.engine_params["use_summarization"]:
+            summary_messages = [m for m in last_worker_messages if m.summary_message]
+            if len(summary_messages) > 1:
+                raise ValueError(f"There should only be one summary message but found {len(summary_messages)}.")
+        else:
+            summary_messages = []
+
         last_worker_messages = self.exclude_system_messages(last_worker_messages)
         # ^ This will also remove the old system message.
 
@@ -3450,6 +3517,48 @@ class OpenAIDCEngine(OpenAIEngineBase):
         messages_to_process.append(worker_agent_system_message)
 
         if historic_worker_messages:
+            if self.session.engine_params["use_summarization"]:
+                if not summary_messages:
+                    # ---
+                    # TODO: This too will eventually become too long. Need *progressive summarization*.
+                    summarize_system_message_text = """
+                    Below you will be given a history of messages between previous rounds of worker agent and user interactions.
+                    Your goal is to summarize this history in a clear way that is useful for the current worker agent.
+                    RULES:
+                    1. Begin your summary with the following text: ### Summary of previous messages
+                    2. Do NOT talk about anything regarding what next steps are, or should be - your ONLY goal is to summarize the messages.
+
+                    NOW STARTS THE MESSAGE HISTORY:
+                    """
+                    messages_to_send_to_openai = [{"role": "system", "content": summarize_system_message_text}]
+                    messages_to_send_to_openai += [
+                        self._handle_openai_message_format(m)  # type: ignore
+                        for m in historic_worker_messages
+                        if m.visibility not in ("ui_only", "system_only", "llm_only_ephemeral")
+                    ]
+                    messages_to_send_to_openai += [
+                        {"role": "system", "content": "END OF MESSAGE HISTORY.\nBegin summarizing."}
+                    ]
+                    completion_kwargs = dict(
+                        messages=messages_to_send_to_openai,
+                        stream=False,
+                    )
+                    print(completion_kwargs)
+                    out = self.initialize_completion()(**completion_kwargs)
+                    summary_text = out.choices[0].message.content
+                    # Record summary.
+                    _summary_message = Message(
+                        key=KeyGeneration.generate_message_key(),
+                        role="system",
+                        visibility="llm_only",
+                        agent="worker",
+                        text=summary_text,
+                        summary_message=True,
+                    )
+                    self._append_message(_summary_message)
+                    summary_messages = [_summary_message]
+                    # ---
+            
             # <separator>
             messages_to_process.append(
                 # NOTE: This is a FULLY EPHEMERAL message, not stored in the DB.
@@ -3460,8 +3569,13 @@ class OpenAIDCEngine(OpenAIEngineBase):
                     agent="worker",
                 )
             )
+            # ---
+
             # [historic record] - w/o system messages.
-            messages_to_process.extend(historic_worker_messages)
+            if self.session.engine_params["use_summarization"]:
+                messages_to_process.extend(summary_messages)
+            else:
+                messages_to_process.extend(historic_worker_messages)
 
         # <separator>
         messages_to_process.append(
@@ -4149,7 +4263,7 @@ class AzureOpenAIDCEngine(
     @staticmethod
     def get_engine_parameters() -> List[EngineParameter]:
         parent_params = AzureOpenAIEngineMixin.get_engine_parameters()
-        return parent_params + [ToolSetParameter, PossibleEpisodesParam]
+        return parent_params + [ToolSetParameter, PossibleEpisodesParam, UseSummarizationParam]
 
     @staticmethod
     def get_engine_name() -> str:
