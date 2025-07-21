@@ -217,14 +217,35 @@ it is clear from the filenames, suggest this to the user and ask for confirmatio
         "selection_condition": None,
         "episode_name": "Check data file(s) can be loaded",
         "episode_details": """
+I. Loading.
 Generate code to check whether the data file(s) can be loaded with `pd.read_csv(<file_path>)`, as that is how the \
 tools expect it.
 
 CHECK that the loaded dataframe has MORE THAN ONE column and more than one row - otherwise it usually \
 means the separator or delimiter is wrong. Try to find a way to load the file (e.g. try different delimiters), and \
-then save the modified file in way that can be loaded with `pd.read_csv(<file_path>)`.
+then save the modified file in way that can be loaded with `pd.read_csv(<file_path>)`. Name this file with the suffix \
+`_fixed` in the filename.
 
-If not possible, suggest to the user that they fix the data and upload it again.""",
+If not possible, suggest to the user that they fix the data and upload it again.
+
+II. Column headers (do this SEPARATELY, AFTER "I. Loading").
+- Check if all uploaded data files have proper column headers (header row with column names).
+- For each file, generate code to:
+  - Print the first few rows to inspect the structure (use `print(df.head())`)
+  - Determine if the first row contains column names or data values
+  - If the first row appears to be data rather than column names, ask the user what the column names should be
+- IF files are missing headers:
+  - Discuss with the user what each column represents and what the column names should be
+  - Show the user the first few rows of data to help them identify what each column contains
+  - Ask the user to provide appropriate column names for each column
+  - RE-LOAD the original file(s), NOT _fixed ones, using the correct delimiter etc., but this time giving the column names \
+that the user provided. Overwrite the _fixed files with the new ones.
+- IF files already have proper headers, confirm this with the user and proceed
+
+III. Sense check the final files:
+- Ensure all files have consistent and meaningful column names before proceeding with analysis, write code to print the \
+column names from each file. And check with the user if everything is OK.
+""",
         "coordinator_guidance": None,
         "worker_guidance": """
 - You MUST NOT use any tool here. DO NOT SUMMON ANY TOOLS.
@@ -245,37 +266,37 @@ IMPORTANT:
 """,
         "tools": [],
     },
-    {
-        "episode_id": "ENV_2B",
-        "selection_condition": None,
-        "status_reason": None,
-        "episode_name": "Check and fix column headers",
-        "episode_details": """
-- Check if all uploaded data files have proper column headers (header row with column names).
-- For each file, generate code to:
-  - Load the first few rows to inspect the structure
-  - Determine if the first row contains column names or data values
-  - If the first row appears to be data rather than column names, ask the user what the column names should be
-- If files are missing headers:
-  - Discuss with the user what each column represents and what the column names should be
-  - Show the user the first few rows of data to help them identify what each column contains
-  - Ask the user to provide appropriate column names for each column
-  - Generate code to add the proper column headers and re-save the files
-- If files already have proper headers, confirm this with the user and proceed
-- Ensure all files have consistent and meaningful column names before proceeding with analysis
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": """
-- You MUST NOT use any tool here. DO NOT SUMMON ANY TOOLS.
-- You MUST generate code in this step!
+#     {
+#         "episode_id": "ENV_2B",
+#         "selection_condition": None,
+#         "status_reason": None,
+#         "episode_name": "Check and fix column headers",
+#         "episode_details": """
+# - Check if all uploaded data files have proper column headers (header row with column names).
+# - For each file, generate code to:
+#   - Load the first few rows to inspect the structure
+#   - Determine if the first row contains column names or data values
+#   - If the first row appears to be data rather than column names, ask the user what the column names should be
+# - If files are missing headers:
+#   - Discuss with the user what each column represents and what the column names should be
+#   - Show the user the first few rows of data to help them identify what each column contains
+#   - Ask the user to provide appropriate column names for each column
+#   - Generate code to add the proper column headers and re-save the files.
+# - If files already have proper headers, confirm this with the user and proceed
+# - Ensure all files have consistent and meaningful column names before proceeding with analysis
+# """,
+#         "coordinator_guidance": None,
+#         "worker_guidance": """
+# - You MUST NOT use any tool here. DO NOT SUMMON ANY TOOLS.
+# - You MUST generate code in this step!
 
-IMPORTANT:
-- Check ALL uploaded files for proper column headers
-- If headers are missing, engage with the user to determine appropriate column names
-- Re-save files with proper headers if needed
-""",
-        "tools": [],
-    },
+# IMPORTANT:
+# - Check ALL uploaded files for proper column headers
+# - If headers are missing, engage with the user to determine appropriate column names
+# - Re-save files with proper headers if needed
+# """,
+#         "tools": [],
+#     },
     {
         "episode_id": "DP-F_1",
         "selection_condition": None,
@@ -575,7 +596,7 @@ synonyms for each topic.
         "selection_condition": None,
         "episode_name": "Column background information",
         "episode_details": """
-Go through EACH columns with the and gather background information.
+Go through EACH columns with the and gather background information -- generate code to list the columns first!
     - IF you have some idea what the column represents, provide the user with a short summary of this. Ask the user if \
 this is correct, and if not, ask them to provide the correct information.
     - IF you are not sure what the column represents, ask the user to provide this information about the column straight away.
@@ -1252,7 +1273,7 @@ outcomes of previous tasks or episodes.
 PLAN = [
     "ENV_1",
     "ENV_2",
-    "ENV_2B",
+    # "ENV_2B",
     "DP-F_1",
     "ENV_3",
     "INFO_1",
