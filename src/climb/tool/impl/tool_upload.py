@@ -57,7 +57,7 @@ class UploadDataFile(ToolBase):
                 key="file",
                 kind="file",
                 description="Please upload your file",
-                extra={"file_types": ["csv"], "multiple": False},
+                extra={"file_types": ["csv", "txt"], "multiple": False},
             ),
         ]
 
@@ -118,7 +118,7 @@ class UploadDataMultipleFiles(ToolBase):
                 key="multiple_files",
                 kind="multiple_files",
                 description="Please upload your file(s)",
-                extra={"file_types": ["csv"], "multiple": True},
+                extra={"file_types": ["csv", "txt"], "multiple": True},
             ),
         ]
 

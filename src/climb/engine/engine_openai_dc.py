@@ -212,33 +212,21 @@ it is clear from the filenames, suggest this to the user and ask for confirmatio
         "tools": ["upload_data_multiple_files"],
     },
     {
-        "episode_id": "DP-F_1",
-        "selection_condition": None,
+        "episode_id": "ENV_2",
         "status_reason": None,
-        "episode_name": "Merge multiple data files",
+        "selection_condition": None,
+        "episode_name": "Check data file(s) can be loaded",
         "episode_details": """
-- If there are multiple files for the training and/or test dataset, tell the user that you will have to merge them into a single file now.
-- Ask if there is a unique key that can be used to merge the files. Tell the user it is OK to be unsure, and that you \
-- If there is no unique key, ask if one can be created by creating a unique combination of columns.
-will help them figure it out. Columns can have different names in different files, so you may need to \
-confirm whether similar columns names refer to the same column across the files, make you best guess and suggest column matches if the user is unsure.
-- Generate code to print the columns names from both files. Look at these and suggest to the user which columns \
-could contain the same information under different names and therefore should be matched. Ask the user to confirm the matches.
-- Generate code to re-name the matched columns to the same name in both files and then merge the files into a single training \
-dataset (and a single test dataset if applicable). The first attempt to merge should be an inner join. This should be done \
-using the unique key or combination of columns.
-- Save the merged datasets with the suffix `_merged` in the filename.
-- Generate code to sense check the merged datasets to ensure that the merge was successful, using the following checks:
-    - show the number of rows lost in the merge. i.e. the number of rows in the largest of the original datasets minus the number of rows in the merged dataset.
-    - show the number of NaN values introduced in the merge.
+Generate code to check whether the data file(s) can be loaded with `pd.read_csv(<file_path>)`, as that is how the \
+tools expect it.
 
-- Ask the user to confirm that the merge was successful, by reviewing the ``_merged.csv` file in the working directory tab.
-- If not successful, ask the user to provide more information to help resolve the issue and re-run the merge according to the feedback.
-- When the merge is successful, proceed to the next step.
-""",
+CHECK that the loaded dataframe has MORE THAN ONE column and more than one row - otherwise it usually \
+means the separator or delimiter is wrong. Try to find a way to load the file (e.g. try different delimiters), and \
+then save the modified file in way that can be loaded with `pd.read_csv(<file_path>)`.
+
+If not possible, suggest to the user that they fix the data and upload it again.""",
         "coordinator_guidance": None,
         "worker_guidance": """
-- You MUST NEVER skip this step if the user has multiple files for either the training and/or test dataset.
 - You MUST NOT use any tool here. DO NOT SUMMON ANY TOOLS.
 - You MUST generate code in this step!
 - So, your response MUST have:
@@ -251,12 +239,95 @@ CODE:
 ... your code to complete the episode ...
 ```
 
+IMPORTANT:
+- If the user has provided both a training and a test dataset files, you must check (and re-save if needed) *both*.
+- If the user has provided multiple files, you must check (and re-save if needed) *all* of them!
+""",
+        "tools": [],
+    },
+    {
+        "episode_id": "ENV_2B",
+        "selection_condition": None,
+        "status_reason": None,
+        "episode_name": "Check and fix column headers",
+        "episode_details": """
+- Check if all uploaded data files have proper column headers (header row with column names).
+- For each file, generate code to:
+  - Load the first few rows to inspect the structure
+  - Determine if the first row contains column names or data values
+  - If the first row appears to be data rather than column names, ask the user what the column names should be
+- If files are missing headers:
+  - Discuss with the user what each column represents and what the column names should be
+  - Show the user the first few rows of data to help them identify what each column contains
+  - Ask the user to provide appropriate column names for each column
+  - Generate code to add the proper column headers and re-save the files
+- If files already have proper headers, confirm this with the user and proceed
+- Ensure all files have consistent and meaningful column names before proceeding with analysis
+""",
+        "coordinator_guidance": None,
+        "worker_guidance": """
+- You MUST NOT use any tool here. DO NOT SUMMON ANY TOOLS.
+- You MUST generate code in this step!
+
+IMPORTANT:
+- Check ALL uploaded files for proper column headers
+- If headers are missing, engage with the user to determine appropriate column names
+- Re-save files with proper headers if needed
+""",
+        "tools": [],
+    },
+    {
+        "episode_id": "DP-F_1",
+        "selection_condition": None,
+        "status_reason": None,
+        "episode_name": "Merge multiple data files",
+        "episode_details": """
+I. Lay out the situation:
+- If there are multiple files for the training and/or test dataset, tell the user that you will have to merge them into a single file now.
+- Ask if some files contain the same data, so can be stacked, or if the files differ and need be merged by some key.
+- Ask if there is a unique key that can be used to merge the files. Tell the user it is OK to be unsure, and that you will help them figure it out.
+
+You will first stack any files if needed (step II), then merge with any other files if needed (step III).
+
+II. Stack files (if applicable):
+- If files can be stacked, confirm with the user that they are OK with this.
+- Check that the column names match for all the files that you intend to stack.
+    - If they do not match, work with the user to harmonize them and then stack the files.
+- Save the stacked files with the suffix `_stacked` in the filename.
+- Print out the number of rows and columns in each original file, and then the stacked file. \
+Sense check this, and check with the user if everything is OK.
+
+III. Merge files (if applicable):
+- If there is no unique key, ask if one can be created by creating a unique combination of columns.
+- Columns can have different names in different files, so you may need to \
+confirm whether similar columns names refer to the same column across the files, make you best guess and suggest column matches if the user is unsure.
+- Generate code to print the columns names from both files. Look at these and suggest to the user which columns \
+could contain the same information under different names and therefore should be matched. Ask the user to confirm the matches.
+- Generate code to re-name the matched columns to the same name in both files and then merge the files into a single training \
+dataset (and a single test dataset if applicable). The first attempt to merge should be an inner join. This should be done \
+using the unique key or combination of columns.
+- Save the merged datasets with the suffix `_merged` in the filename.
+- Generate code to sense check the merged datasets to ensure that the merge was successful, using the following checks:
+    - show the number of rows lost in the merge. i.e. the number of rows in the largest of the original datasets minus the number of rows in the merged dataset.
+    - show the number of NaN values introduced in the merge.
+
+IV. Sense check the final datasets:
+- Ask the user to confirm that the merge was successful, by reviewing the ``_merged.csv` file in the working directory tab.
+- If not successful, ask the user to provide more information to help resolve the issue and re-run the merge according to the feedback.
+- When the merge is successful, proceed to the next step.
+""",
+        "coordinator_guidance": None,
+        "worker_guidance": """
+- You MUST NEVER skip this step if the user has multiple files for either the training and/or test dataset.
+- You MUST NOT use any tool here. DO NOT SUMMON ANY TOOLS.
+- You MUST generate code in this step!
+
 - If the user has provided both a training and a test dataset files, you must check *both*.
 """,
         "tools": [],
     },
     {
-        "episode_id": "ENV_2",
+        "episode_id": "ENV_3",
         "status_reason": None,
         "selection_condition": None,
         "episode_name": "Check hardware",
@@ -269,35 +340,6 @@ machine that meets these requirements or use a cloud service, but allow the opti
         "coordinator_guidance": None,
         "worker_guidance": None,
         "tools": ["hardware_info"],
-    },
-    {
-        "episode_id": "ENV_3",
-        "status_reason": None,
-        "selection_condition": None,
-        "episode_name": "Check data file(s) can be loaded",
-        "episode_details": """
-Generate code to check whether the data file(s) can be loaded with `pd.read_csv(<file_path>)`, as that is how the \
-tools expect it. CHECK that the loaded dataframe has MORE THAN ONE column and more than one row - otherwise it usually \
-means the separator or delimiter is wrong. Try to find a way to load the file (e.g. try different delimiters), and \
-then save the modified file in way that can be loaded with `pd.read_csv(<file_path>)`. If not possible, suggest to \
-the user that they fix the data and upload it again.""",
-        "coordinator_guidance": None,
-        "worker_guidance": """
-- You MUST NOT use any tool here. DO NOT SUMMON ANY TOOLS.
-- You MUST generate code in this step!
-- So, your response MUST have:
-DEPENDENCIES:
-```
-pandas
-```
-CODE:
-```
-... your code to complete the episode ...
-```
-
-- If the user has provided both a training and a test dataset files, you must check *both*.
-""",
-        "tools": [],
     },
     {
         "episode_id": "INFO_1",
@@ -1209,8 +1251,9 @@ outcomes of previous tasks or episodes.
 
 PLAN = [
     "ENV_1",
-    "DP-F_1",
     "ENV_2",
+    "ENV_2B",
+    "DP-F_1",
     "ENV_3",
     "INFO_1",
     "INFO_2",
