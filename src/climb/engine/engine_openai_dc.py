@@ -232,7 +232,7 @@ II. Column headers (do this SEPARATELY, AFTER "I. Loading").
 - Check if all uploaded data files have proper column headers (header row with column names).
 - For each file, generate code to:
   - Print the first few rows to inspect the structure (use `print(df.head())`)
-  - Determine if the first row contains column names or data values
+  - After the code gets executed, look at the output and determine if the first row contains column names or data values
   - If the first row appears to be data rather than column names, ask the user what the column names should be
 - IF files are missing headers:
   - Discuss with the user what each column represents and what the column names should be
@@ -261,6 +261,7 @@ CODE:
 ```
 
 IMPORTANT:
+- COMPLETE ALL THE STEPS. Do not rush to finish. Ask the user when necessary.
 - If the user has provided both a training and a test dataset files, you must check (and re-save if needed) *both*.
 - If the user has provided multiple files, you must check (and re-save if needed) *all* of them!
 """,
@@ -447,6 +448,39 @@ task, otherwise, work with the user to finalize column removal.
         "coordinator_guidance": None,
         "worker_guidance": """
 When generating this code, print the columns line by line (not as one list) so that the user can easily see them.
+""",
+        "tools": [],
+    },
+    {
+        "episode_id": "EDA_1B",
+        "status_reason": None,
+        "selection_condition": None,
+        "episode_name": "Check column types",
+        "episode_details": """
+1. Generate code to examine the data types of all columns in the dataset. Use both `df.dtypes` and \
+`pd.api.types.infer_dtype(df[c])` for each column to check for mixed types or inconsistencies.
+    - IF the user provided both a training and a test dataset, check data types for both datasets and \
+ensure they are consistent between training and test sets.
+    - Print the results clearly to the user, showing both the pandas dtype and the inferred type for each column.
+
+2. Review the data types with the user and discuss what the appropriate data type should be for each column based on \
+the intended analysis. Pay special attention to:
+    - Columns that should be categorical but are currently numeric. Categorical columns are allowed to be string ("object") type.
+    - Date/time columns that need to be converted from strings
+    - Numeric columns that may have been read as strings due to formatting issues
+    - Mixed type columns that need cleaning
+
+3. Generate code to convert data types as agreed with the user. Save the dataset(s) with corrected data types \
+using the suffix `_typed` in the filename.
+""",
+        "coordinator_guidance": None,
+        "worker_guidance": """
+When examining data types, be thorough in checking for potential issues like:
+- Numeric columns stored as strings due to formatting (commas, currency symbols, etc.)
+- Categorical variables encoded as numbers that should remain categorical
+- Date columns stored as strings
+- Mixed types within columns that need cleaning
+Print the data type information in a clear, column-by-column format for easy review.
 """,
         "tools": [],
     },
@@ -1280,6 +1314,7 @@ PLAN = [
     "INFO_2",
     "INFO_3",
     "EDA_1",
+    "EDA_1B",
     "EDA_2",
     "EDA_3",
     "EDA_4",

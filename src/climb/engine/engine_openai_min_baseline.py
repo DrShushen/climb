@@ -74,6 +74,11 @@ Your capabilities are:
 - You DO NOT have access to the internet.
 {PRIVACY_MODE_SECTION_INDICATOR_CAPABILITIES}
 - You have a great understanding of data analysis, machine learning, and medical research.
+
+IMPORTANT:
+- You only have one tool - for uploading data files. The rest of the work is done by code generation.
+- Summon it ONLY ONCE in the beginning, so that the user can upload their data files.
+- DO NOT invoke this tool again, unless explicitly asked by the user!
 """
 
 WORKER_RULES = f"""
@@ -324,6 +329,37 @@ CURRENT WORKING DIRECTORY CONTENTS (for your information, do not send this to th
 ```text
 {WD_CONTENTS_INDICATOR}
 ```
+
+
+
+####IMPORTANT:
+- You only have one tool - for uploading data files. The rest of the work is done by code generation.
+- Summon it ONLY ONCE in the beginning, so that the user can upload their data files.
+- DO NOT invoke this tool again, unless explicitly asked by the user!
+####IMPORTANT:
+- You only have one tool - for uploading data files. The rest of the work is done by code generation.
+- Summon it ONLY ONCE in the beginning, so that the user can upload their data files.
+- DO NOT invoke this tool again, unless explicitly asked by the user!
+####IMPORTANT:
+- You only have one tool - for uploading data files. The rest of the work is done by code generation.
+- Summon it ONLY ONCE in the beginning, so that the user can upload their data files.
+- DO NOT invoke this tool again, unless explicitly asked by the user!
+####IMPORTANT:
+- You only have one tool - for uploading data files. The rest of the work is done by code generation.
+- Summon it ONLY ONCE in the beginning, so that the user can upload their data files.
+- DO NOT invoke this tool again, unless explicitly asked by the user!
+####IMPORTANT:
+- You only have one tool - for uploading data files. The rest of the work is done by code generation.
+- Summon it ONLY ONCE in the beginning, so that the user can upload their data files.
+- DO NOT invoke this tool again, unless explicitly asked by the user!
+####IMPORTANT:
+- You only have one tool - for uploading data files. The rest of the work is done by code generation.
+- Summon it ONLY ONCE in the beginning, so that the user can upload their data files.
+- DO NOT invoke this tool again, unless explicitly asked by the user!
+####IMPORTANT:
+- You only have one tool - for uploading data files. The rest of the work is done by code generation.
+- Summon it ONLY ONCE in the beginning, so that the user can upload their data files.
+- DO NOT invoke this tool again, unless explicitly asked by the user!
 """
 
 WORKER_STARTING_MESSAGE = """
@@ -444,7 +480,7 @@ class OpenAIMinBaselineEngine(OpenAIEngineBase):
         messages_to_process = self.get_message_history()
 
         # Only allow the upload_data_file tool.
-        tools = list_all_tool_specs(filter_tool_names=["upload_data_file"])
+        tools = list_all_tool_specs(filter_tool_names=["upload_data_multiple_files"])
 
         # Update the system message with the current working directory contents.
         system_message_text = update_templates(
@@ -495,7 +531,13 @@ class OpenAIMinBaselineEngine(OpenAIEngineBase):
                 raise ValueError("No system messages found in the messages to process.")
             if messages[0].role != "system":
                 raise ValueError("First message must be a system message.")
-
+            
+        messages += [Message(
+            key=KeyGeneration.generate_message_key(),
+            role="assistant",
+            text="REMINDER: DO NOT USE THE UPLOAD TOOL AGAIN, UNLESS EXPLICITLY ASKED BY THE USER!",
+            visibility="llm_only",
+        )]
         messages_to_send_to_openai = [
             self._handle_openai_message_format(m)  # type: ignore
             for m in messages

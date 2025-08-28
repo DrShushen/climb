@@ -14,7 +14,7 @@ from climb.common import (
 )
 from climb.common.utils import engine_log, update_templates
 from climb.db import DB
-from climb.tool import list_all_tool_specs
+from climb.tool import list_all_tool_specs, list_all_tool_names
 
 from ._azure_config import (
     AzureOpenAIConfig,
@@ -337,6 +337,14 @@ MESSAGE_OPTIONS = {
     "first_message_content": WORKER_STARTING_MESSAGE,
 }
 
+# Keep only default tools.
+ADDITIONAL_TOOLS = dict()
+ADDITIONAL_TOOLS["full"] = ["feature_extraction_from_text", "balance_data", "data_suite_insights"]
+ADDITIONAL_TOOLS["extra"] = ["knn_shapley_data_valuation", "outlier_detection"]
+EXCLUDE_DEFAULT = ADDITIONAL_TOOLS["full"] + ADDITIONAL_TOOLS["extra"]
+all_available_tools = list_all_tool_names(filter_tool_names=None)
+allowed_tools = [t for t in all_available_tools if t not in (EXCLUDE_DEFAULT + ["upload_data_file"])]
+
 
 class OpenAIToolBaselineEngine(OpenAIEngineBase):
     def __init__(
@@ -444,7 +452,7 @@ class OpenAIToolBaselineEngine(OpenAIEngineBase):
         messages_to_process = self.get_message_history()
 
         # Only allow the upload_data_file tool.
-        tools = list_all_tool_specs()
+        tools = list_all_tool_specs(filter_tool_names=allowed_tools)
 
         # Update the system message with the current working directory contents.
         system_message_text = update_templates(
@@ -501,6 +509,9 @@ class OpenAIToolBaselineEngine(OpenAIEngineBase):
             for m in messages
             if m.visibility not in ("ui_only", "system_only")
         ]
+
+        # raise ValueError(allowed_tools)
+        # tools = list_all_tool_specs(filter_tool_names=allowed_tools)
 
         if DEBUG__PRINT_MESSAGES_TO_LLM:
             engine_log("=========================")
