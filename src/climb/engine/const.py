@@ -1,6 +1,8 @@
 # For all options, see: site-packages/openai/types/chat_model.py
 ALLOWED_MODELS = [
     # NOTE: Recommended:
+    # GPT-5:
+    "gpt-5-2025-08-07",
     # GPT-4o:
     "gpt-4o-2024-11-20",
     "gpt-4o-2024-08-06",
@@ -19,6 +21,8 @@ ALLOWED_MODELS = [
 
 # For the values, see: https://platform.openai.com/docs/models/
 MODEL_MAX_MESSAGE_TOKENS = {
+    "gpt-5-2025-08-07": 128_000,
+    # ---
     "gpt-4o-2024-11-20": 16_384,
     "gpt-4o-2024-08-06": 16_384,
     "gpt-4o-2024-05-13": 4_096,
@@ -33,6 +37,8 @@ MODEL_MAX_MESSAGE_TOKENS = {
     "gpt-3.5-turbo-0125": 4_096,
 }
 MODEL_CONTEXT_SIZE = {
+    "gpt-5-2025-08-07": 272_000,
+    # ---
     "gpt-4o-2024-11-20": 128_000,
     "gpt-4o-2024-08-06": 128_000,
     "gpt-4o-2024-05-13": 128_000,

@@ -145,7 +145,8 @@ Your capabilities:
 {PRIVACY_MODE_SECTION_INDICATOR_CAPABILITIES}
 - You have a great understanding of data analysis, machine learning, and medical research.
 - You are able to mark completed tasks with "{TASK_COMPLETED_INDICATOR}", and if a task needs to be stopped and \
-control returned to the coordinator for replanning, you can mark it with "{TASK_STOPPED_INDICATOR}".
+control returned to the coordinator for replanning, you can mark it with "{TASK_STOPPED_INDICATOR}". NEVER issue {TASK_STOPPED_INDICATOR} \
+if you are still expecting a response from the user - otherwise the task will be finished without the user being able to respond!
 - You are able to show images from the working directory to the user (see Rules).
 - You are able to return long messages to the user using the special indicator text (see Rules).
 """
@@ -374,7 +375,10 @@ Ask the user whether they would like to provide high-level information about the
     - Any background information about the data.
 """,
         "coordinator_guidance": None,
-        "worker_guidance": None,
+        "worker_guidance": f"""
+- DO NOT issue {TASK_COMPLETED_INDICATOR} in your first response - otherwise the user will not be able to respond (task will be finished)!
+- Do not bombard the user with too many questions at once, stick to what is most relevant.
+""",
         "tools": [],
     },
     {
@@ -1972,7 +1976,8 @@ Rule 3. Your first message to the user should briefly explain what you plan to d
 about having less user interaction, in which case you should proceed with the task directly.
 
 Rule 4A. When you believe you are finished, issue the {TASK_COMPLETED_INDICATOR} message. There is no need to ask the \
-user if they would like to do something more - the COORDINATOR will take care of this.
+user if they would like to do something more - the COORDINATOR will take care of this. NEVER issue {TASK_STOPPED_INDICATOR} \
+if you are still expecting a response from the user - otherwise the task will be finished without the user being able to respond!
 Rule 4B. If the task cannot be completed successfully, issue the {TASK_STOPPED_INDICATOR} message. The COORDINATOR will \
 decide on the next steps. **Important** The only valid reasons for stopping a task are:
     - The user has asked you to stop, go back, or to try another approach. The coordinator will then receive control \
@@ -2478,7 +2483,8 @@ WORKER_REMINDER = f"""
     2.1: Check that you have completed the task, or it must be stopped.
     - Check the task description given to you in the TASK section.
     - Have you completed everything in the TASK description?
-    - If you have completed the task, issue the {TASK_COMPLETED_INDICATOR}.
+    - If you have completed the task, issue the {TASK_COMPLETED_INDICATOR}. NEVER issue {TASK_STOPPED_INDICATOR} \
+if you are still expecting a response from the user - otherwise the task will be finished without the user being able to respond!
     - Is there a reason you cannot complete the task - as explained in the RULE 4B? If so, issue the \
 {TASK_STOPPED_INDICATOR}. The coordinator will decide on the next steps.
     2.2: Check that you are not proceeding beyond the subtasks you have been given!
