@@ -536,6 +536,18 @@ def prepare_report(working_dir: str) -> str:
         @page {{
             size: A3;
         }}
+        img, svg, video, canvas {{
+            max-width: 100%;
+            height: auto;
+        }}
+        figure {{
+            max-width: 100%;
+            margin: 0;
+        }}
+        pre, code {{
+            white-space: pre-wrap;
+            word-break: break-word;
+        }}
         </style>
 
         <h2>Session report</h2>
