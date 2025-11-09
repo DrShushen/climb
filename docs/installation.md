@@ -70,12 +70,12 @@ CliMB uses [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/g
 
     ```bash
     # Create the environment:
-    conda create -n climb python=3.9 -y
+    conda create -n climb python=3.10 -y
     
     # Install a dependency needed for PDF generation:
-    conda install conda-forge::weasyprint
+    conda install -n climb conda-forge::weasyprint -y
     ```
-    Python `3.9` or newer should be set.
+    Python `3.10` or newer should be set.
 
     ```{admonition} Known installation issue on Windows systems
     :class: note
@@ -94,15 +94,11 @@ CliMB uses [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/g
     ```
 
     ```bash
-    # Create and activate the environment, Python `3.9` or newer should be set:
-    conda create -n climb-code python=3.9 -y
+    # Create and activate the environment, Python `3.10` or newer should be set:
+    conda create -n climb-code python=3.10 -y
 
-    # Activate the environment:
-    conda activate climb-code
     # Install some standard packages in the environment. If more packages are needed by generated code, those will be automatically installed by the tool.
-    conda install pandas numpy matplotlib seaborn scikit-learn shap -y
-    # Exit this environment:
-    conda deactivate
+    conda install -n climb-code pandas numpy matplotlib seaborn scikit-learn shap -y
     ```
 
     CliMB will automatically use this environment when executing the generated code.

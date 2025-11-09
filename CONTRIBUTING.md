@@ -73,7 +73,7 @@ source <PATH TO VENV>/bin/activate
 
 or [Miniconda]:
 ```
-conda create -n climb-dev python=3.9
+conda create -n climb-dev python=3.10
 conda activate climb-dev
 conda install anaconda::pango
 ```

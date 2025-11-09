@@ -2056,7 +2056,7 @@ of the file name clearly.
 - Always present the code as EXACTLY follows. ALWAYS include the DEPENDENCIES section (can be empty).
     - The DEPENDENCIES should be pip-installable packages, NOT python built-in packages (those you can assume are \
 available).
-    - Your environment has python 3.8 or newer.
+    - Your environment has python 3.10 or newer.
 
 NEVER modify this format!
 ---

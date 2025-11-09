@@ -13,7 +13,7 @@ version_scheme = "no-guess-dev"
 # === Linting ===
 [tool.ruff]
 line-length = 120
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.lint]
 extend-select = ["I"]
