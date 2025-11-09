@@ -10,6 +10,8 @@ source =
     */site-packages/
 
 [report]
+omit =
+    src/climb/tool/impl/data_suite/**
 # Regexes for lines to exclude from consideration
 exclude_lines =
     # Have to re-enable the standard pragma

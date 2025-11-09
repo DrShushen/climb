@@ -5,15 +5,15 @@ from typing import Any, Dict
 
 import numpy as np
 import pandas as pd
-from data_suite.models.conformal import conformal_class
-from data_suite.models.copula import fit_sample_copula
-from data_suite.models.representation import compute_representation
-from data_suite.utils.helpers import inlier_outlier_dicts, sort_cis_synth
 from sklearn.cluster import KMeans
 from sklearn.model_selection import train_test_split
 
 from ..tool_comms import ToolCommunicator, ToolReturnIter, execute_tool
 from ..tools import ToolBase
+from .data_suite.models.conformal import conformal_class
+from .data_suite.models.copula import fit_sample_copula
+from .data_suite.models.representation import compute_representation
+from .data_suite.utils.helpers import inlier_outlier_dicts, sort_cis_synth
 
 
 def clean_dataframe(df, unique_threshold=15):
@@ -160,13 +160,13 @@ def data_suite_insights(
         df_large_ci["Cluster"] = cluster_model.labels_
         # Calculate mean of each feature for each cluster
         cluster_means = df_large_ci.groupby("Cluster")[all_features].mean()
-        cluster_means.reset_index(inplace=True).to_csv(workspace / "Data_suite_examples_to_collect.csv", index=False)  # pyright: ignore
+        cluster_means.reset_index(inplace=False).to_csv(workspace / "Data_suite_examples_to_collect.csv", index=False)  # pyright: ignore
 
         tc.set_returns(
             tool_return=(
-                f"The following features have large conformal intervals and these are the data points that the model may perform poorly on: {large_ci_ids}."
-                f"Here are records that approximates the data points that the model may perform poorly on: {cluster_means}."
-                f"It is therefore advised that you collect more records that are similar to the example above in order to improve the model's performance."
+                f"The following features have large conformal intervals and these are the data points that the model may perform poorly on: {large_ci_ids}.\n"
+                f"Here are records that approximates the data points that the model may perform poorly on: {cluster_means}.\n"
+                f"It is therefore advised that you collect more records that are similar to the example above in order to improve the model's performance.\n"
                 f"The exemplar records have also been saved to the workspace directory as 'Data_suite_examples_to_collect.csv'."
             ),
         )
