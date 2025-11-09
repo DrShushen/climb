@@ -216,7 +216,7 @@ def cleanlab_outlier_detection(
     df_cleaned.to_csv(cleaned_file_path, index=False)
     tc.set_returns(
         tool_return=(
-            f"{len(outliers_y)} outliers were removed. " f"The cleaned data has been saved to {cleaned_file_path}"
+            f"{len(outliers_y)} outliers were removed. The cleaned data has been saved to {cleaned_file_path}"
         ),
         user_report=[
             "📊 **Outlier Detection**",

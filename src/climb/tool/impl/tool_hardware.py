@@ -49,8 +49,8 @@ def generate_report() -> str:
     report = (
         f"CPU Information:\n- Physical Cores: {cpu_info['physical_cores']}\n"
         f"- Total Cores: {cpu_info['total_cores']}\n- Max Frequency: {cpu_info['max_frequency']} MHz\n\n"
-        f"RAM Information:\n- Total Memory: {ram_info['total_memory'] / (1024 ** 3):.2f} GB\n"
-        f"- Available Memory: {ram_info['available_memory'] / (1024 ** 3):.2f} GB\n\n"
+        f"RAM Information:\n- Total Memory: {ram_info['total_memory'] / (1024**3):.2f} GB\n"
+        f"- Available Memory: {ram_info['available_memory'] / (1024**3):.2f} GB\n\n"
         "GPU Information:\n"
     )
 

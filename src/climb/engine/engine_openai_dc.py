@@ -268,37 +268,36 @@ IMPORTANT:
 """,
         "tools": [],
     },
-#     {
-#         "episode_id": "ENV_2B",
-#         "selection_condition": None,
-#         "status_reason": None,
-#         "episode_name": "Check and fix column headers",
-#         "episode_details": """
-# - Check if all uploaded data files have proper column headers (header row with column names).
-# - For each file, generate code to:
-#   - Load the first few rows to inspect the structure
-#   - Determine if the first row contains column names or data values
-#   - If the first row appears to be data rather than column names, ask the user what the column names should be
-# - If files are missing headers:
-#   - Discuss with the user what each column represents and what the column names should be
-#   - Show the user the first few rows of data to help them identify what each column contains
-#   - Ask the user to provide appropriate column names for each column
-#   - Generate code to add the proper column headers and re-save the files.
-# - If files already have proper headers, confirm this with the user and proceed
-# - Ensure all files have consistent and meaningful column names before proceeding with analysis
-# """,
-#         "coordinator_guidance": None,
-#         "worker_guidance": """
-# - You MUST NOT use any tool here. DO NOT SUMMON ANY TOOLS.
-# - You MUST generate code in this step!
-
-# IMPORTANT:
-# - Check ALL uploaded files for proper column headers
-# - If headers are missing, engage with the user to determine appropriate column names
-# - Re-save files with proper headers if needed
-# """,
-#         "tools": [],
-#     },
+    #     {
+    #         "episode_id": "ENV_2B",
+    #         "selection_condition": None,
+    #         "status_reason": None,
+    #         "episode_name": "Check and fix column headers",
+    #         "episode_details": """
+    # - Check if all uploaded data files have proper column headers (header row with column names).
+    # - For each file, generate code to:
+    #   - Load the first few rows to inspect the structure
+    #   - Determine if the first row contains column names or data values
+    #   - If the first row appears to be data rather than column names, ask the user what the column names should be
+    # - If files are missing headers:
+    #   - Discuss with the user what each column represents and what the column names should be
+    #   - Show the user the first few rows of data to help them identify what each column contains
+    #   - Ask the user to provide appropriate column names for each column
+    #   - Generate code to add the proper column headers and re-save the files.
+    # - If files already have proper headers, confirm this with the user and proceed
+    # - Ensure all files have consistent and meaningful column names before proceeding with analysis
+    # """,
+    #         "coordinator_guidance": None,
+    #         "worker_guidance": """
+    # - You MUST NOT use any tool here. DO NOT SUMMON ANY TOOLS.
+    # - You MUST generate code in this step!
+    # IMPORTANT:
+    # - Check ALL uploaded files for proper column headers
+    # - If headers are missing, engage with the user to determine appropriate column names
+    # - Re-save files with proper headers if needed
+    # """,
+    #         "tools": [],
+    #     },
     {
         "episode_id": "DP-F_1",
         "selection_condition": None,
@@ -2881,7 +2880,7 @@ You need to complete the task shown below.
         if episode_id in earlier_episodes:
             completed_count += 1
             completed += f"""
-- {task['episode_name']}"""
+- {task["episode_name"]}"""
     if completed_count == 0:
         completed += """
 - None so far. You are the first agent to work on this project."""
@@ -2899,7 +2898,7 @@ to these tasks.
         if episode_id not in earlier_episodes and episode_id != selected_episode:
             still_remaining_count += 1
             still_remaining += f"""
-- {task['episode_name']}"""
+- {task["episode_name"]}"""
     if still_remaining_count == 0:
         still_remaining += """
 - None. You are at the end of the project plan."""
@@ -3332,9 +3331,9 @@ class OpenAIDCEngine(OpenAIEngineBase):
             )
         ]
         if agent.first_message_content is not None:
-            assert (
-                agent.first_message_role is not None
-            ), "First message role must be set if first message content is set."
+            assert agent.first_message_role is not None, (
+                "First message role must be set if first message content is set."
+            )
             initial_messages.append(
                 Message(
                     key=KeyGeneration.generate_message_key(),
@@ -3424,7 +3423,7 @@ class OpenAIDCEngine(OpenAIEngineBase):
 
         if historic_messages:
             if self.session.engine_params["use_summarization"]:
-                if  not summary_messages:
+                if not summary_messages:
                     # ---
                     # TODO: This too will eventually become too long. Need *progressive summarization*.
                     summarize_system_message_text = """
@@ -3663,7 +3662,7 @@ class OpenAIDCEngine(OpenAIEngineBase):
                     self._append_message(_summary_message)
                     summary_messages = [_summary_message]
                     # ---
-            
+
             # <separator>
             messages_to_process.append(
                 # NOTE: This is a FULLY EPHEMERAL message, not stored in the DB.

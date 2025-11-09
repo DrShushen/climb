@@ -2395,7 +2395,7 @@ This subtask should be only carried out if the following condition is met:
             if subtask["subtask_status"] == "completed":
                 completed_count += 1
                 completed += f"""
-- {subtask['subtask_name']}"""
+- {subtask["subtask_name"]}"""
     if completed_count == 0:
         completed += """
 - None so far. You are the first agent to work on this project."""
@@ -2413,7 +2413,7 @@ to these tasks.
             if subtask["subtask_status"] == "not_started" and subtask["subtask_id"] not in subtask_selection:
                 still_remaining_count += 1
                 still_remaining += f"""
-- {subtask['subtask_name']}"""
+- {subtask["subtask_name"]}"""
     if still_remaining_count == 0:
         still_remaining += """
 - None. You are at the end of the project plan."""
@@ -2614,9 +2614,9 @@ class OpenAINextGenEngine(OpenAIEngineBase):
             )
         ]
         if agent.first_message_content is not None:
-            assert (
-                agent.first_message_role is not None
-            ), "First message role must be set if first message content is set."
+            assert agent.first_message_role is not None, (
+                "First message role must be set if first message content is set."
+            )
             initial_messages.append(
                 Message(
                     key=KeyGeneration.generate_message_key(),

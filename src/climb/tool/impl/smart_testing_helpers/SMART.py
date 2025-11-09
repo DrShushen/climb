@@ -315,7 +315,7 @@ class SMART(BaseModel):
 
         for iter_ in range(n):
             selfrefine_task = f"""
-            The context is: {context} and the target variable is {context_target} with the following columns: {', '.join(unique_values.keys())}. \nPrevious answer: {previous_response}. \n\nTASK: Critically evaluate the answer below and then re-write it. Make sure to follow the instructions provided before.  \n\n
+            The context is: {context} and the target variable is {context_target} with the following columns: {", ".join(unique_values.keys())}. \nPrevious answer: {previous_response}. \n\nTASK: Critically evaluate the answer below and then re-write it. Make sure to follow the instructions provided before.  \n\n
             """
             previous_response = self._get_llm_response(selfrefine_task, system_message=system_message)
 
@@ -326,7 +326,7 @@ class SMART(BaseModel):
     def _feasibility_check(self, unique_values, context, context_target, system_message=None, n_refine=1):
         """Checks if the task is feasible. Logic: (1) perform a feasibility query; (2) self-refine the answer; (3) convert to boolean"""
 
-        feasibility_task = f"""Your task is to evaluate whether it is reasonable to to search for subgroups where a predictive model which perform suboptimally. Given the following context about the dataset: {context} and the target variable: {context_target}, and the following columns: {', '.join(unique_values.keys())}, is it reasonable to search for societally meaningful subgroups? Write the reasons why yes, then why no, and provide an overall summary. """
+        feasibility_task = f"""Your task is to evaluate whether it is reasonable to to search for subgroups where a predictive model which perform suboptimally. Given the following context about the dataset: {context} and the target variable: {context_target}, and the following columns: {", ".join(unique_values.keys())}, is it reasonable to search for societally meaningful subgroups? Write the reasons why yes, then why no, and provide an overall summary. """
 
         if system_message is None:
             system_message = """You are an expert at clearly evaluating whether there is a direct connection between the covariates and the outcome variable. Your goal is to determine whether such a connection exists in academic literature or other sources. Avoid making ridiculous connections that are unlikely to hold in reality. Be critical. Focus on avoiding false positives (i.e. relationships that might not exist) because it is costly to test these assumptions and we might overfit the results. Avoid speculative or weak connections. Prioritize false negatives (missing connections) than false positives (offering weak connections that might not hold)"""
@@ -356,7 +356,7 @@ class SMART(BaseModel):
         
         Dataset information: {context}. {context_target}
         
-        The dataset contains {len(unique_values)} columns. The columns are {', '.join(unique_values.keys())}. 
+        The dataset contains {len(unique_values)} columns. The columns are {", ".join(unique_values.keys())}. 
         
         Task: Create {n} hypotheses as to which subgroups within the dataset the model will perform worse than on average because of societal biases or other reasons. Important: Your hypothesis can contain either one variable or two variables in the condition. Therefore, your goal is to find discrepancies in the model's performance, not the underlying data outcomes. Justify why you think that for each of the {n} hypotheses. You must use this format: Hypothesis: <>; Justification: <>, with the hypothesis and justification on the same line separated by a ';'.
         e.g.
@@ -372,7 +372,7 @@ class SMART(BaseModel):
         
         Dataset information: {context}. {context_target}
         
-        The dataset contains {len(unique_values)} columns. The columns are {', '.join(unique_values.keys())}. The values are {str(unique_values.items())}
+        The dataset contains {len(unique_values)} columns. The columns are {", ".join(unique_values.keys())}. The values are {str(unique_values.items())}
         
         Task: Create {n} hypotheses as to which subgroups within the dataset the model will perform worse than on average because of societal biases or other reasons. Therefore, your goal is to find discrepancies in the model's performance, not the underlying data outcomes. Justify why you think that. You must use this format of the output: Hypothesis: <>; Justification: <>, with the hypothesis, justification, and operationalization on the same line separated by a ';'.
         e.g.
@@ -389,7 +389,7 @@ class SMART(BaseModel):
 
         Dataset information: {context}. {context_target}
 
-        The dataset contains {len(unique_values)} columns. The columns are {', '.join(unique_values.keys())}. The values are {str(unique_values.items())}
+        The dataset contains {len(unique_values)} columns. The columns are {", ".join(unique_values.keys())}. The values are {str(unique_values.items())}
 
         TASK: Propose specific variable ranges for each hypothesis such that they are clearly operationalizable and defined. **Use the exact column names with the correct casing as they appear in the dataset**. Ensure that each Operationalization is a single-line expression without line breaks. You must use this format: Hypothesis: <>; Operationalization: <>, with the hypothesis and operationalization on the same line separated by a ';'.
         e.g.
@@ -404,7 +404,7 @@ class SMART(BaseModel):
         The following are hypotheses about which people within a dataset the model might underperform on. 
         Propose specific ranges for each hypothesis. Hypotheses: {hypotheses}.
 
-        TASK: return a dictionary that contains an index number as the key and the column value as the value. If there are multiple columns in that hypothesis, return them in a list. There are the column names: {', '.join(unique_values.keys())}.
+        TASK: return a dictionary that contains an index number as the key and the column value as the value. If there are multiple columns in that hypothesis, return them in a list. There are the column names: {", ".join(unique_values.keys())}.
         """
         return operationalization_prompt
 
@@ -415,7 +415,7 @@ class SMART(BaseModel):
 
         Dataset information: {context}. {context_target}
 
-        The dataset contains {len(unique_values)} columns. The columns are {', '.join(unique_values.keys())}. The values are {str(unique_values.items())}
+        The dataset contains {len(unique_values)} columns. The columns are {", ".join(unique_values.keys())}. The values are {str(unique_values.items())}
 
         However, you are no longer working with the same data as just described. Rather, this is the context: {new_context}.
 
@@ -440,7 +440,7 @@ class SMART(BaseModel):
         - String conditions: {{2: 'X == '45 - 60'}}
 
         Groups to summarize: {operationalizations}
-        Column names: {', '.join(unique_values.keys())}
+        Column names: {", ".join(unique_values.keys())}
         Column values: {str(unique_values.items())}
         """
         return summarization_prompt

@@ -14,7 +14,7 @@ from climb.common import (
 )
 from climb.common.utils import engine_log, update_templates
 from climb.db import DB
-from climb.tool import list_all_tool_specs, list_all_tool_names
+from climb.tool import list_all_tool_names, list_all_tool_specs
 
 from ._azure_config import (
     AzureOpenAIConfig,

@@ -321,7 +321,7 @@ def autoprognosis_explainer_symbolic_pursuit(
         cmap="coolwarm",
         fmt=".4f",
         xticklabels=feature_names,
-        yticklabels=[f"Instance {i+1}" for i in range(np.array(symbolic_explanation_list).shape[0])],
+        yticklabels=[f"Instance {i + 1}" for i in range(np.array(symbolic_explanation_list).shape[0])],
     )
     ax.set_title("Symbolic Explanation Heatmap")
     feature_importance = plt.gcf()

@@ -106,7 +106,7 @@ def except_hook(args: Any, exc_queue: queue.Queue) -> NoReturn:
     else:
         traceback.print_exception(args.exc_type, args.exc_value, args.exc_traceback, file=string_io)
         exc_queue.put(string_io.getvalue())
-        raise ToolException(f"\nException from thread: {args.thread}" f"\n{string_io.getvalue()}")
+        raise ToolException(f"\nException from thread: {args.thread}\n{string_io.getvalue()}")
 
 
 def process_stream_chunk(s: str) -> Optional[str]:

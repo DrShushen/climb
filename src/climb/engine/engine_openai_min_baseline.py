@@ -531,13 +531,15 @@ class OpenAIMinBaselineEngine(OpenAIEngineBase):
                 raise ValueError("No system messages found in the messages to process.")
             if messages[0].role != "system":
                 raise ValueError("First message must be a system message.")
-            
-        messages += [Message(
-            key=KeyGeneration.generate_message_key(),
-            role="assistant",
-            text="REMINDER: DO NOT USE THE UPLOAD TOOL AGAIN, UNLESS EXPLICITLY ASKED BY THE USER!",
-            visibility="llm_only",
-        )]
+
+        messages += [
+            Message(
+                key=KeyGeneration.generate_message_key(),
+                role="assistant",
+                text="REMINDER: DO NOT USE THE UPLOAD TOOL AGAIN, UNLESS EXPLICITLY ASKED BY THE USER!",
+                visibility="llm_only",
+            )
+        ]
         messages_to_send_to_openai = [
             self._handle_openai_message_format(m)  # type: ignore
             for m in messages

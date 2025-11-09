@@ -1218,8 +1218,7 @@ with main_col_2:
                             "category_emoji": st.column_config.TextColumn(
                                 label="ⓘ",
                                 help=(
-                                    "An icon representing the file category. "
-                                    "🛢: data, 🖼️: image, 🧠: model, 📦: other."
+                                    "An icon representing the file category. 🛢: data, 🖼️: image, 🧠: model, 📦: other."
                                 ),
                                 width=35,  # type: ignore
                             ),
