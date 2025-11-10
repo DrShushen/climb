@@ -1,8 +1,13 @@
 [server]
-maxUploadSize = 5000
+maxUploadSize = 10000
 
 [client]
 showSidebarNavigation = false
+showErrorDetails = "full"
+toolbarMode = "viewer"
+
+[browser]
+gatherUsageStats = false
 
 [theme]
 base = "dark"

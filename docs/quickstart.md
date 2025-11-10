@@ -42,7 +42,7 @@ You will land to the CliMB UI as shown below:
 
 ![First Launch](assets/quickstart/q01_first_launch.png)
 
-Please select **🗨️ Research Management** from the side panel.
+Please select **🗨️ Session Management** from the side panel.
 
 ![Research Management](assets/quickstart/q02_research_management.png)
 

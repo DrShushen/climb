@@ -12,10 +12,10 @@ from climb.db.tinydb_db import DB
 from climb.engine import ENGINE_MAP
 
 PAGE_TITLES = {
-    "main_emoji": "📈 CliMB",
-    "main_plain": "CliMB",
-    "research_management_emoji": "🗨️ Research Management",
-    "research_management_plain": "Research Management",
+    "main_emoji": "📈 Active Session",
+    "main_plain": "Active Session",
+    "research_management_emoji": "🗨️ Session Management",
+    "research_management_plain": "Session Management",
     "settings_emoji": "⚙️ Settings",
     "settings_plain": "Settings",
 }
