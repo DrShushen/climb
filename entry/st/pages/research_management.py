@@ -9,7 +9,7 @@ from climb.db.tinydb_db import TinyDB_DB
 from climb.engine import AZURE_OPENAI_CONFIG_PATH, ENGINE_MAP, load_azure_openai_configs
 from climb.ui.st_common import PAGE_TITLES, SHOW_ROLES, SHOW_VISIBILITIES, initialize_common_st_state, menu
 
-st.set_page_config(page_title=PAGE_TITLES["research_management_plain"])
+st.set_page_config(layout="centered", page_title=PAGE_TITLES["research_management_plain"])
 menu()
 
 

@@ -148,6 +148,10 @@ def engine() -> EngineBase:
     return st.session_state.engine
 
 
+def get_shown_message_history() -> List[Message]:
+    return [m for m in engine().get_message_history() if show_in_history_if(m)]
+
+
 # Streamlit state initializations.
 
 if "active_dashboard_tab" not in st.session_state:
@@ -679,14 +683,22 @@ def plot_proportion(token_count_per_agent: Dict[Agent, int], context_size: int) 
 # CSS Selectors (for CSS and JS hacks)
 # NOTE: Be careful to use ' (NOT ") within the selectors if the selectors are being used in JS executions, to ensure
 # string literals are properly handled.
-SELECTOR_MAIN_SPACE = "section.stMain > div.block-container > div[data-testid='stVerticalBlockBorderWrapper'] > div > div[data-testid='stVerticalBlock'] > div:nth-child(4)"
-SELECTOR_CHAT_HISTORY_CONTAINER = f"{SELECTOR_MAIN_SPACE} > div:nth-child(1) > div > div > div > div:nth-child(1)"
+SELECTOR_TOP_STRIP = "section.stMain > div.block-container > div[direction='column'] > div:nth-child(3)"
 
-SELECTOR_TAB_MENU_CONTAINER = f"{SELECTOR_MAIN_SPACE} > div:nth-child(2) > div > div > div > div:nth-child(1)"
-SELECTOR_TAB_MENU = f"{SELECTOR_TAB_MENU_CONTAINER} > iframe"
+SELECTOR_MAIN_SPACE = "section.stMain > div.block-container > div[direction='column'] > div:nth-child(4)"
+SELECTOR_CHAT_HISTORY_CONTAINER = (
+    f"{SELECTOR_MAIN_SPACE} > div[direction='row'] > div:nth-child(1) > div[direction='column'] > div:nth-child(1)"
+)
 
-SELECTOR_TAB_CONTENT_AREA = f"{SELECTOR_MAIN_SPACE} > div:nth-child(2) > div > div > div > div:nth-child(2)"
-SELECTOR_TAB_JS_CONTAINER = f"{SELECTOR_TAB_CONTENT_AREA} > div > div > div[data-testid='stVerticalBlockBorderWrapper']"
+SELECTOR_TAB_MENU_CONTAINER = (
+    f"{SELECTOR_MAIN_SPACE} > div[direction='row'] > div:nth-child(2) > div[direction='column'] > div:nth-child(1)"
+)
+SELECTOR_TAB_MENU = f"{SELECTOR_TAB_MENU_CONTAINER} iframe"
+
+SELECTOR_TAB_CONTENT_AREA = (
+    f"{SELECTOR_MAIN_SPACE} > div[direction='row'] > div:nth-child(2) > div[direction='column'] > div:nth-child(2)"
+)
+SELECTOR_TAB_JS_CONTAINER = f"{SELECTOR_TAB_CONTENT_AREA} > div[direction='column'] > div:nth-child(1)"
 
 SELECTOR_TAB_DEBUG = f"{SELECTOR_TAB_CONTENT_AREA}.tab_debug"
 SELECTOR_TAB_MESSAGE_TREE = f"{SELECTOR_TAB_CONTENT_AREA}.tab_message_tree"
@@ -715,7 +727,7 @@ TAB_TOP_OFFSET = CHAT_HISTORY_CONTAINER_OFFSET - TAB_MENU_BOTTOM_ADJUSTMENT
 # --- --- ---
 
 
-def run_markdown_css_hack() -> None:
+def run_markdown_css_hack(hide_first_n_messages: int = 0) -> None:
     # NOTE: Custom css hack.
 
     # This code has a workaround to completely "disappear" the stale messages from the chat.
@@ -726,6 +738,7 @@ def run_markdown_css_hack() -> None:
     # It also includes a hack to fix the chat box height to be a certain vertical screen height.
 
     REPLACE_IN_STYLE_STR = {
+        "{SELECTOR_TOP_STRIP}": SELECTOR_TOP_STRIP,
         "{SELECTOR_CHAT_HISTORY_CONTAINER}": SELECTOR_CHAT_HISTORY_CONTAINER,
         "{CHAT_HISTORY_CONTAINER_OFFSET}": CHAT_HISTORY_CONTAINER_OFFSET,
         "{SELECTOR_TAB_MENU_CONTAINER}": SELECTOR_TAB_MENU_CONTAINER,
@@ -742,8 +755,8 @@ def run_markdown_css_hack() -> None:
         "{SELECTOR_TAB_DEBUG_UICOMM}": SELECTOR_TAB_DEBUG_UICOMM,
         "{SELECTOR_TAB_DEBUG_MSG}": SELECTOR_TAB_DEBUG_MSG,
         "{SELECTOR_TAB_SESSION_TOKEN_NOTE}": SELECTOR_TAB_SESSION_TOKEN_NOTE,
-        "{SELECTOR_SCROLL_JS_CONTAINER}": SELECTOR_SCROLL_JS_CONTAINER,
         "{TAB_MENU_BOTTOM_ADJUSTMENT}": TAB_MENU_BOTTOM_ADJUSTMENT,
+        "{HIDE_FIRST_N_MESSAGES}": hide_first_n_messages,
     }
     style_str = """
     <style>
@@ -753,32 +766,30 @@ def run_markdown_css_hack() -> None:
         padding-bottom: 0rem;
         margin-top: 1rem;
     }
-    
-    h3:nth-child(1) {
-        line-height: 1.8;
-    }
 
-    /* A hack to dim out the stale messages _completely_. */
-    div .stChatMessage [data-stale="true"] {
-        opacity: 0.0;
+    {SELECTOR_TOP_STRIP} {
+        /* background-color: red; */
+        margin-bottom: -20px;
     }
-    div .stChatMessage [data-stale="true"] button {
-        display: none;
-    }
-    div .stChatMessage .stExpander:has([data-stale="true"]) {
-        display: none;
+    {SELECTOR_TOP_STRIP} div.stButton button{
+        margin-top: -15px;
     }
 
     /* Chat box, make it fixed height. */
-    section.main > div.block-container {
-        height: 100vh;
-    }
     {SELECTOR_CHAT_HISTORY_CONTAINER} {
         /* DEBUG: Uncomment below and check the container is highlighted in red. */
-        /* background-color: red; */
+        /*background-color: red;*/
 
         height: calc(100vh - {CHAT_HISTORY_CONTAINER_OFFSET}px);
-        scroll-behavior: auto !important;
+    }
+
+    /* Hide the 'older' messages that are not to be shown. */
+    {SELECTOR_CHAT_HISTORY_CONTAINER} > div[direction='column'] > div:nth-child(-n + {HIDE_FIRST_N_MESSAGES}) {
+        display: none;
+    }
+    /* However, show the 'Earlier messages were hidden...' message by resetting it back to block. */
+    {SELECTOR_CHAT_HISTORY_CONTAINER} > div[direction='column'] > div.stElementContainer {
+        display: block;
     }
 
     {SELECTOR_TAB_MENU_CONTAINER} {
@@ -786,6 +797,7 @@ def run_markdown_css_hack() -> None:
         margin-bottom: -{TAB_MENU_BOTTOM_ADJUSTMENT}px;
     }
     {SELECTOR_TAB_MENU} {
+        /*background-color: red;*/
         border-bottom: 1px solid rgba(250, 250, 250, 0.2);
     }
 
@@ -843,12 +855,6 @@ def run_markdown_css_hack() -> None:
         margin-bottom: 0.75em;
     }
 
-    /* JS container - hide */
-    {SELECTOR_SCROLL_JS_CONTAINER} {
-        /*background-color: red;*/
-        display: none;
-    }
-
     </style>
     """
     style_str = replace_str_from_dict(style_str, REPLACE_IN_STYLE_STR)
@@ -862,14 +868,23 @@ def run_markdown_css_hack() -> None:
 
 st.set_page_config(page_title=st_common.TITLE, layout="wide", initial_sidebar_state="expanded")
 
-run_markdown_css_hack()
+history = get_shown_message_history()
+hide_first_n_messages = (
+    0
+    if engine().session.session_settings.show_full_message_history
+    else len(history) - engine().session.session_settings.show_message_history_length
+)
+# print(f">>>> DEBUG: HIDE FIRST N MESSAGES: {hide_first_n_messages}")
+run_markdown_css_hack(hide_first_n_messages=hide_first_n_messages)
 
 st_common.menu()
 
-top_col_title, top_col_buttons = st.columns([3, 9])
+top_container = st.container(border=False, height=65)
+with top_container:
+    top_col_title, top_col_buttons = st.columns([3, 9])
 
-with top_col_title:
-    st.markdown(f"### {st_common.TITLE}: `{st_common.VERSION}`", unsafe_allow_html=True)
+    with top_col_title:
+        st.markdown(f"### {st_common.TITLE}: `{st_common.VERSION}`", unsafe_allow_html=True)
 
 modal_disclaimer_title = "ℹ️ Disclaimer"
 modal_settings_title = "⚙️ Settings"
@@ -983,9 +998,9 @@ with top_col_buttons:
 main_col_1, main_col_2 = st.columns([6.5, 5.5])
 
 with main_col_1:
-    container_chat = st.container(height=500)  # NOTE: Height is a dummy value, it's set by CSS hack.
-    container_msg_input = st.container()  # A container for the user chat input, to ensure it sticks to the bottom.
-    container_scroll_js = st.container(height=0)
+    container_chat = st.container(border=True, height=700)  # NOTE: Height is a dummy value, it's set by CSS hack.
+    container_msg_input: Any = st.container()
+    # container_scroll_js = st.container(height=1)
 
 with main_col_2:
     tab_labels = []
@@ -1022,7 +1037,7 @@ with main_col_2:
     st.session_state.active_tab = tab_names_map_rev[active_tab_buttons_out]  # type: ignore
 
     with st.container():
-        container_tab_js = st.container(height=0)
+        container_tab_js = st.container(height=1)  # Will be hidden by CSS hack.
         js_tabs = st_common.JSExecutor(
             js_code=dedent("""
                 function addClassToElement(selector) {
@@ -1513,32 +1528,30 @@ with main_col_2:
 show_tab_warnings_if_tool_running()
 
 # Print message history.
-scroller_js = """
-function scrollToBottom(selector) {
-    // Find the element using the provided CSS selector
-    const element = parent.document.querySelector(selector);
-
-    if (element) {
-        // Set the scrollTop property to the scrollHeight to scroll to the bottom
-        element.scrollTop = element.scrollHeight;
-        /*console.log('Scrolled to the bottom of the element with selector:', selector);*/
-    } else {
-        console.error('Element not found with selector:', selector);
-    }
-}
-
-// Usage example: scroll to the bottom of the element with the class 'content'
-scrollToBottom("<selector>");
-"""
-scroller = st_common.JSExecutor(
-    js_code=scroller_js,
-    container=container_scroll_js,
-    log_text=None,  # "Scroll to bottom of messages container triggered.",
-)
+# scroller_js = """
+# function scrollToBottom(selector) {
+#     // Find the element using the provided CSS selector
+#     const element = parent.document.querySelector(selector);
+#     if (element) {
+#         // Set the scrollTop property to the scrollHeight to scroll to the bottom
+#         // element.scrollTop = element.scrollHeight;
+#         element.scrollIntoView({ behavior: 'instant', block: 'end' });
+#         console.log('Scrolled to the bottom of the element with selector:', selector);
+#     } else {
+#         console.error('Element not found with selector:', selector);
+#     }
+# }
+# // Usage example: scroll to the bottom of the element with the class 'content'
+# scrollToBottom("<selector>");
+# """
+# scroller = st_common.JSExecutor(
+#     js_code=scroller_js,
+#     container=container_scroll_js,
+#     log_text=None,  # "Scroll to bottom of messages container triggered.",
+# )
 
 with container_chat:
-    history = engine().get_message_history()
-    history = [m for m in history if show_in_history_if(m)]
+    history = get_shown_message_history()
     # Do not show the messages that have incoming tool calls.
     # Show the messages that are allowed according to their role and visibility.
 
@@ -1547,7 +1560,9 @@ with container_chat:
         show_message_history_length = len(history)
 
     if len(history) > show_message_history_length:
-        history = history[-show_message_history_length:]
+        # show_from_idx = len(history) - show_message_history_length
+        # history = history[show_from_idx:]
+        # History hiding is handled by the CSS hack.
         ui_log("Trimming message history to show only the last", show_message_history_length, "messages.")
         st.markdown(
             "... **⚙️ Earlier messages were hidden for UI speed. "
@@ -1694,8 +1709,7 @@ with container_chat:
                     else:
                         ui_log("Restart at user message failed.")
 
-            scroller.execute_js(replacements={"<selector>": SELECTOR_CHAT_HISTORY_CONTAINER})
-
+            # scroller.execute_js(replacements={"<selector>": SELECTOR_CHAT_HISTORY_CONTAINER})
 
 if DEBUG__SHOW_ACTIVE_AGENT:
     # Show currently active agent.
@@ -1832,7 +1846,23 @@ def user_input_box(disabled: bool = False, **kwargs: Any) -> Optional[str]:
                         ui_log("create new branch failed.")
                         rerun_with_state(state="await_user_input")
         with c_msg_input:
-            return st.chat_input("Type your message here...", disabled=disabled, **kwargs)
+            input_placeholder = engine().get_state().ui_controlled.input_placeholder
+
+            # Load in placeholder message when it exists (i.e. when reverting back to a previous message).
+            if input_placeholder is not None:
+                st.session_state.my_chat_input = input_placeholder
+
+            def on_chat_input_submit() -> None:
+                # Remove the placeholder message from state, so that the user-submitted message can be used.
+                engine().get_state().ui_controlled.input_placeholder = None
+
+            return st.chat_input(
+                "Type your message here... Shift+Enter to make a new line.",
+                disabled=disabled,
+                key="my_chat_input",
+                on_submit=on_chat_input_submit,
+                **kwargs,
+            )
 
 
 def execute_tool(tool_request) -> None:
@@ -1912,44 +1942,6 @@ def handle_user_input() -> None:
             ui_log("In main_flow > ui_state == 'await_user_input' > input_request is None [= Chat INPUT]")
             # CASE: Simple chat message input.
             user_input = user_input_box(disabled=False)
-
-            # HACK --- --- ---
-            js_input_placeholder = st_common.JSExecutor(
-                js_code=dedent("""
-                    console.log("Executing js_input_placeholder...");
-
-                    // Find the textarea element with the specific aria-label attribute
-                    let textarea = parent.document.querySelector('textarea[aria-label="Type your message here..."]');
-
-                    // Check if the textarea element exists, and then insert the input placeholder into it
-                    if (textarea) {
-                        // Focus on the textarea element
-                        textarea.focus();
-                        
-                        // A timeout needed for the update to actually happen.
-                        setTimeout(() => {
-                            // Insert the text into the textarea
-                            textarea.value = "<input_placeholder>";
-                            textarea.focus();
-                        }, 625);
-                            
-                        console.log("Inserted input placeholder value into the chat input box.");
-                    } else {
-                        console.log("Could not find chat input box.");
-                    }
-                    """),
-                container=container_tab_js,
-                use_st_js=True,
-                log_text="js_input_placeholder",
-            )
-            input_placeholder = engine().get_state().ui_controlled.input_placeholder
-            if input_placeholder is not None:
-                input_placeholder = input_placeholder.replace("\n", " ").replace("\r", " ")
-                try:
-                    js_input_placeholder.execute_js(replacements={"<input_placeholder>": input_placeholder})
-                except Exception as e:
-                    ui_log("Failed to insert input placeholder into the chat input box:", e)
-            # HACK (end) --- --- ---
 
             print("user_input", user_input)
             if user_input:
@@ -2177,13 +2169,7 @@ def handle_output() -> None:
 def main_flow() -> None:
     ui_log("In main_flow")
 
-    scroller.execute_js(replacements={"<selector>": SELECTOR_CHAT_HISTORY_CONTAINER})
-
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # # "Preview only" mode
-    # user_input_box(disabled=True)
-    # st.stop()
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # scroller.execute_js(replacements={"<selector>": SELECTOR_CHAT_HISTORY_CONTAINER})
 
     # TODO: If there is an active tool on reload - kill it!
 
