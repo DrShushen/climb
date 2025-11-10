@@ -16,15 +16,11 @@ from ._engine import (
 )
 from ._initialization import ENGINE_MAP, create_engine
 from .const import ALLOWED_MODELS, MODEL_CONTEXT_SIZE, MODEL_MAX_MESSAGE_TOKENS
-from .engine_openai_nextgen import AzureOpenAINextGenEngine, OpenAINextGenEngine
-from .engine_openai_sim import AzureOpenAINextGenEngineSim, OpenAINextGenEngineSim
 
 __all__ = [
     "ALLOWED_MODELS",
     "AZURE_OPENAI_CONFIG_PATH",
     "AzureOpenAIConfig",
-    "AzureOpenAINextGenEngine",
-    "AzureOpenAINextGenEngineSim",
     "ChunkSentinel",
     "ChunkTracker",
     "CodeExecFinishedSentinel",
@@ -39,8 +35,6 @@ __all__ = [
     "LoadingIndicator",
     "MODEL_CONTEXT_SIZE",
     "MODEL_MAX_MESSAGE_TOKENS",
-    "OpenAINextGenEngine",
-    "OpenAINextGenEngineSim",
     "PRIVACY_MODE_PARAMETER_DESCRIPTION",
     "StreamLike",
 ]

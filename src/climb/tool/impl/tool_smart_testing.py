@@ -55,16 +55,7 @@ def smart_testing(
     base_url = re.sub(pattern, "", str(client._base_url))  # noqa: F841
 
     config_dict = {
-        "api_type": "azure"
-        if session.engine_name
-        in (
-            "azure_openai",
-            "azure_openai_nextgen",
-            "azure_openai_min_baseline",
-            "azure_openai_nextgen_sim",
-            "azure_openai_cot",
-        )
-        else "openai",
+        "api_type": "azure" if session.engine_name in ("azure_openai_v1",) else "openai_v1",
         "api_base": str(client._base_url),
         "api_version": client._api_version,
         "api_key": client.api_key,

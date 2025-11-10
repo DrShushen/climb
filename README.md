@@ -12,15 +12,15 @@ with:
 git clone https://github.com/DrShushen/climb-dc.git
 ```
 
-## 🚀 Usage: CliMB-DC
+## 🚀 Usage: CliMB-v1
 
 In order to run CliMB-DC, you can follow the original [CliMB quickstart guide](https://climb-ai.readthedocs.io/en/latest/quickstart.html) but choose the *engine* (in the *Research Management* page, *Select engine* dropdown) to be:
 ```
-openai_dc
+openai_v1
 ```
 or
 ```
-azure_openai_dc
+azure_openai_v1
 ```
 depending on the OpenAI model provider you are using.
 

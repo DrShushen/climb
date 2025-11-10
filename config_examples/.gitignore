@@ -1,2 +1,4 @@
+# USER NOTE:
+# Do not modify or delete this file, it is not a configuration example file.
 !.env
 !az_openai_config.yml

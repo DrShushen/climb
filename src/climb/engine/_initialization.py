@@ -11,44 +11,16 @@ from ._azure_config import (
 )
 from ._config import get_dotenv_config
 from ._engine import EngineBase
-from .engine_openai_dc import AzureOpenAIDCEngine, OpenAIDCEngine
-from .engine_openai_min_baseline import AzureOpenAIMinBaselineEngine, OpenAIMinBaselineEngine
-from .engine_openai_nextgen import AzureOpenAINextGenEngine, OpenAINextGenEngine
-from .engine_openai_sim import AzureOpenAINextGenEngineSim, OpenAINextGenEngineSim
-from .engine_openai_tool_baseline import AzureOpenAIToolBaselineEngine, OpenAIToolBaselineEngine
+from .engine_openai_v1 import AzureOpenAIV1Engine, OpenV1Engine
 
 dotenv_config = get_dotenv_config()
 
 
 ENGINE_MAP = {
-    # Current engines:
-    OpenAINextGenEngine.get_engine_name(): OpenAINextGenEngine,
-    AzureOpenAINextGenEngine.get_engine_name(): AzureOpenAINextGenEngine,
-    # CoT engines:
-    OpenAIDCEngine.get_engine_name(): OpenAIDCEngine,
-    AzureOpenAIDCEngine.get_engine_name(): AzureOpenAIDCEngine,
+    # v1 engines:
+    OpenV1Engine.get_engine_name(): OpenV1Engine,
+    AzureOpenAIV1Engine.get_engine_name(): AzureOpenAIV1Engine,
 }
-
-if dotenv_config.get("BASELINE_METHODS", "False") == "True":
-    ENGINE_MAP.update(
-        {
-            # Minimal baseline versions:
-            OpenAIMinBaselineEngine.get_engine_name(): OpenAIMinBaselineEngine,
-            AzureOpenAIMinBaselineEngine.get_engine_name(): AzureOpenAIMinBaselineEngine,
-            # Tool baseline versions:
-            OpenAIToolBaselineEngine.get_engine_name(): OpenAIToolBaselineEngine,
-            AzureOpenAIToolBaselineEngine.get_engine_name(): AzureOpenAIToolBaselineEngine,
-        }
-    )
-
-if dotenv_config.get("SIMULATED_USER_METHODS", "False") == "True":
-    ENGINE_MAP.update(
-        {
-            # Minimal baseline versions:
-            OpenAINextGenEngineSim.get_engine_name(): OpenAINextGenEngineSim,
-            AzureOpenAINextGenEngineSim.get_engine_name(): AzureOpenAINextGenEngineSim,
-        }
-    )
 
 azure_engines = [engine_name for engine_name in ENGINE_MAP.keys() if "azure" in engine_name]
 non_azure_engines = [engine_name for engine_name in ENGINE_MAP.keys() if "azure" not in engine_name]

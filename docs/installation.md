@@ -245,7 +245,7 @@ The screenshots representing Azure's UI/interface in Azure's guides referred to 
         ```
         The fields in this file are explained below. What you need to set the values to is shown *in italics below*. **Note:** you should not remove the quotation marks around the values. 
         * `name`: This is used to identify the model in the UI.
-        It will appear as `config_item_name` when you select the `azure_openai_nextgen` engine in  **🗨️ Session Management** (see [🚀 Quickstart Guide - Start a new session](quickstart.md#start-a-new-session)).
+        It will appear as `config_item_name` when you select the `azure_openai_v1` engine in  **🗨️ Session Management** (see [🚀 Quickstart Guide - Start a new session](quickstart.md#start-a-new-session)).
         *You can set this to any value you like.*
         * `endpoint`: This identifies a URL needed to connect to the API.
         *Set this to the **② endpoint** you obtained.*

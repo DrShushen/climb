@@ -3126,7 +3126,7 @@ EXCLUDE_DEFAULT = ADDITIONAL_TOOLS["full"] + ADDITIONAL_TOOLS["extra"]
 EXCLUDE_FULL = ADDITIONAL_TOOLS["extra"]
 
 
-class OpenAIDCEngine(OpenAIEngineBase):
+class OpenV1Engine(OpenAIEngineBase):
     def __init__(
         self,
         db: DB,
@@ -4029,18 +4029,18 @@ class OpenAIDCEngine(OpenAIEngineBase):
                 first_message_content=MESSAGE_OPTIONS["coordinator"]["first_message_content"],
                 system_message_template=MESSAGE_OPTIONS["coordinator"]["system_message_template"],
                 first_message_role="assistant",
-                set_initial_messages=OpenAIDCEngine._set_initial_messages,  # type: ignore
-                gather_messages=OpenAIDCEngine._gather_messages_coordinator,  # type: ignore
-                dispatch=OpenAIDCEngine._dispatch_coordinator,  # type: ignore
+                set_initial_messages=OpenV1Engine._set_initial_messages,  # type: ignore
+                gather_messages=OpenV1Engine._gather_messages_coordinator,  # type: ignore
+                dispatch=OpenV1Engine._dispatch_coordinator,  # type: ignore
             ),
             worker=EngineAgent(
                 "worker",
                 system_message_template=MESSAGE_OPTIONS["worker"]["system_message_template"],
                 first_message_content=MESSAGE_OPTIONS["worker"]["first_message_content"],
                 first_message_role="assistant",
-                set_initial_messages=OpenAIDCEngine._set_initial_messages,  # type: ignore
-                gather_messages=OpenAIDCEngine._gather_messages_worker,  # type: ignore
-                dispatch=OpenAIDCEngine._dispatch_worker,  # type: ignore
+                set_initial_messages=OpenV1Engine._set_initial_messages,  # type: ignore
+                gather_messages=OpenV1Engine._gather_messages_worker,  # type: ignore
+                dispatch=OpenV1Engine._dispatch_worker,  # type: ignore
             ),
         )
         as_dict = self.agents_.model_dump()  # {"coordinator": coordinator EngineAgent, ...}
@@ -4051,7 +4051,7 @@ class OpenAIDCEngine(OpenAIEngineBase):
 
     @staticmethod
     def get_engine_name() -> str:
-        return "openai_dc"
+        return "openai_v1"
 
     def project_completed(self) -> bool:
         return d2m(self.get_state().agent_state["coordinator"], CoordinatorCotState).whole_project_completed
@@ -4333,9 +4333,9 @@ class OpenAIDCEngine(OpenAIEngineBase):
         return message
 
 
-class AzureOpenAIDCEngine(
+class AzureOpenAIV1Engine(
     AzureOpenAIEngineMixin,  # Mixing needs to come first to override the methods correctly.
-    OpenAIDCEngine,
+    OpenV1Engine,
 ):
     def __init__(
         self,
@@ -4354,7 +4354,7 @@ class AzureOpenAIDCEngine(
             azure_openai_config=azure_openai_config,
         )
         # Initialize the Base class.
-        OpenAIDCEngine.__init__(
+        OpenV1Engine.__init__(
             self,
             db=db,
             session=session,
@@ -4371,4 +4371,4 @@ class AzureOpenAIDCEngine(
 
     @staticmethod
     def get_engine_name() -> str:
-        return "azure_openai_dc"
+        return "azure_openai_v1"
