@@ -1,10 +1,8 @@
 import abc
 import os
-import warnings
 from datetime import datetime
 from typing import Any, Callable, Dict, Generator, Iterator, List, Literal, Optional, Tuple, Union, get_args
 
-from nutree import Node, Tree  # pyright: ignore
 from openai import Stream
 
 from climb.common import (
@@ -58,154 +56,6 @@ PrivacyModeParameter = EngineParameter(
     description=PRIVACY_MODE_PARAMETER_DESCRIPTION,
     enum_values=list(get_args(PrivacyModes)),
 )
-
-# === Tree-related functions ===
-
-
-class tree_helpers:
-    # This class is just to group methods in a namespace for clarity.
-
-    @staticmethod
-    def get_last_terminal_child(tree_or_node: Union[Tree, Node]) -> Union[Node, None]:
-        """Get the last terminal child of a tree or node. Traverse the tree recursively by getting the `last_child()` of
-        the current node until a terminal node (no children) is found.
-
-        If the tree is empty, return `None`.
-
-        Args:
-            tree_or_node (Union[Tree, Node]): The tree or node to traverse to find the last terminal child.
-
-        Returns:
-            Union[Node, None]: The last terminal child of the tree or node, or `None` if the tree is empty.
-        """
-        if len(tree_or_node.children) == 0:
-            if isinstance(tree_or_node, Tree):
-                return None
-            return tree_or_node
-        else:
-            node = tree_or_node.last_child()
-            if node is None:
-                raise IndexError("The node was None - last terminal child not found. Empty tree?")
-            return tree_helpers.get_last_terminal_child(node)
-
-    @staticmethod
-    def get_message_list(to_node: Node) -> List["Message"]:
-        """Get the list of messages from the root node to the given node (`to_node`), inclusive.
-
-        Returns:
-            List[Message]: The list of messages from the root node to the given node, inclusive.
-        """
-        return [node.data for node in to_node.get_parent_list(add_self=True)]
-
-    @staticmethod
-    def append_message_to_end_of_tree(tree: Tree, message: Message) -> Node:
-        """Append a message to the end of the tree. If the tree is empty, add the message as the root node. Otherwise, find
-        the last terminal child of the tree and add the message as a child of that node.
-
-        Args:
-            tree (Tree): The tree to which the message should be appended.
-            message (Message): The message to append.
-
-        Returns:
-            Node: The new node to which the message was appended.
-        """
-        last_message_node = tree_helpers.get_last_terminal_child(tree)
-        if last_message_node is None:
-            return tree.add(message)
-        else:
-            return last_message_node.add(message)
-
-    @staticmethod
-    def append_multiple_messages_to_end_of_tree(tree: Tree, messages: List[Message]) -> Node:
-        """Append multiple messages to the end of the tree. If the tree is empty, add the messages as the root node. Otherwise, find
-        the last terminal child of the tree and add the messages as children of that node.
-
-        Args:
-            tree (Tree): The tree to which the messages should be appended.
-            messages (List[Message]): The messages to append.
-
-        Returns:
-            Node: The new node to which the messages were appended.
-        """
-        node = None
-        for message in messages:
-            if node is None:
-                node = tree_helpers.append_message_to_end_of_tree(tree, message)
-            else:
-                # To avoid re-traversing the tree, we use the last appended node to append the next message.
-                node = node.add(message)
-        if node is None:
-            raise ValueError("No messages were appended to the tree")
-        return node
-
-    @staticmethod
-    def get_linear_message_history_to_terminal_child(tree: Tree) -> List[Message]:
-        """Get the linear message history (a list) from the root node to the last terminal child of the tree.
-
-        Args:
-            tree (Tree): The tree from which to get the linear message history.
-
-        Returns:
-            List[Message]: The message list.
-        """
-        last_message_node = tree_helpers.get_last_terminal_child(tree)
-        if last_message_node is None:
-            message_list = []
-        else:
-            message_list = tree_helpers.get_message_list(last_message_node)
-        return message_list
-
-    @staticmethod
-    def get_last_branch_point_node(tree: Tree) -> Node:
-        """Get the message at the last branch point of the tree.
-
-        Args:
-            tree (Tree): The tree from which to get the last branch point message.
-
-        Returns:
-            Message: The message at the last branch point.
-        """
-
-        def _ascend_tree_to_previous_branch_point(node: Node) -> Node:
-            """Ascend the tree to find the previous branch point.
-            If the parent of the current node is a branch point, return
-            the parent. Otherwise, continue to ascend the tree until a branch point is found.
-
-            Args: node (Node): The current node to check for a branch point.
-
-            Returns: Node: The previous branch point.
-            """
-            parent = node.parent
-            if parent is None:
-                return None  # type: ignore
-            if parent.data.role == BRANCH_ROLE:
-                return parent
-            return _ascend_tree_to_previous_branch_point(parent)
-
-        last_terminal_child = tree_helpers.get_last_terminal_child(tree)
-        if last_terminal_child is None:
-            raise ValueError("No messages in the tree")
-
-        potential_branch_point = _ascend_tree_to_previous_branch_point(last_terminal_child)
-        if potential_branch_point is None:
-            warnings.warn("No previous branch point found. Returning the root node with no action taken.")
-            return last_terminal_child
-        try:
-            while not (
-                len(potential_branch_point.children) < BRANCH_LIMIT and len(potential_branch_point.children) > 0
-            ):
-                potential_branch_point = _ascend_tree_to_previous_branch_point(potential_branch_point)
-        except AttributeError:
-            warnings.warn(f"potential_branch_point has no children. potential_branch_point: {potential_branch_point}")
-            if potential_branch_point is None:
-                return last_terminal_child
-
-        if len(potential_branch_point.children) == 0:
-            raise ValueError("parent message has no children - this should never be raised")
-        return potential_branch_point
-
-
-# === Tree-related functions [END] ===
 
 
 class EngineAgent:
@@ -423,10 +273,9 @@ class EngineBase(abc.ABC):
         Returns:
             Message: The last message in the session.
         """
-        last_terminal_child = tree_helpers.get_last_terminal_child(self.session.messages)
-        if last_terminal_child is None:
+        if not self.session.messages:
             raise ValueError("No messages in the session")
-        return last_terminal_child.data
+        return self.session.messages[-1]
 
     def update_state(self) -> None:
         # Propagate the engine state to the last message.
@@ -442,9 +291,6 @@ class EngineBase(abc.ABC):
     # TODO: Possibly improve/rethink.
     def restart_at_user_message(self, key: str) -> bool:
         raise NotImplementedError
-
-    @abc.abstractmethod
-    def create_new_message_branch(self) -> bool: ...
 
     @abc.abstractmethod
     def execute_tool_call(

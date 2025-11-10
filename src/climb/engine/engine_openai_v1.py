@@ -31,7 +31,6 @@ from ._engine import (
     EngineAgent,
     LoadingIndicator,
     StreamLike,
-    tree_helpers,
 )
 from ._engine_openai import AzureOpenAIEngineMixin, OpenAIEngineBase
 
@@ -3152,6 +3151,7 @@ class OpenV1Engine(OpenAIEngineBase):
             # sanity_check_structured_plan(STRUCTURED_PLAN)
 
             # Set initial engine state.
+            print("==============================> Initializing OpenV1Engine engine state...")
             self.session.engine_state = EngineState(
                 streaming=False,
                 agent="coordinator",
@@ -3172,6 +3172,9 @@ class OpenV1Engine(OpenAIEngineBase):
                 },
                 ui_controlled=UIControlledState(interaction_stage="reason", input_request=None),
             )
+            print(self.session.engine_state)
+            self.db.update_session(self.session)
+            print("==============================> Engine state initialized.")
         # CASE: When loaded from DB, restore the engine engine state:
         else:
             messages_with_engine_state = self._get_restartable_messages()
@@ -3344,7 +3347,7 @@ class OpenV1Engine(OpenAIEngineBase):
                     engine_state=self.session.engine_state,
                 )
             )
-        tree_helpers.append_multiple_messages_to_end_of_tree(self.session.messages, initial_messages)
+        self.session.messages.extend(initial_messages)
 
         self.db.update_session(self.session)
 
@@ -4308,24 +4311,6 @@ class OpenV1Engine(OpenAIEngineBase):
                                         visibility="all",
                                     )
                                 )
-
-    def create_new_message_branch(self) -> bool:
-        # Create a new message branch.
-        last_branch_point = tree_helpers.get_last_branch_point_node(self.session.messages)
-        if last_branch_point is None:
-            raise ValueError("No branch point found in the message history.")
-        if last_branch_point != tree_helpers.get_last_terminal_child(self.session.messages):
-            last_branch_point.add(
-                Message(
-                    key=KeyGeneration.generate_message_key(),
-                    role="new_branch",
-                    text=None,
-                    agent="worker",
-                    visibility="system_only",
-                )
-            )
-            return True
-        return False
 
     def _update_system_message(self, message: Message, template: str) -> Message:
         message = copy.deepcopy(message)

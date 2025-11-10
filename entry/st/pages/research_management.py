@@ -29,7 +29,7 @@ sessions_df = pd.DataFrame(
             "Started at": session.started_at,
             "Engine name": session.engine_name,
             "# messages": len(
-                [m for m in session.messages if m.data.role in SHOW_ROLES and m.data.visibility in SHOW_VISIBILITIES]
+                [m for m in session.messages if m.role in SHOW_ROLES and m.visibility in SHOW_VISIBILITIES]
             ),
             "Active": session.session_key == st.session_state.active_session_key,
         }

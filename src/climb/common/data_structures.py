@@ -11,21 +11,19 @@ import matplotlib.figure
 import plotly.graph_objects
 import pydantic
 import rich.pretty
-from nutree import Tree  # pyright: ignore
 
 from .utils import make_filename_path_safe, truncate_dict_values
 
 if TYPE_CHECKING:
     from climb.db import DB
 
-Role = Literal["system", "assistant", "user", "tool", "code_execution", "new_branch"]
+Role = Literal["system", "assistant", "user", "tool", "code_execution"]
 # Explanation:
 # - "system": Messages that are system messages from the LLM perspective.
 # - "assistant": Messages that are assistant messages from the LLM perspective.
 # - "user": Messages that are user messages from the LLM perspective.
 # - "tool": Messages that are tool messages from the LLM perspective, and also used internally for tracking tools.
 # - "code_execution": Messages that contain code execution information, used internally for managing code execution.
-# - "new_branch": Messages that indicate a new branch (Tree/Chain of Thought feature).
 
 
 MessageVisibility = Literal["all", "ui_only", "llm_only", "llm_only_ephemeral", "system_only"]
@@ -310,10 +308,7 @@ class Session(pydantic.BaseModel):
     engine_name: str
     engine_params: Dict[str, EngineParameterValue] = dict()
 
-    # The Optional + exclude is used to avoid the nutree can't pickle lock error.
-    # https://stackoverflow.com/questions/66419620/pydantic-settings-typeerror-cannot-pickle-thread-lock-object
-    # In order to avoid always checking for None, the property `messages` is used.
-    message_tree: Optional[Tree] = pydantic.Field(default=None, exclude=True)
+    messages: List[Message] = []
 
     # NOTE: Notice the default values that are set here!
     engine_state: EngineState = EngineState(
@@ -324,16 +319,6 @@ class Session(pydantic.BaseModel):
     )
 
     session_settings: SessionSettings = SessionSettings()
-
-    @property
-    def messages(self) -> Tree:
-        if self.message_tree is None:
-            self.message_tree = Tree()
-        return self.message_tree
-
-    @messages.setter
-    def messages(self, value: Tree) -> None:
-        self.message_tree = value
 
     model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
 

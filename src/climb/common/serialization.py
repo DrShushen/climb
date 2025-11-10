@@ -1,16 +1,12 @@
 import copy
 import enum
 import importlib
-import json
 import os
 import pickle
-from functools import partial
-from io import StringIO
 from typing import Any, Dict
 
 import matplotlib.figure
 import plotly.graph_objects
-from nutree import Node, Tree  # pyright: ignore
 
 from . import Message, Session
 from .utils import make_filename_path_safe
@@ -131,74 +127,16 @@ def message_from_serializable_dict(message_dict: Dict[str, Any]) -> Message:
     return Message(**message_dict_new)
 
 
-# === Tree-related serialization ===
-
-USE_DATA_KEY = "data"
-
-
-def _serialize_mapper(node: Node, data: Dict[str, Any], working_dir: str) -> Dict[str, Any]:
-    # Validate that the node data is a Message.
-    node_data = node.data
-    if not isinstance(node_data, Message):
-        raise ValueError(f"Node data is not a Message: {node_data}")
-    # Save the message representation dictionary in the `USE_DATA_KEY` key of the `data` dictionary.
-    # Pass the message data through our custom serialization function.
-    data[USE_DATA_KEY] = message_to_serializable_dict(node_data, working_dir)
-    return data
-
-
-def serialize_message_tree(tree: Tree, working_dir: str) -> Dict[str, Any]:
-    """Serialize a message tree to a dictionary.
-
-    Args:
-        tree (Tree): The tree to serialize.
-        working_dir (str): The working directory that is used for storing some non-serializable data via pickling.
-
-    Returns:
-        Dict[str, Any]: The serialized tree.
-    """
-    # Use StringIO to simulate a file-like object that the Tree.save method expects.
-    string_io = StringIO()
-    # Use a mapper to serialize the data in a way we need.
-    serialize_mapper_partial = partial(_serialize_mapper, working_dir=working_dir)
-    tree.save(mapper=serialize_mapper_partial, target=string_io)
-    string_io_value = string_io.getvalue()
-    # Convert the string to a dictionary.
-    return json.loads(string_io_value)
-
-
-def _deserialize_mapper(parent: Node, data: Dict[str, Any]) -> Any:
-    # The message data dictionary is stored in the `data` dictionary `USE_DATA_KEY` key.
-    # Feed this data dictionary through the message_from_serializable_dict function to parse any complex objects.
-    return message_from_serializable_dict(data[USE_DATA_KEY])
-
-
-def deserialize_message_tree(serialized_tree: Dict[str, Any]) -> Tree:
-    """Deserialize a message tree from its serialized form.
-
-    Args:
-        serialized_tree (Dict[str, Any]): The serialized tree.
-
-    Returns:
-        Tree: The deserialized tree.
-    """
-    # Use StringIO to simulate a file-like object that the Tree.load method expects.
-    string_io = StringIO(json.dumps(serialized_tree))
-    # Use a mapper to deserialize the data in a way we need.
-    return Tree.load(target=string_io, mapper=_deserialize_mapper)
-
-
-# === Tree-related serialization [END] ===
-
-
 def session_to_serializable_dict(session: Session) -> Dict[str, Any]:
     session_dump = session.model_dump()
 
-    if session.message_tree is not None:
-        serialized_messages_tree = serialize_message_tree(session.messages, session.working_directory)
-        session_dump["message_tree"] = serialized_messages_tree
+    if session.messages:
+        serialized_messages = [
+            message_to_serializable_dict(message, session.working_directory) for message in session.messages
+        ]
+        session_dump["messages"] = serialized_messages
     else:
-        session_dump["message_tree"] = None
+        session_dump["messages"] = []
 
     return session_dump
 
@@ -206,9 +144,9 @@ def session_to_serializable_dict(session: Session) -> Dict[str, Any]:
 def session_from_serializable_dict(session_dict: Dict[str, Any]) -> Session:
     session_dict_new = copy.deepcopy(session_dict)
 
-    if session_dict["message_tree"] is not None:
-        session_dict_new["message_tree"] = deserialize_message_tree(session_dict["message_tree"])
+    if session_dict["messages"]:
+        session_dict_new["messages"] = [message_from_serializable_dict(message) for message in session_dict["messages"]]
     else:
-        session_dict_new["message_tree"] = None
+        session_dict_new["messages"] = []
 
     return Session(**session_dict_new)

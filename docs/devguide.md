@@ -32,7 +32,7 @@ The code structure of `climb` is summarized below:
 
 ## Engine
 
-**Engine** (under `./climb/engine`) is the backbone used to interact with a LLM backend as the reasoning unit. Currently CliMB supports Azure and OpenAI. The `EngineBase` class manages sessions, messages, agents, and stores session data to a local database (`./db`). Direct interaction with the LLMs is performed by agents under the `EngineAgent` class. Communication is abstracted as a `Message` in `./climb/common/data_structures`, which stores the details of each interaction step. Messages are structured as a tree to allow branching conversations, managed using `tree_helpers`.
+**Engine** (under `./climb/engine`) is the backbone used to interact with a LLM backend as the reasoning unit. Currently CliMB supports Azure and OpenAI. The `EngineBase` class manages sessions, messages, agents, and stores session data to a local database (`./db`). Direct interaction with the LLMs is performed by agents under the `EngineAgent` class. Communication is abstracted as a `Message` in `./climb/common/data_structures`, which stores the details of each interaction step.
 
 The engine takes in input dataset and user specifications, and performs automated data data processing and analysis on the data by consulting the reasoning unit on actions, and the end user for feedback and confirmation of actions. The reasoning unit then plans a set of tasks to be executed by the action unit. We provide the action unit a set of tools, and also allow it to generate code not within the tool library to be executed (e.g. print a column specific to the user's dataset). The full list of possible tasks to be assigned by the reasoning unit are described in `./engine/<engine_name>.py`.
 

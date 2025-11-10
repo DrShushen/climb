@@ -31,7 +31,6 @@ from ._engine import (
     ChunkTracker,
     EngineBase,
     PrivacyModeParameter,
-    tree_helpers,
 )
 from ._openai_token_estimation import estimate_prompt_tokens_with_tools
 from .const import ALLOWED_MODELS, MODEL_MAX_MESSAGE_TOKENS
@@ -152,7 +151,7 @@ class OpenAIEngineBase(EngineBase):
         return "noop"
 
     def get_message_history(self) -> List[Message]:
-        message_list = tree_helpers.get_linear_message_history_to_terminal_child(self.session.messages)
+        message_list = self.session.messages
 
         if DEBUG__PRINT_GET_MESSAGE_HISTORY:
             engine_log("--- GETTING MESSAGE HISTORY ---")
@@ -165,7 +164,7 @@ class OpenAIEngineBase(EngineBase):
         if DEBUG__PRINT_APPEND_MESSAGE:
             engine_log("--- APPENDING MESSAGE ---")
             rich.pretty.pprint(message)
-        tree_helpers.append_message_to_end_of_tree(self.session.messages, message)
+        self.session.messages.append(message)
         if message.visibility == "llm_only_ephemeral":
             self.ephemeral_messages_to_send.append(message.key)
         self.db.update_session(self.session)
@@ -433,12 +432,7 @@ class OpenAIEngineBase(EngineBase):
         self.session.engine_state = last_restartable_message.engine_state
 
         # === Update message history - cut off all the messages after the last restartable message. ===
-        last_restartable_message_node = self.session.messages.find_first(
-            match=lambda m: m.data.key == last_restartable_message.key
-        )
-        if last_restartable_message_node is None:
-            raise ValueError("Last restartable message not found in the message history.")
-        last_restartable_message_node.remove_children()  # NOTE: This updates the underlying tree.
+        self.session.messages = self.session.messages[: self.session.messages.index(last_restartable_message) + 1]
         # === Update message history - cut off all the messages after the last restartable message. [END] ===
 
         # Use a copy of the last_restartable_message's Engine state, to avoid accidental changes to the
@@ -482,12 +476,8 @@ class OpenAIEngineBase(EngineBase):
             return False
 
         # === Update message history - cut off all the messages after the restart_message. ===
-        restart_message_node = self.session.messages.find_first(match=lambda m: m.data.key == restart_message.key)
-        print("restart_message_node", restart_message_node)
-        if restart_message_node is None:
-            raise ValueError("Restart message not found in the message history.")
-        restart_message_node.remove_children()  # NOTE: This updates the underlying tree.
-        # === Update message history - cut off all the messages after the last restartable message. [END] ===
+        self.session.messages = self.session.messages[: self.session.messages.index(restart_message) + 1]
+        # === Update message history - cut off all the messages after the restart_message. [END] ===
 
         # Use a copy of the last_restartable_message's Engine state, to avoid accidental changes to the
         # historic snapshot object.

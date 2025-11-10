@@ -908,16 +908,22 @@ def rerun_with_state(state: Optional[InteractionStage] = None) -> None:
     st.rerun()
 
 
-@st.dialog(modal_disclaimer_title, width="large")
+@st.dialog(modal_disclaimer_title, width="large", dismissible=False)
 def modal_disclaimer():
     st.markdown(
         DISCLAIMER_TEXT.replace("# Disclaimer:\n", ""),  # Remove the title line, as it's already in the modal title.
     )
-    user_settings.disclaimer_shown = True
-    db.update_user_settings(user_settings)
-    # Add an "Accept" button to close the modal.
-    if st.button("Accept", type="primary"):
-        st.rerun()
+    # "Accept" button to close the modal.
+    accept_btn = st.button("Accept", type="primary")
+    if accept_btn:
+        # Accepted:
+        user_settings.disclaimer_shown = True  # Disclaimer has been accepted once, no need to show again.
+        db.update_user_settings(user_settings)
+        rerun_with_state(state=None)
+    else:
+        # Waiting (stop streamlit execution, otherwise there will be things running in the background
+        # preventing the accept button from being pressed)
+        st.stop()
 
 
 @st.dialog(modal_settings_title)
@@ -990,15 +996,23 @@ def modal_settings():
         rerun_with_state(state=None)
 
 
+def in_await_user_input_state() -> bool:
+    return engine().get_state().ui_controlled.interaction_stage == "await_user_input"
+
+
 with top_col_buttons:
     st.markdown("")  # Dummy space.
     c1, c2, _ = st.columns([1.5, 1.5, 9])
 
+    can_click_buttons = in_await_user_input_state()
+
     with c1:
-        if user_settings.disclaimer_shown is False or st.button(modal_disclaimer_title, type="primary"):
+        if user_settings.disclaimer_shown is False or st.button(
+            modal_disclaimer_title, type="primary", disabled=not can_click_buttons
+        ):
             modal_disclaimer()
     with c2:
-        if st.button(modal_settings_title):
+        if st.button(modal_settings_title, disabled=not can_click_buttons):
             modal_settings()
 
 main_col_1, main_col_2 = st.columns([6.5, 5.5])
@@ -1795,53 +1809,30 @@ def user_input_box(disabled: bool = False, **kwargs: Any) -> Optional[str]:
     with container_msg_input:
         c_msg_btn1, c_msg_btn2, c_msg_btn3, c_msg_input = st.columns([0.6, 0.6, 0.6, 8.2])
         with c_msg_btn1:
-            if st.button("✅", disabled=disabled, help="A shortcut for proceeding to next step."):
+            if st.button("✅", disabled=disabled, help="Tell the assistant to continue"):
                 return "All correct. Proceed."
         with c_msg_btn2:
-            if st.button("↻", disabled=False, help="Restart from the last reasoning step."):
-                ui_log("Restart button pressed.")
-                # CASE: Streaming, restart means to just restart from the last streaming message. Just restart the
+            if st.button("↻", disabled=False, help="Retry the last step"):
+                ui_log("Retry button pressed.")
+                # CASE: Streaming, retry means to just restart from the last streaming message. Just restart the
                 # UI in present interaction stage.
                 if engine().get_state().streaming is True:
-                    ui_log("Restart CASE: Streaming. Restarting from the last streaming message.")
+                    ui_log("Retry CASE: Streaming. Restarting from the last streaming message.")
                     rerun_with_state(state=None)
-                # CASE: Not streaming, restart means to discard the last message and restart from the last
+                # CASE: Not streaming, retry means to discard the last message and restart from the last
                 # reasoning step.
                 else:
                     ui_log(
-                        "Restart CASE: Not streaming. Discarding last message and "
+                        "Retry CASE: Not streaming. Discarding last message and "
                         "restarting from the last reasoning step."
                     )
-                    # TODO: Make robust - currently if discard_last fails, no fallback.
                     success = engine().discard_last()
                     if success:
                         rerun_with_state(state=None)
                     else:
                         ui_log("Discard last failed.")
         with c_msg_btn3:
-            if st.button(
-                "🔃",
-                disabled=False,
-                help="Go back to just after the last user message and create new branch in message tree.",
-            ):
-                ui_log("Go back and branch button pressed.")
-
-                # TODO: Understand this better in the context of the paper method
-                # CASE: Streaming, restart means to just restart from the last streaming message. Just restart the
-                # UI in present interaction stage.
-                if engine().get_state().streaming is True:
-                    ui_log("Restart CASE: Streaming. Branching from last user message.")
-                    rerun_with_state(state=engine().get_state().ui_controlled.interaction_stage)
-                # CASE: Not streaming, restart means to discard the last message and restart from the last
-                # reasoning step.
-                else:
-                    ui_log("Restart CASE: Not streaming. Branching from last user message.")
-                    success = engine().create_new_message_branch()
-                    if success:
-                        rerun_with_state(state="reason")
-                    else:
-                        ui_log("create new branch failed.")
-                        rerun_with_state(state="await_user_input")
+            pass
         with c_msg_input:
             input_placeholder = engine().get_state().ui_controlled.input_placeholder
 
