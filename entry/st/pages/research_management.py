@@ -7,9 +7,18 @@ import streamlit as st
 from climb.common import create_new_session
 from climb.db.tinydb_db import TinyDB_DB
 from climb.engine import AZURE_OPENAI_CONFIG_PATH, ENGINE_MAP, load_azure_openai_configs
-from climb.ui.st_common import PAGE_TITLES, SHOW_ROLES, SHOW_VISIBILITIES, initialize_common_st_state, menu
+from climb.ui.st_common import (
+    CLIMB_ICON_IMAGE,
+    PAGE_TITLES,
+    SHOW_ROLES,
+    SHOW_VISIBILITIES,
+    initialize_common_st_state,
+    menu,
+)
 
-st.set_page_config(layout="centered", page_title=PAGE_TITLES["research_management_plain"])
+st.set_page_config(
+    layout="centered", page_title=PAGE_TITLES["research_management_tab_title"], page_icon=CLIMB_ICON_IMAGE
+)
 menu()
 
 

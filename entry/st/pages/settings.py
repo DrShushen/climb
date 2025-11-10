@@ -1,9 +1,9 @@
 import streamlit as st
 
 from climb.db.tinydb_db import TinyDB_DB
-from climb.ui.st_common import COMMON_SETTINGS, PAGE_TITLES, menu
+from climb.ui.st_common import CLIMB_ICON_IMAGE, COMMON_SETTINGS, PAGE_TITLES, menu
 
-st.set_page_config(layout="centered", page_title=PAGE_TITLES["settings_plain"])
+st.set_page_config(layout="centered", page_title=PAGE_TITLES["settings_tab_title"], page_icon=CLIMB_ICON_IMAGE)
 menu()
 
 db = TinyDB_DB()

@@ -872,7 +872,12 @@ def run_markdown_css_hack(hide_first_n_messages: int = 0) -> None:
 
 # region: === Streamlit app layout and simple flow (including message history) ===
 
-st.set_page_config(page_title=st_common.TITLE, layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(
+    page_title=st_common.PAGE_TITLES["main_tab_title"],
+    layout="wide",
+    initial_sidebar_state="expanded",
+    page_icon=st_common.CLIMB_ICON_IMAGE,
+)
 
 history = get_shown_message_history()
 hide_first_n_messages = (

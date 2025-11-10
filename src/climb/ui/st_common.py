@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import streamlit as st
 from dotenv import dotenv_values
+from PIL import Image
 from streamlit.components.v1 import html
 from streamlit_js import st_js_blocking
 
@@ -11,17 +12,22 @@ from climb.common.utils import replace_str_from_dict, ui_log
 from climb.db.tinydb_db import DB
 from climb.engine import ENGINE_MAP
 
+TITLE = "CliMB"
+VERSION = "v1"
+
 PAGE_TITLES = {
     "main_emoji": "📈 Active Session",
     "main_plain": "Active Session",
+    "main_tab_title": f"{TITLE} | Active Session",
     "research_management_emoji": "🗨️ Session Management",
     "research_management_plain": "Session Management",
+    "research_management_tab_title": f"{TITLE} | Session Management",
     "settings_emoji": "⚙️ Settings",
     "settings_plain": "Settings",
+    "settings_tab_title": f"{TITLE} | Settings",
 }
 
-TITLE = PAGE_TITLES["main_plain"]
-VERSION = "v1"
+CLIMB_ICON_IMAGE = Image.open("./entry/st/climb.ico")
 
 SHOW_ROLES = ["user", "assistant", "tool", "code_execution"]  # "system"
 SHOW_VISIBILITIES = ["all", "ui_only"]
