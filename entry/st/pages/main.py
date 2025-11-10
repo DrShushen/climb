@@ -701,7 +701,6 @@ SELECTOR_TAB_CONTENT_AREA = (
 SELECTOR_TAB_JS_CONTAINER = f"{SELECTOR_TAB_CONTENT_AREA} > div[direction='column'] > div:nth-child(1)"
 
 SELECTOR_TAB_DEBUG = f"{SELECTOR_TAB_CONTENT_AREA}.tab_debug"
-SELECTOR_TAB_MESSAGE_TREE = f"{SELECTOR_TAB_CONTENT_AREA}.tab_message_tree"
 SELECTOR_TAB_SESSION = f"{SELECTOR_TAB_CONTENT_AREA}.tab_session"
 SELECTOR_TAB_WD = f"{SELECTOR_TAB_CONTENT_AREA}.tab_wd"
 SELECTOR_TAB_PLAN = f"{SELECTOR_TAB_CONTENT_AREA}.tab_plan"
@@ -1013,7 +1012,6 @@ with main_col_2:
     tab_labels = []
     tab_names_map = {
         "tab_debug": "🐛 DEBUG",
-        "tab_message_tree": "🌳 Message Tree",
         "tab_session": "📘 Session",
         "tab_wd": "📂 Working directory",
         "tab_plan": "📜 Plan",
@@ -1023,7 +1021,6 @@ with main_col_2:
     if DEBUG_PANEL:
         tab_labels += [
             sac.ButtonsItem(label=tab_names_map["tab_debug"]),
-            sac.ButtonsItem(label=tab_names_map["tab_message_tree"]),
         ]
     tab_labels += [
         sac.ButtonsItem(label=tab_names_map["tab_session"]),
@@ -1110,13 +1107,6 @@ with main_col_2:
                 if not show_all_msg:
                     messages = messages[:shown_n_msg]
                 st.write(messages)
-
-        elif st.session_state.active_tab == "tab_message_tree":
-            add_tab_warning_area("tab_message_tree")
-            update_debug_panel_ui_comm()
-            st.code(
-                engine().session.messages.format(repr="{node.data.role}-{node.data.key}", style="round43c", join="\n")
-            )
 
         elif st.session_state.active_tab == "tab_session":
             add_tab_warning_area("tab_session")
