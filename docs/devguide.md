@@ -106,3 +106,8 @@ The list of available tools is documented under [Tool Reference](tool.md).
 CliMB utilizes [Streamlit](https://streamlit.io/) as the framework for user interface. Streamlit serves a locally hosted web app with pages under `./entry/st/pages`. Currently, pages include a chat interface under `main.py` and session manager under `research_management.py`. Other helper functions for the UI are found under `./ui/`.
 
 An entrypoint to understand the user experience and data flow would be `main_flow()` under `main.py`. In general, the state of the UI is defined in the underlying engine, where the app could be either processing user input, intermediate reasoning stream from the reasoning unit, or display output. Each interaction within the chat interface is logged as a Message and stored within the Engine. This allows for sessions to be saved and retrieved at a later time.
+
+The streamlit toolbar menu is set to `"minimal"` by default in the `.streamlit/config.toml` file of the repository (see [Streamlit configuration](https://docs.streamlit.io/develop/concepts/configuration/options)). In order to change this to developer mode (as it has useful features such as rerunning) without editing the config file which is committed, run the following command (`bash` example below) to set the appropriate environment variable, before starting the Streamlit app:
+```bash
+export STREAMLIT_CLIENT_TOOLBAR_MODE="developer"
+```

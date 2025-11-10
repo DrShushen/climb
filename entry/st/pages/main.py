@@ -778,9 +778,12 @@ def run_markdown_css_hack(hide_first_n_messages: int = 0) -> None:
     /* Chat box, make it fixed height. */
     {SELECTOR_CHAT_HISTORY_CONTAINER} {
         /* DEBUG: Uncomment below and check the container is highlighted in red. */
-        /*background-color: red;*/
+        /* background-color: red; */
 
+        /* Fix height - LHS column */
         height: calc(100vh - {CHAT_HISTORY_CONTAINER_OFFSET}px);
+        min-height: calc(100vh - {CHAT_HISTORY_CONTAINER_OFFSET}px);
+        max-height: calc(100vh - {CHAT_HISTORY_CONTAINER_OFFSET}px);
     }
 
     /* Hide the 'older' messages that are not to be shown. */
@@ -801,14 +804,18 @@ def run_markdown_css_hack(hide_first_n_messages: int = 0) -> None:
         border-bottom: 1px solid rgba(250, 250, 250, 0.2);
     }
 
-    /* Fix max height - RHS column */
+    /* RHS column, tab *content* area */
     {SELECTOR_TAB_CONTENT_AREA} {
         /*background-color: green;*/
-        max-height: calc(100vh - {TAB_TOP_OFFSET}px);
         overflow-y: scroll;
         overflow-x: hidden;
         border-bottom: 1px solid rgba(250, 250, 250, 0.2);
         margin-top: 0;
+
+        /* Fix height */
+        height: calc(100vh - {TAB_TOP_OFFSET}px);
+        min-height: calc(100vh - {TAB_TOP_OFFSET}px);
+        max-height: calc(100vh - {TAB_TOP_OFFSET}px);
     }
     {SELECTOR_TAB_JS_CONTAINER} {
         display: none;
