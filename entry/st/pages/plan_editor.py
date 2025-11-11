@@ -1,5 +1,4 @@
 import copy
-import datetime
 import json
 import uuid
 from collections import OrderedDict
@@ -29,6 +28,7 @@ st.html("<style>[data-testid='stHeaderActionElements'] {display: none;}</style>"
 # ----------------------------
 
 PLANS_DIR = Path("./plans")
+TEMPLATES_DIR = Path("./plans/defaults")
 
 # The allowed tool names. Only these can be chosen in the UI.
 TOOL_NAMES: List[str] = list_all_tool_names()
@@ -66,6 +66,14 @@ if "last_serialized" not in st.session_state:
     st.session_state.last_serialized = None
 if "manual_open_state" not in st.session_state:
     st.session_state.manual_open_state: Dict[str, bool] = {}
+if "is_new_from_template" not in st.session_state:
+    st.session_state.is_new_from_template: bool = False
+if "template_source_file" not in st.session_state:
+    st.session_state.template_source_file: Path | None = None
+if "selected_source" not in st.session_state:
+    st.session_state.selected_source: str = "My plans"
+if "new_plan_filename" not in st.session_state:
+    st.session_state.new_plan_filename: str = ""
 
 
 # -------------------- Utilities --------------------
@@ -80,6 +88,28 @@ def _clone_template() -> Dict[str, Any]:
     d["_uid"] = str(uuid.uuid4())[:8]  # stable UI identity across re-renders
     d["_extras"] = {}  # non-schema keys preserved here (read-only)
     return d
+
+
+def ensure_str_is_valid_filename(filename: str) -> str:
+    # Replace spaces with underscores
+    filename = filename.replace(" ", "_")
+
+    # Remove or replace invalid characters for Windows, macOS, and Unix
+    invalid_chars = '<>:"/\\|?*'
+    for char in invalid_chars:
+        filename = filename.replace(char, "_")
+
+    # Remove control characters (0-31) and DEL (127)
+    filename = "".join(char for char in filename if ord(char) > 31 and ord(char) != 127)
+
+    # Remove leading/trailing dots and spaces (after other replacements)
+    filename = filename.strip(". ")
+
+    # Ensure it has .json extension
+    if not filename.lower().endswith(".json"):
+        filename = f"{filename}.json"
+
+    return filename
 
 
 def list_json_files(directory: Path) -> List[Path]:
@@ -202,13 +232,14 @@ def _validate(items: List[Dict[str, Any]]) -> Tuple[List[str], List[str]]:
     return errors, warnings
 
 
-def _save_with_backup(path: Path, items: List[Dict[str, Any]]) -> None:
+def _save_plan(path: Path, items: List[Dict[str, Any]]) -> None:
     # backup if file exists
-    if path.exists():
-        ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-        backup = path.with_suffix(path.suffix + f".bak_{ts}")
-        backup.write_bytes(path.read_bytes())
-    # write
+    # if path.exists():
+    #     ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    #     backup = path.with_suffix(path.suffix + f".bak_{ts}")
+    #     backup.write_bytes(path.read_bytes())
+
+    # write plan to file:
     ordered_items = [_ordered_for_save(it) for it in items]
     with path.open("w", encoding="utf-8") as f:
         json.dump(ordered_items, f, ensure_ascii=False, indent=4)
@@ -266,12 +297,12 @@ def delete_item(idx: int):
 def optional_singleline(it: Dict[str, Any], field_key: str, label: str, widget_key_prefix: str) -> str | None:
     """Single-line text with a 'Set to None' toggle (for optional short fields)."""
     is_none = it.get(field_key) is None
-    c1, c2 = st.columns([0.84, 0.16])
-    with c2:
+    c1_optional_singleline, c2_optional_singleline = st.columns([0.84, 0.16])
+    with c2_optional_singleline:
         st.markdown("")
         st.markdown("")
         set_none = st.checkbox("None", value=is_none, key=f"{widget_key_prefix}_{field_key}_none")
-    with c1:
+    with c1_optional_singleline:
         val = st.text_input(
             label,
             value=it.get(field_key) or "",
@@ -374,38 +405,64 @@ def tools_editor(it: Dict[str, Any], uid: str):
 
 ensure_data_dir()
 
-with st.container():
+with st.container(border=True):
     repo_path = Path(__file__).parent.parent.parent.parent
-    plans_dir_relative = PLANS_DIR.resolve().relative_to(repo_path)
-    plans_dir_absolute = PLANS_DIR.resolve()
-    files = list_json_files(PLANS_DIR)
-    files_available_names = [p.name for p in files]
-    colA1, colB, colC = st.columns([0.1, 0.7, 0.2])
-    with colA1:
-        st.caption("")
-        refresh = st.button("↻ Refresh files", use_container_width=True)
-    with colB:
+    col_loader_left, col_loader_right = st.columns([0.7, 0.3])
+    with col_loader_left:
+        source_options = ("My plans", "Templates")
+        selected_source = st.radio(
+            "Load plan file from:",
+            options=source_options,
+            index=(
+                source_options.index(st.session_state.selected_source)
+                if st.session_state.selected_source in source_options
+                else 0
+            ),
+            key="selected_source_radio",
+            horizontal=True,
+        )
+        st.session_state.selected_source = selected_source
+        browse_dir = PLANS_DIR if selected_source == "My plans" else TEMPLATES_DIR
+        browse_dir_relative = browse_dir.resolve().relative_to(repo_path)
+        files = list_json_files(browse_dir)
+        files_available_names = [p.name for p in files]
+        select_key = "file_select_my" if selected_source == "My plans" else "file_select_tpl"
         selected_name = st.selectbox(
-            f"Select a plan file to open. Plan files are found in `./{plans_dir_relative}/` directory.",
+            f"Select a plan file to open then click `📂 Load`. Files are in `./{browse_dir_relative}/`.",
             options=files_available_names if files_available_names else ["(no JSON files found)"],
-            index=0,
+            index=0 if not files_available_names else 0,
+            key=select_key,
             disabled=not bool(files_available_names),
         )
-    st_common.horizontal_rule()
+    with col_loader_right:
+        # st.caption("")
+        refresh = st.button("↻ Refresh files", use_container_width=True)
+        load_btn = st.button("📂 Load", use_container_width=True)
+        load_status_container = st.container()
+
+    # st_common.horizontal_rule()
     st.markdown("")
 
-# Auto-open on first load if nothing opened yet
-auto_open = st.session_state.loaded_file is None and bool(files_available_names)
-if files_available_names or auto_open:
-    path_to_open = PLANS_DIR / (selected_name if files_available_names else "")
-    if st.session_state.loaded_file != path_to_open:
-        if path_to_open.exists():
+# Explicit open action
+if files_available_names and load_btn:
+    path_to_open = browse_dir / selected_name
+    if path_to_open.exists():
+        try:
             st.session_state.plan_items = _read_json(path_to_open)
             st.session_state.loaded_file = path_to_open
             st.session_state.last_serialized = _serialize_items_for_compare(st.session_state.plan_items)
+            st.session_state.is_new_from_template = selected_source == "Templates"
+            st.session_state.template_source_file = path_to_open if st.session_state.is_new_from_template else None
+            if st.session_state.is_new_from_template:
+                # When opening a template, clear any prior "Save As" filename
+                st.session_state.new_plan_filename = ""
             _reset_manual_expand_states()
-            with colC:
-                st.success(f"Opened: `{path_to_open.name}`")
+            with load_status_container:
+                src_label = "template" if st.session_state.is_new_from_template else "plan"
+                st.success(f"Opened {src_label}: `{path_to_open.name}`")
+        except Exception as e:
+            with load_status_container:
+                st.error(f"Failed to open file: {e}")
 
 current_file: Path | None = st.session_state.loaded_file
 items: List[Dict[str, Any]] = st.session_state.plan_items
@@ -413,28 +470,29 @@ items: List[Dict[str, Any]] = st.session_state.plan_items
 # -------------------- Toolbar --------------------
 
 with st.container():
-    c1, c2, c3, c4 = st.columns([0.7, 0.1, 0.1, 0.1])
-    with c1:
-        st.markdown(f"**Editing plan file:** `{current_file.name}`" if current_file else "_No file open_")
-    with c2:
+    col_menu_current_file, col_menu_add_item, col_menu_reset, col_menu_save = st.columns([0.6, 0.1, 0.1, 0.2])
+    with col_menu_current_file:
+        if current_file is None:
+            st.markdown("_No file open_")
+    with col_menu_add_item:
         add_btn = st.button(
             "➕ Add item",
             use_container_width=True,
             disabled=current_file is None,
             help="Add a new item to the episode list.",
         )
-    with c3:
+    with col_menu_reset:
         reload_btn = st.button(
             "⟲ Reset",
             use_container_width=True,
             disabled=current_file is None,
-            help="Reset all edits and reload from file.",
+            help="Reset all edits and reload from source file.",
         )
     # c4: Has the save button, and due to streamlit operation ordering, this must go after the editable elements list
     # as otherwise the changes will not be correctly reflected.
 
-    column_notes, column_infos = st.columns([0.5, 0.5])
-    with column_notes:
+    column_infopanel_notes, column_infopanel_statuses = st.columns([0.5, 0.5])
+    with column_infopanel_notes:
         st.caption(
             "- Unknown extra keys from the file are preserved but not editable here.\n"
             "- A timestamped *.bak* backup is created on every save."
@@ -457,7 +515,7 @@ if reload_btn and current_file is not None:
         st.session_state.plan_items = _read_json(current_file)
         st.session_state.last_serialized = _serialize_items_for_compare(st.session_state.plan_items)
         _reset_manual_expand_states()
-        with column_infos:
+        with column_infopanel_statuses:
             st.info(f"Reloaded from file: {current_file.name}")
         st.rerun()
     except Exception as e:
@@ -465,7 +523,7 @@ if reload_btn and current_file is not None:
 
 
 if current_file is not None:
-    with column_infos:
+    with column_infopanel_statuses:
         if not items:
             st.info("This file currently contains an empty list. Use **Add item** to begin.")
 
@@ -484,8 +542,8 @@ for idx, it in enumerate(items):
     # Header with manual toggle next to title
     with st.container(border=True):
         title = f"`{it.get('episode_id') or 'NEW'}` {it.get('episode_name') or ''}"
-        hc1, hc2, btns_col = st.columns([0.06, 0.6, 0.34])
-        with hc1:
+        col_episode_1, col_episode_2, col_episode_btns = st.columns([0.06, 0.6, 0.34])
+        with col_episode_1:
             is_open = st.checkbox(
                 "❯",
                 value=bool(st.session_state.manual_open_state.get(uid, False)),
@@ -493,12 +551,12 @@ for idx, it in enumerate(items):
                 # help="Use the checkbox to open/close the editor for each item",
             )
             st.session_state.manual_open_state[uid] = bool(is_open)
-        with hc2:
+        with col_episode_2:
             st.markdown(f"##### {title}")
-        with btns_col:
+        with col_episode_btns:
             # Row actions
-            a1, a2, a3 = st.columns([1, 1, 1])
-            with a1:
+            col_episode_btns_up, col_episode_btns_down, col_episode_btns_delete = st.columns([1, 1, 1])
+            with col_episode_btns_up:
                 st.button(
                     "↑ Move up",
                     key=f"up_{uid}",
@@ -507,7 +565,7 @@ for idx, it in enumerate(items):
                     disabled=(idx == 0),
                     use_container_width=True,
                 )
-            with a2:
+            with col_episode_btns_down:
                 st.button(
                     "↓ Move down",
                     key=f"down_{uid}",
@@ -516,23 +574,23 @@ for idx, it in enumerate(items):
                     disabled=(idx == len(items) - 1),
                     use_container_width=True,
                 )
-            with a3:
+            with col_episode_btns_delete:
                 st.button("🗑️ Delete", key=f"del_{uid}", on_click=delete_item, args=(idx,), use_container_width=True)
 
         if st.session_state.manual_open_state.get(uid, False):
             st_common.horizontal_rule()
 
             # Top fields
-            c1, c2, c3 = st.columns([0.3, 0.35, 0.35])
-            with c1:
+            col_episode_fields_id, col_episode_fields_name, col_episode_fields_sel = st.columns([0.3, 0.35, 0.35])
+            with col_episode_fields_id:
                 it["episode_id"] = st.text_input(
                     "episode_id (must be unique)", value=it.get("episode_id") or "", key=f"eid_{uid}"
                 ).strip()
-            with c2:
+            with col_episode_fields_name:
                 it["episode_name"] = st.text_input(
                     "episode_name (required)", value=it.get("episode_name") or "", key=f"name_{uid}"
                 )
-            with c3:
+            with col_episode_fields_sel:
                 it["selection_condition"] = optional_singleline(
                     it, "selection_condition", "selection_condition (optional)", widget_key_prefix=f"sel_{uid}"
                 )
@@ -551,8 +609,8 @@ for idx, it in enumerate(items):
             st.markdown("")
 
             # Optional long texts with preview + None toggle
-            g1, g2 = st.columns(2)
-            with g1:
+            col_episode_fields_cg, col_episode_fields_wg = st.columns(2)
+            with col_episode_fields_cg:
                 it["coordinator_guidance"] = optional_longtext(
                     it,
                     "coordinator_guidance",
@@ -560,7 +618,7 @@ for idx, it in enumerate(items):
                     widget_key_prefix=f"cg_{uid}",
                     height=200,
                 )
-            with g2:
+            with col_episode_fields_wg:
                 it["worker_guidance"] = optional_longtext(
                     it,
                     "worker_guidance",
@@ -585,7 +643,7 @@ for idx, it in enumerate(items):
 if current_file is not None:
     dirty = st.session_state.last_serialized != _serialize_items_for_compare(items)
 
-    with column_infos:
+    with column_infopanel_statuses:
         # DEBUG:
         # import rich.pretty
         # print("items serialized:")
@@ -605,24 +663,74 @@ if current_file is not None:
         elif warns:
             st.warning("Warnings:\n\n- " + "\n- ".join(warns))
 
-    with c4:
+    with col_menu_save:
         errs, warns = _validate(items)
+        # For 'new from template', prompt for a filename under PLANS_DIR
+        save_disabled_extra = False
+        dest_path_preview_str = ""
+        if st.session_state.is_new_from_template:
+            st.session_state.new_plan_filename = st.text_input(
+                "Save as filename (under ./plans)",
+                value=st.session_state.new_plan_filename,
+                key="new_plan_filename_input",
+                placeholder="Enter plan name, e.g. 'my_plan.json'",
+                help="Enter a filename to save this template as a new plan in ./plans/",
+            ).strip()
+            dest_name = (
+                ensure_str_is_valid_filename(st.session_state.new_plan_filename)
+                if st.session_state.new_plan_filename
+                else ""
+            )
+            save_disabled_extra = not bool(dest_name)
+            dest_path_preview_str = ("./" + str(PLANS_DIR / dest_name)) if dest_name else ""
+
         save_btn = st.button(
             "💾 Save changes",
             type="primary",
             use_container_width=True,
-            disabled=bool(errs) or not dirty,
+            disabled=bool(errs) or not dirty or save_disabled_extra,
             help=(
-                "Fix validation errors first." if errs else ("No changes to save." if not dirty else "Save to disk.")
+                "Fix validation errors first."
+                if errs
+                else (
+                    "No changes to save."
+                    if not dirty
+                    else (
+                        f"Save to {dest_path_preview_str}"
+                        if st.session_state.is_new_from_template and dest_path_preview_str
+                        else "Save to disk."
+                    )
+                )
             ),
         )
 
+    with col_menu_current_file:
+        if st.session_state.is_new_from_template:
+            dest_name = (
+                ensure_str_is_valid_filename(st.session_state.new_plan_filename)
+                if st.session_state.new_plan_filename
+                else "..."
+            )
+            st.markdown(f"##### Editing template: `{current_file.name}` → will save to `./{PLANS_DIR}/{dest_name}`")
+        else:
+            st.markdown(f"##### Editing plan file: `{current_file.name}`")
+
     if save_btn:
-        try:
-            _save_with_backup(current_file, items)
+        if st.session_state.is_new_from_template:
+            # Determine destination path within PLANS_DIR
+            dest_path = (PLANS_DIR / dest_name).resolve()
+            _save_plan(dest_path, items)
+            st.session_state.loaded_file = dest_path
             st.session_state.last_serialized = _serialize_items_for_compare(items)
-            with column_infos:
-                st.success(f"Saved: {current_file.name} (backup created).")
-        except Exception as e:
-            with column_infos:
-                st.error(f"Failed to save: {e}")
+            st.session_state.is_new_from_template = False
+            st.session_state.template_source_file = None
+            # Switch UI selection to the newly saved plan
+            st.session_state.selected_source = "My plans"
+            with column_infopanel_statuses:
+                st.success(f"Saved new plan: {dest_path.name}")
+            # st.rerun()
+        else:
+            _save_plan(current_file, items)
+            st.session_state.last_serialized = _serialize_items_for_compare(items)
+            with column_infopanel_statuses:
+                st.success(f"Saved: {current_file.name}")
