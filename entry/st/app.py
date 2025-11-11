@@ -11,6 +11,7 @@ st.set_page_config(
 
 # NOTE: This page should not end up being displayed to the user (we auto-navigate to `main.py` page), but just in case:
 st.markdown("⇦ Please select a page from the sidebar.")
-st.markdown(
-    f"🛈 If this is your first time using **{st_common.TITLE}**, start at the **{st_common.PAGE_TITLES['research_management_emoji']}** page."
+st.info(
+    f"If this is your first time using :grey-background[{st_common.TITLE}], start at the :grey-background[{st_common.PAGE_TITLES['research_management_emoji']}] page.",
+    icon=":material/info:",
 )
