@@ -1,5 +1,6 @@
 import copy
 import json
+import os
 import uuid
 from collections import OrderedDict
 from pathlib import Path
@@ -9,6 +10,13 @@ from uuid import uuid4
 import streamlit as st
 
 import climb.ui.st_common as st_common
+from climb.common.plan_files import (
+    PLAN_FILES_DIR,
+    PLAN_FILES_DIR_RELATIVE_STR,
+    TEMPLATES_DIR,
+    TEMPLATES_DIR_RELATIVE_STR,
+    load_plan_and_template_files,
+)
 from climb.tool import list_all_tool_names
 
 st.set_page_config(
@@ -26,9 +34,6 @@ st.html("<style>[data-testid='stHeaderActionElements'] {display: none;}</style>"
 # ----------------------------
 # 1) CONFIGURATION
 # ----------------------------
-
-PLANS_DIR = Path("./plans")
-TEMPLATES_DIR = Path("./plans/defaults")
 
 # The allowed tool names. Only these can be chosen in the UI.
 TOOL_NAMES: List[str] = list_all_tool_names()
@@ -80,7 +85,7 @@ if "new_plan_filename" not in st.session_state:
 
 
 def ensure_data_dir() -> None:
-    PLANS_DIR.mkdir(parents=True, exist_ok=True)
+    PLAN_FILES_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def _clone_template() -> Dict[str, Any]:
@@ -110,12 +115,6 @@ def ensure_str_is_valid_filename(filename: str) -> str:
         filename = f"{filename}.json"
 
     return filename
-
-
-def list_json_files(directory: Path) -> List[Path]:
-    if not directory.exists():
-        return []
-    return sorted([p for p in directory.glob("*.json") if p.is_file()])
 
 
 def _read_json(path: Path) -> List[Dict[str, Any]]:
@@ -406,7 +405,6 @@ def tools_editor(it: Dict[str, Any], uid: str):
 ensure_data_dir()
 
 with st.container(border=True):
-    repo_path = Path(__file__).parent.parent.parent.parent
     col_loader_left, col_loader_right = st.columns([0.7, 0.3])
     with col_loader_left:
         source_options = ("My plans", "Templates")
@@ -422,13 +420,18 @@ with st.container(border=True):
             horizontal=True,
         )
         st.session_state.selected_source = selected_source
-        browse_dir = PLANS_DIR if selected_source == "My plans" else TEMPLATES_DIR
-        browse_dir_relative = browse_dir.resolve().relative_to(repo_path)
-        files = list_json_files(browse_dir)
-        files_available_names = [p.name for p in files]
+        browse_dir = PLAN_FILES_DIR if selected_source == "My plans" else TEMPLATES_DIR
+        plan_and_template_files = load_plan_and_template_files()
+        if selected_source == "My plans":
+            files_available_names = plan_and_template_files["plan_files"]
+        else:
+            files_available_names = plan_and_template_files["template_plan_files"]
         select_key = "file_select_my" if selected_source == "My plans" else "file_select_tpl"
         selected_name = st.selectbox(
-            f"Select a plan file to open then click `📂 Load`. Files are in `./{browse_dir_relative}/`.",
+            (
+                "Select a plan file to open then click `📂 Load`. Files are in "
+                f"`{PLAN_FILES_DIR_RELATIVE_STR if selected_source == 'My plans' else TEMPLATES_DIR_RELATIVE_STR}/`."
+            ),
             options=files_available_names if files_available_names else ["(no JSON files found)"],
             index=0 if not files_available_names else 0,
             key=select_key,
@@ -496,7 +499,7 @@ with st.container():
         st.caption(
             "- Open an existing plan file to edit it, or create a new plan from a template.\n"
             "- Add, edit, and delete episodes to create your plan.\n"
-            "- Save your plan to a file in the `./plans/` directory."
+            f"- Save your plan to a file in the `{PLAN_FILES_DIR_RELATIVE_STR}/` directory."
         )
 
 
@@ -666,24 +669,26 @@ if current_file is not None:
 
     with col_menu_save:
         errs, warns = _validate(items)
-        # For 'new from template', prompt for a filename under PLANS_DIR
+        # For 'new from template', prompt for a filename under PLAN_FILES_DIR
         save_disabled_extra = False
         dest_path_preview_str = ""
         if st.session_state.is_new_from_template:
             st.session_state.new_plan_filename = st.text_input(
-                "Save as filename (under `./plans/`)",
+                f"Save as filename (under `{PLAN_FILES_DIR_RELATIVE_STR}/`)",
                 value=st.session_state.new_plan_filename,
                 key="new_plan_filename_input",
                 placeholder="Enter plan name, e.g. 'my_plan.json'",
-                help="Enter a filename to save this template as a new plan in `./plans/`.",
+                help=f"Enter a filename to save this template as a new plan in `{PLAN_FILES_DIR_RELATIVE_STR}/`.",
             ).strip()
-            dest_name = (
+            pan_file_being_edited_filename = (
                 ensure_str_is_valid_filename(st.session_state.new_plan_filename)
                 if st.session_state.new_plan_filename
                 else ""
             )
-            save_disabled_extra = not bool(dest_name)
-            dest_path_preview_str = ("./" + str(PLANS_DIR / dest_name)) if dest_name else ""
+            save_disabled_extra = not bool(pan_file_being_edited_filename)
+            dest_path_preview_str = (
+                ("./" + str(PLAN_FILES_DIR / pan_file_being_edited_filename)) if pan_file_being_edited_filename else ""
+            )
 
         save_btn = st.button(
             "💾 Save changes",
@@ -707,28 +712,29 @@ if current_file is not None:
 
     with col_menu_current_file:
         if st.session_state.is_new_from_template:
-            dest_name = (
+            pan_file_being_edited_filename = (
                 ensure_str_is_valid_filename(st.session_state.new_plan_filename)
                 if st.session_state.new_plan_filename
                 else "..."
             )
-            st.markdown(f"##### Editing template: `{current_file.name}` → will save to `./{PLANS_DIR}/{dest_name}`")
+            pan_file_being_edited_path = (PLAN_FILES_DIR / pan_file_being_edited_filename).resolve()
+            st.markdown(
+                f"##### Editing template: `{current_file.name}` → will save to `{os.path.join(PLAN_FILES_DIR_RELATIVE_STR, pan_file_being_edited_filename)}`"
+            )
         else:
             st.markdown(f"##### Editing plan file: `{current_file.name}`")
 
     if save_btn:
         if st.session_state.is_new_from_template:
-            # Determine destination path within PLANS_DIR
-            dest_path = (PLANS_DIR / dest_name).resolve()
-            _save_plan(dest_path, items)
-            st.session_state.loaded_file = dest_path
+            _save_plan(pan_file_being_edited_path, items)
+            st.session_state.loaded_file = pan_file_being_edited_path
             st.session_state.last_serialized = _serialize_items_for_compare(items)
             st.session_state.is_new_from_template = False
             st.session_state.template_source_file = None
             # Switch UI selection to the newly saved plan
             st.session_state.selected_source = "My plans"
             with column_infopanel_statuses:
-                st.success(f"Saved new plan: {dest_path.name}")
+                st.success(f"Saved new plan: {pan_file_being_edited_path.name}")
             # st.rerun()
         else:
             _save_plan(current_file, items)
