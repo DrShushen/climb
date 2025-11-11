@@ -494,8 +494,9 @@ with st.container():
     column_infopanel_notes, column_infopanel_statuses = st.columns([0.5, 0.5])
     with column_infopanel_notes:
         st.caption(
-            "- Unknown extra keys from the file are preserved but not editable here.\n"
-            "- A timestamped *.bak* backup is created on every save."
+            "- Open an existing plan file to edit it, or create a new plan from a template.\n"
+            "- Add, edit, and delete episodes to create your plan.\n"
+            "- Save your plan to a file in the `./plans/` directory."
         )
 
 
@@ -670,11 +671,11 @@ if current_file is not None:
         dest_path_preview_str = ""
         if st.session_state.is_new_from_template:
             st.session_state.new_plan_filename = st.text_input(
-                "Save as filename (under ./plans)",
+                "Save as filename (under `./plans/`)",
                 value=st.session_state.new_plan_filename,
                 key="new_plan_filename_input",
                 placeholder="Enter plan name, e.g. 'my_plan.json'",
-                help="Enter a filename to save this template as a new plan in ./plans/",
+                help="Enter a filename to save this template as a new plan in `./plans/`.",
             ).strip()
             dest_name = (
                 ensure_str_is_valid_filename(st.session_state.new_plan_filename)
