@@ -25,6 +25,9 @@ PAGE_TITLES = {
     "settings_emoji": "⚙️ Settings",
     "settings_plain": "Settings",
     "settings_tab_title": f"{TITLE} | Settings",
+    "plan_editor_emoji": "🏗️ Plan Editor",
+    "plan_editor_plain": "Plan Editor",
+    "plan_editor_tab_title": f"{TITLE} | Plan Editor",
 }
 
 CLIMB_ICON_IMAGE = Image.open("./entry/st/climb.ico")
@@ -126,6 +129,9 @@ def menu() -> None:
     st.sidebar.page_link("pages/main.py", label=PAGE_TITLES["main_emoji"])
     st.sidebar.page_link("pages/research_management.py", label=PAGE_TITLES["research_management_emoji"])
     st.sidebar.page_link("pages/settings.py", label=PAGE_TITLES["settings_emoji"])
+    with st.sidebar:
+        horizontal_rule()
+    st.sidebar.page_link("pages/plan_editor.py", label=PAGE_TITLES["plan_editor_emoji"])
 
     with st.sidebar:
         st.markdown("---")
@@ -143,6 +149,13 @@ def menu() -> None:
             "and [Cambridge Centre for AI in Medicine](https://www.damtp.cam.ac.uk/new-cambridge-centre-ai-medicine-ccaim-0)"
         )
         st.image("./entry/st/ccaim.png", width=150)
+
+
+def horizontal_rule() -> None:
+    return st.html(
+        "<hr style='margin: 0; border-bottom: 1px solid rgba(250, 250, 250, 0.2); "
+        "border-top: none; border-left: none; border-right: none;'>"
+    )
 
 
 def initialize_common_st_state(db: DB) -> None:

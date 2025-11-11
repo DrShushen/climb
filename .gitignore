@@ -54,6 +54,7 @@ MANIFEST
 .python-version
 
 # === Custom ===
+
 # Hidden:
 .ruff_cache
 .dev
@@ -65,3 +66,7 @@ keys.env
 az_openai_config.yml
 az_openai_config.yml.old
 db.json
+
+# Plans directory
+plans/*
+!plans/defaults/

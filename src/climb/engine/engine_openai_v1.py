@@ -192,7 +192,6 @@ EPISODE_DB = [
     {
         "episode_id": "ENV_1",
         "selection_condition": None,
-        "status_reason": None,
         "episode_name": "Upload data files",
         "episode_details": """
 - Introduce yourself as an AI assistant that will help the user with their clinical machine learning study.
@@ -213,7 +212,6 @@ it is clear from the filenames, suggest this to the user and ask for confirmatio
     },
     {
         "episode_id": "ENV_2",
-        "status_reason": None,
         "selection_condition": None,
         "episode_name": "Check data file(s) can be loaded",
         "episode_details": """
@@ -267,40 +265,9 @@ IMPORTANT:
 """,
         "tools": [],
     },
-    #     {
-    #         "episode_id": "ENV_2B",
-    #         "selection_condition": None,
-    #         "status_reason": None,
-    #         "episode_name": "Check and fix column headers",
-    #         "episode_details": """
-    # - Check if all uploaded data files have proper column headers (header row with column names).
-    # - For each file, generate code to:
-    #   - Load the first few rows to inspect the structure
-    #   - Determine if the first row contains column names or data values
-    #   - If the first row appears to be data rather than column names, ask the user what the column names should be
-    # - If files are missing headers:
-    #   - Discuss with the user what each column represents and what the column names should be
-    #   - Show the user the first few rows of data to help them identify what each column contains
-    #   - Ask the user to provide appropriate column names for each column
-    #   - Generate code to add the proper column headers and re-save the files.
-    # - If files already have proper headers, confirm this with the user and proceed
-    # - Ensure all files have consistent and meaningful column names before proceeding with analysis
-    # """,
-    #         "coordinator_guidance": None,
-    #         "worker_guidance": """
-    # - You MUST NOT use any tool here. DO NOT SUMMON ANY TOOLS.
-    # - You MUST generate code in this step!
-    # IMPORTANT:
-    # - Check ALL uploaded files for proper column headers
-    # - If headers are missing, engage with the user to determine appropriate column names
-    # - Re-save files with proper headers if needed
-    # """,
-    #         "tools": [],
-    #     },
     {
         "episode_id": "DP-F_1",
         "selection_condition": None,
-        "status_reason": None,
         "episode_name": "Merge multiple data files",
         "episode_details": """
 I. Lay out the situation:
@@ -349,7 +316,6 @@ IV. Sense check the final datasets:
     },
     {
         "episode_id": "ENV_3",
-        "status_reason": None,
         "selection_condition": None,
         "episode_name": "Check hardware",
         "episode_details": """
@@ -364,7 +330,6 @@ machine that meets these requirements or use a cloud service, but allow the opti
     },
     {
         "episode_id": "INFO_1",
-        "status_reason": None,
         "selection_condition": None,
         "episode_name": "High-level information from the user",
         "episode_details": """
@@ -381,7 +346,6 @@ Ask the user whether they would like to provide high-level information about the
     },
     {
         "episode_id": "INFO_2",
-        "status_reason": None,
         "selection_condition": None,
         "episode_name": "Experiment setup and research question from the user",
         "episode_details": """
@@ -398,7 +362,6 @@ these, that is also not a problem, and another agent will handle this later.
     },
     {
         "episode_id": "INFO_3",
-        "status_reason": None,
         "selection_condition": None,
         "episode_name": "Assess data suitability and tool support",
         "episode_details": """
@@ -428,7 +391,6 @@ invoke them!
     },
     {
         "episode_id": "EDA_1",
-        "status_reason": None,
         "selection_condition": None,
         "episode_name": "Exclude/keep columns",
         "episode_details": """
@@ -455,7 +417,6 @@ When generating this code, print the columns line by line (not as one list) so t
     },
     {
         "episode_id": "EDA_1B",
-        "status_reason": None,
         "selection_condition": None,
         "episode_name": "Check column types",
         "episode_details": """
@@ -488,7 +449,6 @@ Print the data type information in a clear, column-by-column format for easy rev
     },
     {
         "episode_id": "EDA_2",
-        "status_reason": None,
         "selection_condition": None,
         "episode_name": "Perform EDA",
         "episode_details": """
@@ -512,7 +472,6 @@ any modifications to the data at this stage, as that will be handled later in th
     },
     {
         "episode_id": "EDA_3",
-        "status_reason": None,
         "selection_condition": None,
         "episode_name": "Generate descriptive statistics",
         "episode_details": """
@@ -538,7 +497,6 @@ best understanding of medical research and data science.
     },
     {
         "episode_id": "EDA_4",
-        "status_reason": None,
         "selection_condition": "Only if data analysis reveals fewer than 50 samples",
         "episode_name": "Warn about small sample size if necessary",
         "episode_details": """
@@ -554,7 +512,6 @@ Note: this refers to the number of samples in the training dataset.
     },
     {
         "episode_id": "EDA_5",
-        "status_reason": None,
         "selection_condition": "If the user's problem is SURVIVAL ANALYSIS",
         "episode_name": "Show Kaplan-Meier plot",
         "episode_details": """
@@ -583,7 +540,6 @@ confirm this), show it to the user using the `<WD>/image_name.extension` format 
     },
     {
         "episode_id": "DP-F_2",
-        "status_reason": None,
         "selection_condition": None,
         "episode_name": "Free text field data extraction",
         "episode_details": """
@@ -628,7 +584,6 @@ synonyms for each topic.
     },
     {
         "episode_id": "DP-BM_1",
-        "status_reason": None,
         "selection_condition": None,
         "episode_name": "Column background information",
         "episode_details": """
@@ -649,7 +604,6 @@ task. Once you have done this, ask the user if they would like to continue with 
     },
     {
         "episode_id": "DP-M_1",
-        "status_reason": None,
         "selection_condition": None,
         "episode_name": "Represent missing data as NaN",
         "episode_details": """
@@ -675,7 +629,6 @@ Otherwise you could end up replacing values that are not actually missing data!
     },
     {
         "episode_id": "DP-M_2",
-        "status_reason": None,
         "selection_condition": "Only if missing data is present",
         "episode_name": "Consider dropping columns with high missing values",
         "episode_details": """
@@ -701,7 +654,6 @@ in your code, to ensure that all the results are shown!
     },
     {
         "episode_id": "DP-M_3",
-        "status_reason": None,
         "selection_condition": "Only if missing data is present",
         "episode_name": "Consider dropping rows with missing values",
         "episode_details": """
@@ -726,7 +678,6 @@ transformation to it.
     },
     {
         "episode_id": "DP-M_4",
-        "status_reason": None,
         "selection_condition": "Only if missing data is present",
         "episode_name": "Impute missing values",
         "episode_details": """
@@ -756,7 +707,6 @@ training data and transform the test data.
     },
     {
         "episode_id": "DP-AM_1",
-        "status_reason": None,
         "selection_condition": None,
         "episode_name": "Discuss data preprocessing with the user",
         "episode_details": """
@@ -784,7 +734,6 @@ use the test dataset to inform the preprocessing steps on the training dataset -
     },
     {
         "episode_id": "DP-AM_2",
-        "status_reason": None,
         "selection_condition": None,
         "episode_name": "Feature selection",
         "episode_details": """
@@ -815,7 +764,6 @@ if the user wants to drop any columns, you must apply the same transformation to
     },
     {
         "episode_id": "DP-AM_3",
-        "status_reason": None,
         "selection_condition": None,
         "episode_name": "Data valuation",
         "episode_details": """
@@ -839,7 +787,6 @@ If the user has provided both a training and a test dataset, you must run the to
     },
     {
         "episode_id": "DP-AM_4",
-        "status_reason": None,
         "selection_condition": None,
         "episode_name": "Outlier detection",
         "episode_details": """
@@ -866,7 +813,6 @@ and once for the test dataset.
     },
     {
         "episode_id": "DP-AM_5",
-        "status_reason": None,
         "selection_condition": None,
         "episode_name": "Balance the dataset",
         "episode_details": """
@@ -889,7 +835,6 @@ If the user's task is regression or survival analysis skip this whole episode as
     },
     {
         "episode_id": "DP-AM_6",
-        "status_reason": None,
         "selection_condition": None,
         "episode_name": "Data Suite Insights",
         "episode_details": """
@@ -909,7 +854,6 @@ If the user's task is regression or survival analysis skip this whole episode as
     },
     {
         "episode_id": "MLC_1",
-        "status_reason": None,
         "selection_condition": None,
         "episode_name": "Confirm ML problem type",
         "episode_details": """
@@ -926,7 +870,6 @@ Once you have the information, mark this task as completed! Do not proceed to ru
     },
     {
         "episode_id": "MLC_2-SURVIVAL",
-        "status_reason": None,
         "selection_condition": "Only if the ML problem is SURVIVAL ANALYSIS",
         "episode_name": "Check time and event columns",
         "episode_details": """
@@ -948,7 +891,6 @@ help here!
     },
     {
         "episode_id": "MLC_3",
-        "status_reason": None,
         "selection_condition": None,
         "episode_name": "Check for data leakage",
         "episode_details": """
@@ -988,7 +930,6 @@ If the user has provided both a training and a test dataset, you must ensure tha
     },
     {
         "episode_id": "MLC_4",
-        "status_reason": None,
         "selection_condition": None,
         "episode_name": "Check for irrelevant columns",
         "episode_details": """
@@ -1032,7 +973,6 @@ If the user has provided both a training and a test dataset, you must ensure tha
     },
     {
         "episode_id": "ML_1-CLASSIFICATION",
-        "status_reason": None,
         "selection_condition": "Only if the ML problem is CLASSIFICATION",
         "episode_name": "Machine learning study - classification",
         "episode_details": """
@@ -1050,7 +990,6 @@ this may be the case, and what needs to be done to improve model performance. Pr
     },
     {
         "episode_id": "ML_1-REGRESSION",
-        "status_reason": None,
         "selection_condition": "Only if the ML problem is REGRESSION",
         "episode_name": "Machine learning study - regression",
         "episode_details": """
@@ -1068,7 +1007,6 @@ this may be the case, and what needs to be done to improve model performance. Pr
     },
     {
         "episode_id": "ML_1-SURVIVAL",
-        "status_reason": None,
         "selection_condition": "Only if the ML problem is SURVIVAL ANALYSIS",
         "episode_name": "Machine learning study - survival analysis",
         "episode_details": """
@@ -1086,7 +1024,6 @@ this may be the case, and what needs to be done to improve model performance. Pr
     },
     {
         "episode_id": "ML_CONF",
-        "status_reason": None,
         "selection_condition": None,
         "episode_name": "Conformal Prediction for Model Uncertainty",
         "episode_details": """
@@ -1109,7 +1046,6 @@ If you have both a train and test dataset, pass them both to the tool. If you on
     },
     {
         "episode_id": "MLE_1",
-        "status_reason": None,
         "selection_condition": None,
         "episode_name": "Feature importance plots - Invase",
         "episode_details": """
@@ -1125,7 +1061,6 @@ If the user has provided both a training and a test dataset, use the training da
     },
     {
         "episode_id": "MLE_2",
-        "status_reason": None,
         "selection_condition": None,
         "episode_name": "Feature importance plots - Symbolic Pursuit",
         "episode_details": """
@@ -1140,7 +1075,6 @@ If the user has provided both a training and a test dataset, use the training da
     },
     {
         "episode_id": "MLE_3",
-        "status_reason": None,
         "selection_condition": None,
         "episode_name": "Feature importance plots",
         "episode_details": """
@@ -1158,7 +1092,6 @@ If the user has provided both a training and a test dataset, use the training da
     },
     {
         "episode_id": "MLE_2-CLASSIFICATION",
-        "status_reason": None,
         "selection_condition": "The ML task is CLASSIFICATION",
         "episode_name": "Insights on classification",
         "episode_details": """
@@ -1179,7 +1112,6 @@ and retraining the model.
     },
     {
         "episode_id": "MLE_2X-CLASSIFICATION",
-        "status_reason": None,
         "selection_condition": "The ML task is CLASSIFICATION; Data IQ insights reveal many AMBIGUOUS/HARD samples",
         "episode_name": "Act on ambiguous/hard samples",
         "episode_details": """
@@ -1211,7 +1143,6 @@ This is because the user may want to consider removing these samples and retrain
     },
     {
         "episode_id": "MLE_4",
-        "status_reason": None,
         "selection_condition": None,
         "episode_name": "Subgroup analysis",
         "episode_details": """
@@ -1238,7 +1169,6 @@ Only do this if the user wants to perform subgroup analysis. Guide the user thro
     },
     {
         "episode_id": "MLI_1",
-        "status_reason": None,
         "selection_condition": None,
         "episode_name": "Iterate with the user",
         "episode_details": """
@@ -1258,7 +1188,6 @@ Use your best judgement to suggest how modelling performance can be improved, an
     },
     {
         "episode_id": "END_1",
-        "status_reason": None,
         "selection_condition": None,
         "episode_name": "Discuss the project and finish up",
         "episode_details": """
@@ -1277,7 +1206,6 @@ This will send the control back to the coordinator to reissue the tasks.
         "tools": None,
     },
 ]
-
 
 EPISODE_DB_SPECIFICATION = """
 # Episode Database Specification
@@ -1309,7 +1237,6 @@ outcomes of previous tasks or episodes.
 PLAN = [
     "ENV_1",
     "ENV_2",
-    # "ENV_2B",
     "DP-F_1",
     "ENV_3",
     "INFO_1",
