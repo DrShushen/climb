@@ -153,6 +153,7 @@ class EngineParameter(pydantic.BaseModel):
     min_value: Optional[float] = None
     max_value: Optional[float] = None
     set_by_static_method: Optional[str] = None
+    default_set_by_static_method: Optional[str] = None
     disabled: Optional[bool] = False
     records_disabled_keys: Optional[List[str]] = None
 

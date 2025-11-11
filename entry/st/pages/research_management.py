@@ -1,12 +1,12 @@
 import shutil
-from typing import List, cast
+from typing import Any, List
 
 import pandas as pd
 import streamlit as st
 
 from climb.common import create_new_session
 from climb.db.tinydb_db import TinyDB_DB
-from climb.engine import AZURE_OPENAI_CONFIG_PATH, ENGINE_MAP, load_azure_openai_configs
+from climb.engine import AZURE_OPENAI_CONFIG_PATH, ENGINE_MAP, EngineBase, load_azure_openai_configs
 from climb.ui.st_common import (
     CLIMB_ICON_IMAGE,
     PAGE_TITLES,
@@ -16,9 +16,7 @@ from climb.ui.st_common import (
     menu,
 )
 
-st.set_page_config(
-    layout="centered", page_title=PAGE_TITLES["research_management_tab_title"], page_icon=CLIMB_ICON_IMAGE
-)
+st.set_page_config(layout="wide", page_title=PAGE_TITLES["research_management_tab_title"], page_icon=CLIMB_ICON_IMAGE)
 menu()
 
 
@@ -102,25 +100,18 @@ else:
         sessions_df,
         disabled=[c for c in sessions_df.columns if c not in EDITABLE_COLUMNS],
         column_config={
-            "Select": st.column_config.CheckboxColumn(required=True),
+            "Select": st.column_config.CheckboxColumn(required=True, width=5),
             "Session key": None,
+            "Session name": st.column_config.TextColumn(width=450),
+            "Started at": st.column_config.DatetimeColumn(width=150),
+            "Engine name": st.column_config.TextColumn(width=150),
+            "# messages": st.column_config.NumberColumn(width=25),
+            "Active": st.column_config.CheckboxColumn(width=5),
         },
         hide_index=True,
     )
 
     selected_rows = de[de.Select]
-
-    if st.button("💾 Update session details", help="Update the details of selected sessions if you edited them above."):
-        for _, row in de.iterrows():
-            session_key = row["Session key"]
-            new_name = row["Session name"]
-            session = db.get_session(session_key)
-            if session.friendly_name != new_name:
-                session.friendly_name = new_name
-                db.update_session(session)
-                if session_key == st.session_state.active_session_key:
-                    st.session_state.session_reload = True
-                    st.rerun()
 
     active_session_name = None
     ready_to_load = len(selected_rows) == 1
@@ -134,11 +125,36 @@ else:
         if active_session_name is None
         else f"🚀 Load selected session `{active_session_name}` ⏵"
     )
-    if st.button(
-        activate_button_name,
-        disabled=not ready_to_load,
-        help="Select one session to activate.",
-    ):
+
+    col_btn1, col_btn2, col_btn3 = st.columns([0.15, 0.72, 0.18])
+    with col_btn1:
+        btn_update_session_details = st.button(
+            "💾 Update session details", help="Update the details of selected sessions if you edited them above."
+        )
+    with col_btn2:
+        btn_load_selected_session = st.button(
+            activate_button_name, disabled=not ready_to_load, help="Select one session to activate."
+        )
+    with col_btn3:
+        btn_delete_selected_sessions = st.button(
+            "🗑️ Delete selected session(s) ⏵",
+            disabled=selected_rows.empty,
+            help="Select at least one session to delete.",
+        )
+
+    if btn_update_session_details:
+        for _, row in de.iterrows():
+            session_key = row["Session key"]
+            new_name = row["Session name"]
+            session = db.get_session(session_key)
+            if session.friendly_name != new_name:
+                session.friendly_name = new_name
+                db.update_session(session)
+                if session_key == st.session_state.active_session_key:
+                    st.session_state.session_reload = True
+                    st.rerun()
+
+    if btn_load_selected_session:
         st.session_state.active_session_key = selected_session_key
         st.session_state.session_reload = True
 
@@ -152,9 +168,7 @@ else:
 
         st.switch_page("pages/main.py")
 
-    if st.button(
-        "🗑️ Delete selected session(s) ⏵", disabled=selected_rows.empty, help="Select at least one session to delete."
-    ):
+    if btn_delete_selected_sessions:
         with st.expander("Confirm deletion", expanded=True):
             st.markdown("")
             selected_session_keys = selected_rows["Session key"].tolist()
@@ -186,32 +200,58 @@ lead to substandard results.
     """
 )
 
-col1b, col2b = st.columns(2)
-with col1b:
-    st.markdown("#### New session settings:")
-    new_session_name = st.text_input("Session name", value="", placeholder="Leave empty for auto-generated name")
-    engine_name = st.selectbox("Select engine", options=ENGINE_MAP.keys())
-    st.session_state.new_session_settings["session_name"] = new_session_name if new_session_name != "" else None
-    st.session_state.new_session_settings["engine_name"] = engine_name
+with st.container(border=True):
+    st.markdown("#### New session:")
+    col_new_session_name, col_engine_name = st.columns(2)
+    with col_new_session_name:
+        new_session_name = st.text_input("Session name", value="", placeholder="Leave empty for auto-generated name")
+        st.session_state.new_session_settings["session_name"] = new_session_name if new_session_name != "" else None
+    with col_engine_name:
+        engine_name = st.selectbox("Select engine", options=ENGINE_MAP.keys())
+        st.session_state.new_session_settings["engine_name"] = engine_name
 
-with col2b:
-    st.markdown("#### Engine parameters:")
+with st.container(border=True):
+    st.markdown("""
+    #### Session engine parameters:
+    Hover over :grey[:material/help:] to see more information about the parameter.
+    """)
     engine_params = dict()
-    EngineClass = ENGINE_MAP[engine_name]  # type: ignore
+    EngineClass: EngineBase = ENGINE_MAP[engine_name]  # type: ignore
     cannot_create = False
-    for param in ENGINE_MAP[cast(str, engine_name)].get_engine_parameters():
+    if "azure" in engine_name:
+        if load_azure_openai_configs(AZURE_OPENAI_CONFIG_PATH) == []:
+            st.markdown(
+                "No Azure OpenAI configurations found. Please add a configuration file at `az_openai_config.yml`."
+            )
+            cannot_create = True
+    # kwargs dict for params that are set by static methods. (i.e. params that have a `set_by_static_method` attribute.)
+    kwargs_dict = {
+        # ... Add any initial kwargs needed ...
+    }
+    # print(kwargs_dict)
+    for param in EngineClass.get_engine_parameters():
         # Values set by static methods. --- --- ---
-        if "azure" in engine_name:
-            if load_azure_openai_configs(AZURE_OPENAI_CONFIG_PATH) == []:
-                st.markdown("No Azure OpenAI configurations found.")
-                cannot_create = True
-                break
-        if "azure" in engine_name and param.name == "model_id":
+        # NOTE: we also keep dynamically adding the engine_params defined thus far to potentially be used by
+        # a param-setting static method. Hence the order of the parameters matters, if a parameter is set by a
+        # static method, it should be defined after the parameters that the static method depends on.
+        if hasattr(param, "set_by_static_method") and param.set_by_static_method is not None:
             static_method = getattr(EngineClass, param.set_by_static_method)
-            config_item_name = engine_params["config_item_name"]
-            value_set = static_method(config_item_name=config_item_name)
+            kwargs_dict.update(engine_params)
+            value_set = static_method(**kwargs_dict)
+            value_may_be_editable = False
+        elif hasattr(param, "default_set_by_static_method") and param.default_set_by_static_method is not None:
+            static_method = getattr(EngineClass, param.default_set_by_static_method)
+            kwargs_dict.update(engine_params)
+            value_set = static_method(**kwargs_dict)
+            value_may_be_editable = True
         else:
             value_set = None
+            value_may_be_editable = True
+        param_disabled = param.disabled if value_may_be_editable else True
+        # ^ What it means:
+        # - If the parameter's value is set by a static method, it is never editable.
+        # - If the parameter's default is set by a static method, it is may be editable,
+        #   depending on the `disabled` attribute of the parameter.
         # --- --- ---
         if param.kind == "float":
             engine_params[param.name] = st.number_input(  # type: ignore
@@ -220,14 +260,14 @@ with col2b:
                 value=value_set if value_set is not None else param.default,  # type: ignore
                 min_value=param.min_value,
                 max_value=param.max_value,
-                disabled=param.disabled if value_set is None else True,
+                disabled=param_disabled,
             )
         elif param.kind == "bool":
             engine_params[param.name] = st.checkbox(
                 param.name,
                 help=param.description,
                 value=value_set if value_set is not None else param.default,  # type: ignore
-                disabled=param.disabled if value_set is None else True,
+                disabled=param_disabled,
             )
         elif param.kind == "enum":
             engine_params[param.name] = st.selectbox(
@@ -235,19 +275,45 @@ with col2b:
                 help=param.description,
                 options=param.enum_values,  # type: ignore
                 index=param.enum_values.index(value_set if value_set is not None else param.default),  # type: ignore
-                disabled=param.disabled if value_set is None else True,
+                disabled=param_disabled,
             )
         elif param.kind == "records":
             st.markdown(param.name)
-            st.markdown(f"*{param.description}*")
+            st.caption(f"{param.description}")
+
             disabled = param.records_disabled_keys or []
+
+            df = pd.DataFrame(param.default)
+
+            # Estimate a reasonable width for all the columns in the dataframe.
+            # Convert each column to string, and return the maximum character length of each column.
+            max_column_lengths = df.map(lambda x: len(str(x)) if not isinstance(x, bool) else 1).max()
+            # Normalize so values add to 1000 and convert to int.
+            max_column_lengths = (max_column_lengths / max_column_lengths.sum() * 1000).astype(int)
+            max_column_lengths = {col: int(str(max_column_lengths[col])) for col in df.columns}  # int64 --> python int.
+
+            # Automatically get the column config type for column types bool, numeric, and string.
+            def _get_col_type(col: str) -> Any:
+                if df[col].dtype.name == "bool":
+                    return st.column_config.CheckboxColumn
+                elif "float" in df[col].dtype.name or "int" in df[col].dtype.name:
+                    return st.column_config.NumberColumn
+                elif "datetime" in df[col].dtype.name:
+                    return st.column_config.DatetimeColumn
+                elif "object" in df[col].dtype.name:
+                    return st.column_config.TextColumn
+                else:
+                    raise ValueError(f"Unexpected column type: {df[col].dtype.name}")
+
+            # Create the data editor.
             df_edited = st.data_editor(
-                pd.DataFrame(param.default),
+                df,
                 disabled=disabled,
                 hide_index=True,
+                column_config={col: _get_col_type(col)(width=max_column_lengths[col]) for col in df.columns},
             )
             engine_params[param.name] = df_edited.to_dict("records")
-            print(engine_params[param.name])
+
         else:
             raise ValueError(f"Unexpected parameter kind: {param.kind}")
     st.session_state.new_session_settings["engine_params"] = engine_params
