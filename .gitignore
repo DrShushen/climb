@@ -66,6 +66,7 @@ keys.env
 az_openai_config.yml
 az_openai_config.yml.old
 db.json
+TODO.txt
 
 # Plans directory
 plans/*

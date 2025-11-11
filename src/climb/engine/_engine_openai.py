@@ -711,6 +711,7 @@ class AzureOpenAIEngineMixin:
                 min_value=0.0,
                 max_value=1.0,
                 disabled=not configs_found,
+                default_set_by_static_method="set_temperature",
             ),
             PrivacyModeParameter,
         ]

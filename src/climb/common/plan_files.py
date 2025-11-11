@@ -1,4 +1,6 @@
+import json
 from pathlib import Path
+from typing import Any, Dict, List, Literal, Union
 
 import rich.pretty
 
@@ -20,8 +22,16 @@ PLAN_FILES_DIR_RELATIVE_STR = "./" + str(PLAN_FILES_DIR_RELATIVE)
 TEMPLATES_DIR_RELATIVE_STR = "./" + str(TEMPLATES_DIR_RELATIVE)
 
 
-def load_plan_and_template_files() -> dict[str, list[str]]:
+def load_plan_and_template_files(
+    return_as: Literal["absolute_paths", "relative_paths", "filenames"] = "filenames",
+) -> dict[str, list[str]]:
     """Load all .json files from TEMPLATES_DIR and PLAN_FILES_DIR.
+
+    Args:
+        return_as: Whether to return the paths of the files instead of just the filenames.
+            - "absolute_paths": Return the absolute paths of the files.
+            - "relative_paths": Return the relative paths of the files.
+            - "filenames": Return the filenames only.
 
     Returns:
         dict with keys "plan_files" and "template_plan_files", each containing
@@ -40,7 +50,39 @@ def load_plan_and_template_files() -> dict[str, list[str]]:
         template_plan_files = [f.name for f in TEMPLATES_DIR.glob("*.json") if f.is_file()]
         template_plan_files.sort()
 
-    return {"plan_files": plan_files, "template_plan_files": template_plan_files}
+    if return_as == "absolute_paths":
+        return {
+            "plan_files": [str(PLAN_FILES_DIR / f) for f in plan_files],
+            "template_plan_files": [str(TEMPLATES_DIR / f) for f in template_plan_files],
+        }
+    elif return_as == "relative_paths":
+        return {
+            "plan_files": [str(PLAN_FILES_DIR_RELATIVE / f) for f in plan_files],
+            "template_plan_files": [str(TEMPLATES_DIR_RELATIVE / f) for f in template_plan_files],
+        }
+    elif return_as == "filenames":
+        return {
+            "plan_files": plan_files,
+            "template_plan_files": template_plan_files,
+        }
+    else:
+        raise ValueError(f"Invalid return_as: {return_as}")
+
+
+def load_plan_file(plan_file: Union[str, Path], relative_path: bool = False) -> List[Dict[str, Any]]:
+    # Try loading the file as a relative path.
+    if relative_path:
+        try:
+            with open(REPO_PATH / Path(plan_file), "r") as f:
+                return json.load(f)
+        except Exception as e:
+            raise ValueError(f"Failed to load plan file {plan_file} as a relative path: {e}")
+    # Try loading the file as an absolute path.
+    try:
+        with open(plan_file, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        raise ValueError(f"Failed to load plan file {plan_file} as an absolute path: {e}")
 
 
 if __name__ == "__main__":
@@ -81,7 +123,17 @@ if __name__ == "__main__":
     print(f"TEMPLATES_DIR_RELATIVE:\t\t{TEMPLATES_DIR_RELATIVE}")
     print()
 
-    print("Plan and template files:")
-    plan_and_template_files = load_plan_and_template_files()
+    print("Plan and template files with paths:")
+    plan_and_template_files = load_plan_and_template_files(return_as="absolute_paths")
+    rich.pretty.pprint(plan_and_template_files)
+    print()
+
+    print("Plan and template files with relative paths:")
+    plan_and_template_files = load_plan_and_template_files(return_as="relative_paths")
+    rich.pretty.pprint(plan_and_template_files)
+    print()
+
+    print("Plan and template files with filenames:")
+    plan_and_template_files = load_plan_and_template_files(return_as="filenames")
     rich.pretty.pprint(plan_and_template_files)
     print()

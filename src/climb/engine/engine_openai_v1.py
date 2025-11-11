@@ -1,6 +1,8 @@
 import copy
+import json
 import re
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 
 import pydantic
@@ -18,6 +20,7 @@ from climb.common import (
     ToolSpecs,
     UIControlledState,
 )
+from climb.common.plan_files import REPO_PATH, load_plan_and_template_files
 from climb.common.utils import check_extra_available, d2m, engine_log, m2d, update_templates
 from climb.db import DB
 from climb.tool import list_all_tool_names, list_all_tool_specs
@@ -187,1025 +190,6 @@ they left off!
 ===============
 """
 
-
-EPISODE_DB = [
-    {
-        "episode_id": "ENV_1",
-        "selection_condition": None,
-        "episode_name": "Upload data files",
-        "episode_details": """
-- Introduce yourself as an AI assistant that will help the user with their clinical machine learning study.
-- Ask the user if they have their data file(s) ready as a CSV file. Explain briefly what a training dataset and a test \
-dataset are. Tell the user that they have to upload their training dataset, and they can also upload a test dataset if \
-they have it.
-- Ask the user if their datasets are spread across multiple files. Explain that if they are, we can handle merging them \
-into a single train or test dataset. Ask them to upload all the relevant files they have.
-- Wait for user response.
-- If the user has files ready, proceed to summoning the tool. Otherwise, STOP the task.
-- Then summon the `upload_data_multiple_files` tool so that the user can upload their data file(s).
-- Finally, confirm with the user which file(s) are the training dataset and which are the test dataset (if applicable). If \
-it is clear from the filenames, suggest this to the user and ask for confirmation.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": "Do no process the data files in any way during this step. We will handle that in the next steps.",
-        "tools": ["upload_data_multiple_files"],
-    },
-    {
-        "episode_id": "ENV_2",
-        "selection_condition": None,
-        "episode_name": "Check data file(s) can be loaded",
-        "episode_details": """
-I. Loading.
-Generate code to check whether the data file(s) can be loaded with `pd.read_csv(<file_path>)`, as that is how the \
-tools expect it.
-
-CHECK that the loaded dataframe has MORE THAN ONE column and more than one row - otherwise it usually \
-means the separator or delimiter is wrong. Try to find a way to load the file (e.g. try different delimiters), and \
-then save the modified file in way that can be loaded with `pd.read_csv(<file_path>)`. Name this file with the suffix \
-`_fixed` in the filename.
-
-If not possible, suggest to the user that they fix the data and upload it again.
-
-II. Column headers (do this SEPARATELY, AFTER "I. Loading").
-- Check if all uploaded data files have proper column headers (header row with column names).
-- For each file, generate code to:
-  - Print the first few rows to inspect the structure (use `print(df.head())`)
-  - After the code gets executed, look at the output and determine if the first row contains column names or data values
-  - If the first row appears to be data rather than column names, ask the user what the column names should be
-- IF files are missing headers:
-  - Discuss with the user what each column represents and what the column names should be
-  - Show the user the first few rows of data to help them identify what each column contains
-  - Ask the user to provide appropriate column names for each column
-  - RE-LOAD the original file(s), NOT _fixed ones, using the correct delimiter etc., but this time giving the column names \
-that the user provided. Overwrite the _fixed files with the new ones.
-- IF files already have proper headers, confirm this with the user and proceed
-
-III. Sense check the final files:
-- Ensure all files have consistent and meaningful column names before proceeding with analysis, write code to print the \
-column names from each file. And check with the user if everything is OK.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": """
-- You MUST NOT use any tool here. DO NOT SUMMON ANY TOOLS.
-- You MUST generate code in this step!
-- So, your response MUST have:
-DEPENDENCIES:
-```
-pandas
-```
-CODE:
-```
-... your code to complete the episode ...
-```
-
-IMPORTANT:
-- COMPLETE ALL THE STEPS. Do not rush to finish. Ask the user when necessary.
-- If the user has provided both a training and a test dataset files, you must check (and re-save if needed) *both*.
-- If the user has provided multiple files, you must check (and re-save if needed) *all* of them!
-""",
-        "tools": [],
-    },
-    {
-        "episode_id": "DP-F_1",
-        "selection_condition": None,
-        "episode_name": "Merge multiple data files",
-        "episode_details": """
-I. Lay out the situation:
-- If there are multiple files for the training and/or test dataset, tell the user that you will have to merge them into a single file now.
-- Ask if some files contain the same data, so can be stacked, or if the files differ and need be merged by some key.
-- Ask if there is a unique key that can be used to merge the files. Tell the user it is OK to be unsure, and that you will help them figure it out.
-
-You will first stack any files if needed (step II), then merge with any other files if needed (step III).
-
-II. Stack files (if applicable):
-- If files can be stacked, confirm with the user that they are OK with this.
-- Check that the column names match for all the files that you intend to stack.
-    - If they do not match, work with the user to harmonize them and then stack the files.
-- Save the stacked files with the suffix `_stacked` in the filename.
-- Print out the number of rows and columns in each original file, and then the stacked file. \
-Sense check this, and check with the user if everything is OK.
-
-III. Merge files (if applicable):
-- If there is no unique key, ask if one can be created by creating a unique combination of columns.
-- Columns can have different names in different files, so you may need to \
-confirm whether similar columns names refer to the same column across the files, make you best guess and suggest column matches if the user is unsure.
-- Generate code to print the columns names from both files. Look at these and suggest to the user which columns \
-could contain the same information under different names and therefore should be matched. Ask the user to confirm the matches.
-- Generate code to re-name the matched columns to the same name in both files and then merge the files into a single training \
-dataset (and a single test dataset if applicable). The first attempt to merge should be an inner join. This should be done \
-using the unique key or combination of columns.
-- Save the merged datasets with the suffix `_merged` in the filename.
-- Generate code to sense check the merged datasets to ensure that the merge was successful, using the following checks:
-    - show the number of rows lost in the merge. i.e. the number of rows in the largest of the original datasets minus the number of rows in the merged dataset.
-    - show the number of NaN values introduced in the merge.
-
-IV. Sense check the final datasets:
-- Ask the user to confirm that the merge was successful, by reviewing the ``_merged.csv` file in the working directory tab.
-- If not successful, ask the user to provide more information to help resolve the issue and re-run the merge according to the feedback.
-- When the merge is successful, proceed to the next step.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": """
-- You MUST NEVER skip this step if the user has multiple files for either the training and/or test dataset.
-- You MUST NOT use any tool here. DO NOT SUMMON ANY TOOLS.
-- You MUST generate code in this step!
-
-- If the user has provided both a training and a test dataset files, you must check *both*.
-""",
-        "tools": [],
-    },
-    {
-        "episode_id": "ENV_3",
-        "selection_condition": None,
-        "episode_name": "Check hardware",
-        "episode_details": """
-Use the `hardware_info` tool to get information about the user's hardware. Using the report, determine whether the \
-user's hardware is suitable for the task. As a rough guide, we want a machine with a CPU with at least 4 cores, \
-16GB of RAM, and a GPU with at least 4GB of memory. If the user's hardware is not suitable, suggest they find a \
-machine that meets these requirements or use a cloud service, but allow the option to proceed anyway.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": None,
-        "tools": ["hardware_info"],
-    },
-    {
-        "episode_id": "INFO_1",
-        "selection_condition": None,
-        "episode_name": "High-level information from the user",
-        "episode_details": """
-Ask the user whether they would like to provide high-level information about the dataset, especially:
-    - How is it structured (what does a row or a column represent)?
-    - Any background information about the data.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": f"""
-- DO NOT issue {TASK_COMPLETED_INDICATOR} in your first response - otherwise the user will not be able to respond (task will be finished)!
-- Do not bombard the user with too many questions at once, stick to what is most relevant.
-""",
-        "tools": [],
-    },
-    {
-        "episode_id": "INFO_2",
-        "selection_condition": None,
-        "episode_name": "Experiment setup and research question from the user",
-        "episode_details": """
-1. Ask the user to describe the experiment setup and the research question they wish to investigate.
-2. Confirm with the user what the name of the target column in their dataset is.
-3. (Conditional step) Only IF you suspect that the user wants to do SURVIVAL ANALYSIS, confirm with the user that (A) \
-the target column represents the event (usually 1 = event, and 0 = censoring) and (B) that they have a column that \
-represents the time to the event. Make a mental note of this. If the user has columns that can be transformed into \
-these, that is also not a problem, and another agent will handle this later.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": None,
-        "tools": [],
-    },
-    {
-        "episode_id": "INFO_3",
-        "selection_condition": None,
-        "episode_name": "Assess data suitability and tool support",
-        "episode_details": """
-Given what the user has told you, ask yourself two things:
-    Q1: Is the data suitable for the task?
-        > Example problem: the data is in a format that is not supported by the tools (e.g. time series data).
-        > Example problem: more than one row per patient, but the tools expect one row per patient.
-        > Think of any such problems...
-    Q2: Does the AutoPrognosis set of tools that you have access to support the task?
-- If the answer to Q1 is NO, think whether the data can be somehow transformed to fit the task. If you think this is \
-possible, suggest this to the user. If not, suggest how the user can get the right data.
-- If the answer to Q2 is NO, apologize to the user, mention that your capabilities are still being enhanced, but for \
-now this task cannot be performed.
-- If on the basis of the above you think the task CAN be performed, proceed to the next step. Otherwise, ask the \
-user if you can help them with anything else.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": """
-DO NOT actually execute the AutoPrognosis tools here! Use their specifications for your information, but DO NOT \
-invoke them!
-""",
-        "tools": [
-            "autoprognosis_classification_train_test",
-            "autoprognosis_regression_train_test",
-            "autoprognosis_survival_train_test",
-        ],
-    },
-    {
-        "episode_id": "EDA_1",
-        "selection_condition": None,
-        "episode_name": "Exclude/keep columns",
-        "episode_details": """
-1. Generate code to list the names of all the columns in the dataset and print this clearly to the user.
-    - IF the user provided both a training and a test dataset, you must (1) *clearly* list the columns of both datasets. \
-and (2) programmatically check that the columns are the same in both datasets.
-    - IF the columns are not the same, work with the user to decide which columns to keep and which to exclude. You must \
-achieve the same columns in both datasets. IF this is not possible STOP the task.
-
-2. Ask the user if they would like to exclude certain columns from the analysis, or conversely, only keep certain columns. \
-If so, find out which columns these are. Then generate code to drop the columns that the user wants to exclude or to \
-only keep the columns that the user wants to keep. If the user provides no preference, do NOT make any changes at this step. \
-Save the modified dataset(s) with the suffix `_user_cols` in the \
-filename.
-
-3. If you did any column exclusion, confirm with the user that there are no more columns to exclude. If so, finish the \
-task, otherwise, work with the user to finalize column removal.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": """
-When generating this code, print the columns line by line (not as one list) so that the user can easily see them.
-""",
-        "tools": [],
-    },
-    {
-        "episode_id": "EDA_1B",
-        "selection_condition": None,
-        "episode_name": "Check column types",
-        "episode_details": """
-1. Generate code to examine the data types of all columns in the dataset. Use both `df.dtypes` and \
-`pd.api.types.infer_dtype(df[c])` for each column to check for mixed types or inconsistencies.
-    - IF the user provided both a training and a test dataset, check data types for both datasets and \
-ensure they are consistent between training and test sets.
-    - Print the results clearly to the user, showing both the pandas dtype and the inferred type for each column.
-
-2. Review the data types with the user and discuss what the appropriate data type should be for each column based on \
-the intended analysis. Pay special attention to:
-    - Columns that should be categorical but are currently numeric. Categorical columns are allowed to be string ("object") type.
-    - Date/time columns that need to be converted from strings
-    - Numeric columns that may have been read as strings due to formatting issues
-    - Mixed type columns that need cleaning
-
-3. Generate code to convert data types as agreed with the user. Save the dataset(s) with corrected data types \
-using the suffix `_typed` in the filename.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": """
-When examining data types, be thorough in checking for potential issues like:
-- Numeric columns stored as strings due to formatting (commas, currency symbols, etc.)
-- Categorical variables encoded as numbers that should remain categorical
-- Date columns stored as strings
-- Mixed types within columns that need cleaning
-Print the data type information in a clear, column-by-column format for easy review.
-""",
-        "tools": [],
-    },
-    {
-        "episode_id": "EDA_2",
-        "selection_condition": None,
-        "episode_name": "Perform EDA",
-        "episode_details": """
-Perform exploratory data analysis on the data using the `EDA` tool.
-
-If the user provided both a training and a test dataset, you must use the tool with the TRAINING dataset only.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": """
-**IMPORTANT**: This step needs executing a TOOL called `EDA`. **DO NOT** write your own code for this step!
-
-- The `target` (name of the target column) argument for the EDA tool should be clear from previous steps, in most cases. \
-PROVIDE it to the tool unless definitely not possible.
-- After executing the tool, provide the user with a summary of what you see in the EDA. Use your best understanding of \
-data science and machine learning. **DO NOT** make suggestions of what needs to be done next! That will be handled \
-later in the process. **Just summarize your learnings.**
-- Ask the user if they want to discuss the EDA results. If they do, answer their questions as needed. DO NOT make \
-any modifications to the data at this stage, as that will be handled later in the process.
-""",
-        "tools": ["EDA"],
-    },
-    {
-        "episode_id": "EDA_3",
-        "selection_condition": None,
-        "episode_name": "Generate descriptive statistics",
-        "episode_details": """
-- Ask the user if they would like to generate descriptive statistics. If yes:
-- Generate descriptive statistics using the `descriptive_statistics` tool. If the user provided both a training and a \
-test dataset, you must use the tool with the TRAINING dataset only.
-- Suggest that the user reviews the EDA and descriptive statistics at this stage. Ask them if they have reviewed \
-these and if they have any questions (answer as needed). Only then proceed to the next step.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": """
-(1) After executing the descriptive statistics tool, provide the user with a summary of what you found out. Use your \
-best understanding of medical research and data science.
-(2) Check the tool logs for the names of the figures generated by the tool. Think about which ones are most important \
-(let's say five most important ones). Then use your rules for showing images to the user to show these images for them to review.
-
-**IMPORTANT**: to show an image simply include `<WD>/image_name.extension` in your message. Always use this EXACT format when showing an image!
-
-**DO NOT** make suggestions of what needs to be done next! That will be handled later in the process.
-**Just summarize your learnings here.**
-""",
-        "tools": ["descriptive_statistics"],
-    },
-    {
-        "episode_id": "EDA_4",
-        "selection_condition": "Only if data analysis reveals fewer than 50 samples",
-        "episode_name": "Warn about small sample size if necessary",
-        "episode_details": """
-ONLY IF there are fewer than about 50 samples, warn the user that the results may not be reliable as there is not \
-enough data. Allow to continue if the user is happy with that. SKIP this step DIRECTLY and COMPLETELY if there are more than \
-50 samples.
-
-Note: this refers to the number of samples in the training dataset.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": None,
-        "tools": [],
-    },
-    {
-        "episode_id": "EDA_5",
-        "selection_condition": "If the user's problem is SURVIVAL ANALYSIS",
-        "episode_name": "Show Kaplan-Meier plot",
-        "episode_details": """
-Reminder: this task is only relevant if the user's problem is SURVIVAL ANALYSIS.
-
-- Ask the user if they would like to see a Kaplan-Meier plot for the survival analysis. If yes, do the following:
-    1. Make sure that you know exactly which column represents the time to the event and which column represents the event.
-    2. Generate code to show the Kaplan-Meier plot. Hint: use the `lifelines` library.
-    3. Show the plot to the user.
-- If they do NOT want this, SKIP this step.
-
-Do this for the training dataset. If the user also provided a test dataset, ask them if they would like to see \
-the plot for the test dataset as well and repeat the process if they do.
-""",
-        "coordinator_guidance": """
-Review the conversation history to see if the user's task is likely to be survival analysis. If it seems like it is and the user would like to see it, \
-you MUST issue this episode, do NOT skip it in that case! If the user do NOT want this, SKIP this.
-""",
-        "worker_guidance": """
-Important:
-* To show the plot you must save it as an image file in the working directory.
-* After the code has been run, and if the plot was successfully saved (check CURRENT WORKING DIRECTORY contents to \
-confirm this), show it to the user using the `<WD>/image_name.extension` format in your next message.
-""",
-        "tools": [],
-    },
-    {
-        "episode_id": "DP-F_2",
-        "selection_condition": None,
-        "episode_name": "Free text field data extraction",
-        "episode_details": """
-- Describe to the user what the `feature_extraction_from_text` tool does and what it's useful for.
-- Ask the user if any of the fields are free text fields that they would like to extract usable features from. Remind the \
-user they can view the data in the working directory to see the columns, if needed.
-- If there are no free text fields, skip the rest of this episode.
-- If there are free text fields, ask the user if they would like to use the `feature_extraction_from_text` tool to extract \
-features from the free text fields.
-- Ask the user to confirm which columns are free text fields that they would like to extract features from and then list the \
-topics they would like to extract from the text. Ask them at the same time to provide any essential synonyms that must be looked for.
-- Take the user's response and form the most comprehensive topic_dicts json string you can. This means you must \
-include the 10 most likely synonyms for each topic.
-- Call the `feature_extraction_from_text` tool with the topics_dict and other parameters needed to extract the features from the free text fields.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": """
-When compiling the topics_dict, ensure that the keys are the column names and the values are dictionaries with the \
-topics as keys and lists of synonyms as values. The synonyms should be words that are likely to appear in \
-the text and are related to the topic. For example:
-{
-    "column1": {
-        "topic1": ["synonym1", "synonym2", ...],
-        "topic2": ["synonym3", "synonym4", ...]
-    },
-    "column2": {
-        "topic1": ["synonym1", "synonym2", ...],
-        "topic3": ["synonym5", "synonym6", ...]
-    },
-}
-The column names are those confirmed as free text fields by the user. The topics are the topics the user has specified they are \
-interested in extracting into categorical columns. For the list of synonyms, you should create a list of the top ten terms \
-that you think are most likely to appear in the text and are related to the topic.
-
-NOTE: You MUST make the most comprehensive list of synonyms. Make sure to include the shortest feasible version of each synonym \
-that is specific to the topic. For example, if the topic is "treatment", the synonyms should be "treatment", "treat", "therapy", \
-etc. NOT "medical treatment", "drug therapy", etc.
-NOTE: You MUST NOT ask the user to suggest the synonyms. You MUST use your best judgment to determine the most appropriate \
-synonyms for each topic.
-""",
-        "tools": ["feature_extraction_from_text"],
-    },
-    {
-        "episode_id": "DP-BM_1",
-        "selection_condition": None,
-        "episode_name": "Column background information",
-        "episode_details": """
-Go through EACH columns with the and gather background information -- generate code to list the columns first!
-    - IF you have some idea what the column represents, provide the user with a short summary of this. Ask the user if \
-this is correct, and if not, ask them to provide the correct information.
-    - IF you are not sure what the column represents, ask the user to provide this information about the column straight away.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": """
-- Do *NOT* ask about one column at a time, but rather go through several columns at once, so that the process is more efficient.
-- If there is a reasonable number of columns, roughly < 30, ensure that you have gone through all of them.
-- If there are many columns, focus on the most important ones, or the ones that are most likely to be relevant to the \
-task. Once you have done this, ask the user if they would like to continue with the remaining columns.
-- *ALWAYS* go over the columns whose meaning is not clear to you - and ask the user for clarification.
-""",
-        "tools": [],
-    },
-    {
-        "episode_id": "DP-M_1",
-        "selection_condition": None,
-        "episode_name": "Represent missing data as NaN",
-        "episode_details": """
-Any missing data must be first represented as `numpy.nan` values.
-
-1. Check the results from the EDA step to figure out if there are non-standard NaNs. If you have reason to suspect \
-this is the case, list for the user, what specific values you suspect are used to represent missing data. Ask the \
-user to confirm if these are indeed used to represent missing data.
-**Note:** if you suspect there are no non-standard NaNs, tell this to the user and confirm. If the user confirms, \
-you can move on with the plan.
-
-2. Generate code to replace the non-standard NaNs with `numpy.nan` values. Save this modified dataset with the \
-suffix `_nan` in the filename. IF there is a test set, you must apply the same transformation to it.
-""",
-        "coordinator_guidance": "This task should come before DP-M_2,3,4 tasks, as it affects them.",
-        "worker_guidance": """
-**IMPORTANT**
-- Do NOT assume some "typical" non-standard NaN placeholders.
-- Always check based on the data analysis results, and CONFIRM wit the user what the placeholders are.
-Otherwise you could end up replacing values that are not actually missing data!
-""",
-        "tools": [],
-    },
-    {
-        "episode_id": "DP-M_2",
-        "selection_condition": "Only if missing data is present",
-        "episode_name": "Consider dropping columns with high missing values",
-        "episode_details": """
-If there is any missing data in the dataset:
-    - Generate code to show per-column % missing values. Show these in descending order of % missing values.
-    - Suggest that as a rule of thumb any columns with 80%+ missing values should be removed. Ask the user what their \
-acceptable threshold is for including a column in the analysis.
-    - Ask the user if they are happy to drop the columns that exceed this threshold? Do they want to keep some \
-columns that exceed this threshold? If so, which ones?
-    - Given the user responses, generate code to drop the appropriate columns. IF there is a test set, you *must* apply \
-the same transformation to it.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": """
-**IMPORTANT**: When generating code to show per-column % missing values:
-Remember that pandas shortens the printed output of the dataframe.
-Use the statements:
-pd.options.display.max_rows = None
-pd.options.display.max_columns = None
-in your code, to ensure that all the results are shown!
-""",
-        "tools": [],
-    },
-    {
-        "episode_id": "DP-M_3",
-        "selection_condition": "Only if missing data is present",
-        "episode_name": "Consider dropping rows with missing values",
-        "episode_details": """
-Generate code to show:
-    - per-column % missing values,
-    - % of total rows that have missing values.
-If there are still missing values in the dataset:
-    - If the user's intended TARGET VARIABLE has missing values, we must make sure to handle this. Ask them if \
-they are happy to drop rows with missing values in the target variable. Point out to the user that imputing the \
-target variable is not recommended.
-    - Ask the user if they are happy to drop rows with missing data (in any column), or if they are happy to use \
-an imputation tool (HyperImpute). Suggest that imputation is usually the better option, especially if most rows \
-have missing values. If the percentage of rows with missing values is high, strongly suggest using imputation \
-rather than dropping rows, due to the risk of losing valuable data.
-    - If they want to drop the rows, generate code to do so. IF there is a test set, you *must* apply the same \
-transformation to it.
-    - If they want to use HyperImpute, complete your task, the next agent will handle this.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": "You MUST NOT use HyperImpute tool! The next agent will handle this.",
-        "tools": [],
-    },
-    {
-        "episode_id": "DP-M_4",
-        "selection_condition": "Only if missing data is present",
-        "episode_name": "Impute missing values",
-        "episode_details": """
-Step 1. Generate code to show:
-    - per-column % missing values,
-    - % of total rows that have missing values.
-Step 2. Explain to the user what the hyperimpute tool will do and check they are happy to use it.
-Step 3. If there are still missing values in the dataset:
-    - Use the `hyperimpute_imputation_train_test` tool (do not write own code for imputation).
-After imputation, generate code to show the per-column % missing values again, and confirm with the user that there \
-are no more missing values.
-""",
-        "coordinator_guidance": """
-**IMPORTANT**:
-- If the dataset has ANY missing values at all, we MUST IMPUTE THEM before we can proceed to the predictive modelling \
-stage. Hence, you MUST issue this episode IF there are missing values.
-""",
-        "worker_guidance": """
-* Use the LATEST version of the dataset, after all the previous steps have been completed. Check the conversation \
-history and the modification date-time of the files in the working directory to ensure this.
-* Save the imputed dataset(s) with a suffix `_hyperimputed` in the filename.
-
-* IF there is a test set, you *must* provide BOTH the training and test dataset paths to the tool. It will fit on the \
-training data and transform the test data.
-""",
-        "tools": ["hyperimpute_imputation_train_test"],
-    },
-    {
-        "episode_id": "DP-AM_1",
-        "selection_condition": None,
-        "episode_name": "Discuss data preprocessing with the user",
-        "episode_details": """
-Discuss with the user whether they have any particular data preprocessing steps in mind. work with them to generate \
-code to perform these steps. **IMPORTANT** Since your tools down the line support standard preprocessing like \
-normalization, feature selection, etc., DO NOT suggest these here (unless the user explicitly asks to do these). \
-This step is about whether the user has any specific data transformations in mind, that have medical meaning.
-""",
-        "coordinator_guidance": """
-This is a LONG episode and it involves a lot of back-and-forth with the user.
-The worker may have many things to do here, to satisfy the user needs.
-""",
-        "worker_guidance": """
-###### User interaction:
-- **IMPORTANT:** You MUST keep asking the user if they have any MORE preprocessing steps in mind. The user may \
-want to do multiple things here! You must keep asking until the user says (1) they are finished or (2) they do not have any \
-more preprocessing steps in mind or (3) they want to go on. Only then can you proceed to the next episode (if any).
-###### Data:
-- **IMPORTANT:** You must work from the latest version of the dataset, after missing data handling!
-- **IMPORTANT:** If the user has provided both a training and a test dataset, you must ensure that whatever \
-preprocessing steps you do on the training dataset, you must also do on the test dataset. Note that you must not \
-use the test dataset to inform the preprocessing steps on the training dataset - this is a critical best practice.
-""",
-        "tools": ["EDA", "descriptive_statistics"],
-    },
-    {
-        "episode_id": "DP-AM_2",
-        "selection_condition": None,
-        "episode_name": "Feature selection",
-        "episode_details": """
-- Describe to the user what the `feature_selection` tool does and what it's useful for.
-- Ask the user if they want to use this tool to select the most important features in the dataset.
-- **IMPORTANT** Only if the user says YES, summon the `feature_selection` tool. If NOT, SKIP this step.
-- Use the `feature_selection` tool to find the most important features in the dataset.
-- Suggest to the user that they may want to further drop some or all features that are not in the list of important \
-features,as it can help simplify the task and improve the performance of machine learning models.
-- List the features that are selected as important and the features that are not important. Ask the user if they \
-would like to drop any of the unimportant features.
-- If so, generate code to do this.
-- If not, keep all features and go on.
-- Save this modified dataset with a suffix `_selected_features` in the filename.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": """
-**IMPORTANT**
-If the task is survival analysis, the you must do the following BEFORE running the feature selection tool:
-1. Confirm what is the TIME variable (the variable that has the time index representing event time)
-2. Confirm what is the EVENT variable (the variable that represents the event itself, usually binary)
-Do NOT remove these columns in the feature selection step!
-
-If the user has provided both a training and a test dataset, you must run the tool on the training dataset only. Then, \
-if the user wants to drop any columns, you must apply the same transformation to BOTH datasets.
-""",
-        "tools": ["feature_selection"],
-    },
-    {
-        "episode_id": "DP-AM_3",
-        "selection_condition": None,
-        "episode_name": "Data valuation",
-        "episode_details": """
-- Describe to the user what the `knn_shapley_data_valuation` tool does and what it's useful for.
-- Ask the user if they want to use this tool to discover which of the samples are the best and worst predictors.
-- Only if the user says yes, summon the `knn_shapley_data_valuation` tool, otherwise skip this step.
-- Use the `knn_shapley_data_valuation` tool to find which of the samples are the best and worst predictors.
-- Suggest to the user that they may want to further drop all the samples that are not in the list of best predictors.
-- State the number of samples that are selected as good and bad predictors.
-- List the sample indices that could be dropped due to being bad predictors. Ask the user if they \
-would like to drop any of the samples deemed as poor predictors.
-- If so, generate code to do this.
-- Save this modified dataset with a suffix `_data_valuation_samples` in the filename.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": """
-**IMPORTANT**
-If the user has provided both a training and a test dataset, you must run the tool on the training dataset only. Then, \
-""",
-        "tools": ["knn_shapley_data_valuation"],
-    },
-    {
-        "episode_id": "DP-AM_4",
-        "selection_condition": None,
-        "episode_name": "Outlier detection",
-        "episode_details": """
-- Describe to the user what the `outlier_detection` tool does and what it's useful for.
-- Ask the user if they want to use this tool to discover and remove outliers in the dataset.
-- Only if the user says yes, summon the `outlier_detection` tool, otherwise skip this step.
-- Use the `outlier_detection` tool to find and remove the outliers in the dataset.
-- Tell the user how many outliers were found and removed.
-- Ask the user if they are happy with the removal of the outliers. If yes, this stage is complete. \
-If no, ask them if they would like to revert to using the dataset they had before summoning the tool, with the outliers.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": """
-**IMPORTANT**
-If the task is survival analysis, then you must do the following BEFORE running the feature selection tool:
-1. Confirm what is the TIME variable (the variable that has the time index representing event time)
-2. Confirm what is the EVENT variable (the variable that represents the event itself, usually binary)
-Do NOT remove these columns in the feature selection step!
-
-If the user has provided both a training and a test dataset, summon the tool twice, once for the training dataset \
-and once for the test dataset.
-""",
-        "tools": ["outlier_detection"],
-    },
-    {
-        "episode_id": "DP-AM_5",
-        "selection_condition": None,
-        "episode_name": "Balance the dataset",
-        "episode_details": """
-- Describe to the user what the `balance_data` tool does and what it's useful for.
-- Generate code to show the user the class distribution of the target variable.
-- Ask the user if they want to better balance the dataset by oversampling or undersampling the classes, \
-making sure to explain why this can be beneficial for the model.
-- If no, skip the rest of this episode. If yes, provide information about the different options for \
-balancing the data (Undersampling, Oversampling, SMOTE, and Combine). Describe when each method is best suitable.
-- Recommend which method is best given the class distribution of the target variable calculated earlier.
-- Ask the user which one they would like to use.
-- use the `balance_data` tool to balance the data. 
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": """
-If the user's task is regression or survival analysis skip this whole episode as it is only relevant for classification problems.
-- **IMPORTANT:** You must work from the latest version of the dataset, after missing data handling!
-""",
-        "tools": ["balance_data"],
-    },
-    {
-        "episode_id": "DP-AM_6",
-        "selection_condition": None,
-        "episode_name": "Data Suite Insights",
-        "episode_details": """
-- Ask the user if they are interested in understanding regions of your data where a model will perform poorly even though \
-the the data will not be directly improved by the insights.
-- Describe to the user what the `data_suite_insights` tool does and what it's useful for.
-- If yes, use the `data_suite_insights` tool to generate insights into the dataset. The tool will return \
-exemplar records that the user may want to collect more records similar to in order to improve the model's performance.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": """
-If the user is not interested in understanding regions of your data where a model will perform poorly, skip the rest of this step.
-If the user's task is regression or survival analysis skip this whole episode as it is only relevant for classification problems.
-- **IMPORTANT:** You must work from the latest version of the dataset, after missing data handling!
-""",
-        "tools": ["data_suite_insights"],
-    },
-    {
-        "episode_id": "MLC_1",
-        "selection_condition": None,
-        "episode_name": "Confirm ML problem type",
-        "episode_details": """
-Confirm with the user to what the target variable is and whether it is a classification, regression, or survival \
-analysis task - provide your best suggestion based on the message history and check with the user if this is correct.
-
-**IMPORTANT**: You must **explicitly** ask the user for confirmation on this, as this is a critical decision.
-""",
-        "coordinator_guidance": "Issue this task on its own first",
-        "worker_guidance": """
-Once you have the information, mark this task as completed! Do not proceed to running the study, this will be done later.
-""",
-        "tools": [],
-    },
-    {
-        "episode_id": "MLC_2-SURVIVAL",
-        "selection_condition": "Only if the ML problem is SURVIVAL ANALYSIS",
-        "episode_name": "Check time and event columns",
-        "episode_details": """
-ONLY IF the task is SURVIVAL ANALYSIS, you need to make sure both the *time* and *event* (target) columns are present \
-in the data. Check what format the time is in. The tool expects the time to be a number (integer or float) \
-representing a duration until the event. If the time is in a date-like format, you need to convert it to a number \
-representing the duration. Generate code to do this.
-""",
-        "coordinator_guidance": """
-ONLY issue this task if the user has confirmed the problem setting is SURVIVAL ANALYSIS.
-IF the problem is CLASSIFICATION or REGRESSION, you MUST SKIP this task. Do NOT issue it to the worker agent in that case.
-""",
-        "worker_guidance": """
-Use your best understanding of the data from EDA to determine what should be considered the starting point for the \
-time and what units to use. This is a tricky step, think carefully and step by step. The user will appreciate your \
-help here!
-""",
-        "tools": [],
-    },
-    {
-        "episode_id": "MLC_3",
-        "selection_condition": None,
-        "episode_name": "Check for data leakage",
-        "episode_details": """
-We need to check for data leakage at this point. This is a critical step to ensure the integrity of the machine \
-learning study. Data leakage is when information that would not be available at the time of prediction is used in \
-the model. This can lead to overly optimistic results and a model that cannot be used in practice.
-
-Follow the below substeps EXACTLY.
-- (1) Explicitly list ALL THE COLUMNS (the current columns, after all the preprocessing steps we have done) except \
-the target (and also except the event in case of SURVIVAL ANALYSIS). Do this by generating code. REMEMBER to use the \
-LATEST version of the dataset!
-- (2) Consult the message history, to check the meaning and details of each of these columns. Write a bullet point \
-list of columns that you suspect are likely to represent a data leak, with a reason for each. Be careful with columns \
-that represent information from different time points, especially in the survival analysis setting, as they may reveal \
-the target. Remember, information not available at the time of prediction is likely data leakage.
-Explain to the user why data leakage is a problem and suggest removing them. Example:
-    - `cause_of_death`: This column is likely to reveal the target variable `death`.
-    - `column_name`: Reason for suspecting a data leak.
-    ...
-NOTE: If there are no such columns, explicitly state that you do not suspect any data leakage, but ask the user to double check this.
-NOTE: Since you might not have picked up all the data leakage columns, always ask the user to double-check whether they think there are any others.
-- (3) If the user wants to exclude any of the columns discussed, GENERATE THE CODE to do so STRAIGHT AWAY. This cannot be done later!
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": """
-**IMPORTANT**
-- This is an important step that prevents data leakage. If not performed correctly, the user's ML study could be meaningless!
-- Perform all substeps STEP BY STEP - DO NOT DEVIATE FROM THESE STEPS!
-- Pause and discuss with the user at each step, don't do it all together - that's confusing. DO NOT RUSH!
-- **IMPORTANT** If writing code to drop any columns, make sure to start from the LATEST version of the dataset \
-(after missing data handling and any other preprocessing steps).
-
-FINALLY:
-If the user has provided both a training and a test dataset, you must ensure that the same columns are dropped from both datasets.
-""",
-        "tools": [],
-    },
-    {
-        "episode_id": "MLC_4",
-        "selection_condition": None,
-        "episode_name": "Check for irrelevant columns",
-        "episode_details": """
-We need to check for irrelevant columns at this point. Inclusion of irrelevant columns can lead to overfitting and \
-misleading feature importance. Hence it is important to remove them before continuing with the machine learning study.
-
-**IMPORTANT**:
-What are irrelevant columns? Here, we mean ONLY: ID columns, or any "data artifacts" that are not useful for the analysis.
-Do NOT consider columns that "may be irrelevant" based on your understanding of the data. This is a very specific check.
-
-Follow the below substeps EXACTLY.
-- (1) Now you need to check if there are any meaningless/irrelevant columns still left in the dataset. \
-Consult the message history to check the meaning and details of each of the columns to help you. Write a bullet point \
-list of columns that you suspect are irrelevant, with a reason for each. Explain to the user why irrelevant columns \
-are a problem and suggest removing them. Example:
-    - `patient_id`: This column is an identifier and does not contain any useful information for the analysis.
-    - `column_name`: Reason for suspecting an irrelevant column.
-    ...
-NOTE: If there are no such columns, explicitly state that you do not suspect any irrelevant columns, but ask the user to double check this.
-NOTE: Since you might not have picked up all the irrelevant columns, always ask the user to double-check whether they think there are any others.
-- (2) If the user wants to exclude any of the columns discussed, GENERATE THE CODE to do so STRAIGHT AWAY. This cannot be done later!
-- (3) If the user wants to keep all columns or go on, you MUST SKIP this.
-
-(4) Finally, list the feature columns that are left, and check that the user is happy to use all of these features \
-in the machine learning study. This is to make it clear to the user what features we are going to use and serves as \
-a final check.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": """
-**IMPORTANT**
-- This is an important step that prevents irrelevant columns from being used in the ML study.
-- Perform all substeps STEP BY STEP - DO NOT DEVIATE FROM THESE STEPS!
-- Pause and discuss with the user at each step, don't do it all together - that's confusing. DO NOT RUSH!
-- **IMPORTANT** If writing code to drop any columns, make sure to start from the LATEST version of the dataset \
-(after missing data handling and any other preprocessing steps, and after the data leakage check column removals).
-
-FINALLY:
-If the user has provided both a training and a test dataset, you must ensure that the same columns are dropped from both datasets.
-""",
-        "tools": [],
-    },
-    {
-        "episode_id": "ML_1-CLASSIFICATION",
-        "selection_condition": "Only if the ML problem is CLASSIFICATION",
-        "episode_name": "Machine learning study - classification",
-        "episode_details": """
-Perform a machine learning study using the `autoprognosis_classification_train_test` tool. Set the `mode` parameter to "all".
-After the study is done, ask the user if they want to also try using linear models only. If so, then set the `mode` parameter to "linear" and run the tool again.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": """
-**IMPORTANT NOTE**: You MUST INVOKE the tool rather than writing your own code for this step.
-
-If you receive an error that a minimum performance threshold was not met, suggest to the user the reasons as to why \
-this may be the case, and what needs to be done to improve model performance. Provide advice SPECIFIC to the user's case.
-""",
-        "tools": ["autoprognosis_classification_train_test"],
-    },
-    {
-        "episode_id": "ML_1-REGRESSION",
-        "selection_condition": "Only if the ML problem is REGRESSION",
-        "episode_name": "Machine learning study - regression",
-        "episode_details": """
-Perform a machine learning study using the `autoprognosis_regression_train_test` tool. Set the `mode` parameter to "all".
-After the study is done, ask the user if they want to also try using linear models only. If so, then set the `mode` parameter to "linear" and run the tool again.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": """
-**IMPORTANT NOTE**: You MUST INVOKE the tool rather than writing your own code for this step.
-
-If you receive an error that a minimum performance threshold was not met, suggest to the user the reasons as to why \
-this may be the case, and what needs to be done to improve model performance. Provide advice SPECIFIC to the user's case.
-""",
-        "tools": ["autoprognosis_regression_train_test"],
-    },
-    {
-        "episode_id": "ML_1-SURVIVAL",
-        "selection_condition": "Only if the ML problem is SURVIVAL ANALYSIS",
-        "episode_name": "Machine learning study - survival analysis",
-        "episode_details": """
-**IMPORTANT NOTE**: You MUST INVOKE the tool rather than writing your own code for this step.
-
-Perform a machine learning study using the `autoprognosis_survival_train_test` tool. Set the `mode` parameter to "all".
-After the study is done, ask the user if they want to also try using linear models only. If so, then set the `mode` parameter to "linear" and run the tool again.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": """
-If you receive an error that a minimum performance threshold was not met, suggest to the user the reasons as to why \
-this may be the case, and what needs to be done to improve model performance. Provide advice SPECIFIC to the user's case.
-""",
-        "tools": ["autoprognosis_survival_train_test"],
-    },
-    {
-        "episode_id": "ML_CONF",
-        "selection_condition": None,
-        "episode_name": "Conformal Prediction for Model Uncertainty",
-        "episode_details": """
-- This episode applies conformal prediction to a pre-trained model to quantify prediction uncertainty. Explain the concept of conformal prediction to the user.
-- Ask the user what miscoverage level they would like to use for the conformal prediction. Tell the user that 0.05 means a 95% confidence interval and the  default is 0.1.
-- Summon the `conformal_prediction` tool with the user suggested miscoverage level to generate prediction sets (for classification and survival) or intervals (for regression).
-    """,
-        "coordinator_guidance": """
-Ensure that the correct pre-trained model file path is provided along with up-to-date training and test CSV files.
-This tool is meant to provide a measure of uncertainty for the model's predictions, which is particularly useful for assessing 
-model reliability and guiding further data collection or model refinement.
-    """,
-        "worker_guidance": """
-For survival analysis, ensure that a valid time-to-event column is provided.
-Make sure to use the latest versions of the training and test datasets. The tool returns prediction sets (for classification and survival) 
-or intervals (for regression) in a user-friendly DataFrame format.
-If you have both a train and test dataset, pass them both to the tool. If you only have a train dataset, pass it to the tool. Do not guess what the test dataset is.
-    """,
-        "tools": ["conformal_prediction"],
-    },
-    {
-        "episode_id": "MLE_1",
-        "selection_condition": None,
-        "episode_name": "Feature importance plots - Invase",
-        "episode_details": """
-If the task is regression then skip this step.
-If the project is not a regression task, ask if the user wants to see feature importance plots with invase. 
-- If so, then use the `autoprognosis_explainer_invase` tool for classification or survival analysis tasks. Run \
-both explainer tools, one after the other, if the task type is compatible with the tool.
-If the user has provided both a training and a test dataset, use the training dataset here.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": None,
-        "tools": ["autoprognosis_explainer_invase"],
-    },
-    {
-        "episode_id": "MLE_2",
-        "selection_condition": None,
-        "episode_name": "Feature importance plots - Symbolic Pursuit",
-        "episode_details": """
-Ask if the user wants to see feature importance plots. 
-- If so, then summon the `autoprognosis_explainer_symbolic_pursuit` tool to produce the plot
-
-If the user has provided both a training and a test dataset, use the training dataset here.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": None,
-        "tools": ["autoprognosis_explainer_symbolic_pursuit"],
-    },
-    {
-        "episode_id": "MLE_3",
-        "selection_condition": None,
-        "episode_name": "Feature importance plots",
-        "episode_details": """
-Ask if the user wants to see feature importance plots. 
-- If so, then generate these with the `shap_explainer` tool \
-for regression or classification tasks, and use the `permutation_explainer` tool for survival analysis tasks. It \
-is CRITICAL to ALWAYS select `permutation_explainer` for survival tasks.
-- If NOT, you MUST SKIP this
-
-If the user has provided both a training and a test dataset, use the training dataset here.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": None,
-        "tools": ["shap_explainer", "permutation_explainer"],
-    },
-    {
-        "episode_id": "MLE_2-CLASSIFICATION",
-        "selection_condition": "The ML task is CLASSIFICATION",
-        "episode_name": "Insights on classification",
-        "episode_details": """
-If the task is a CLASSIFICATION task, ask if the user wants to see insights about which samples were \
-hard/easy/ambiguous to classify.
-- If SO, then generate these with the `dataiq_insights` tool.
-- If NOT, skip this.
-
-If the user has provided both a training and a test dataset, use the training dataset here.
-""",
-        "coordinator_guidance": """
-**IMPORTANT!*** If the result of the data IQ insights suggests that there are quite a few AMBIGUOUS and HARD samples, \
-you should ADD MLE_2X-CLASSIFICATION to the plan. This is because the user may want to consider removing these samples \
-and retraining the model.
-""",
-        "worker_guidance": None,
-        "tools": ["dataiq_insights"],
-    },
-    {
-        "episode_id": "MLE_2X-CLASSIFICATION",
-        "selection_condition": "The ML task is CLASSIFICATION; Data IQ insights reveal many AMBIGUOUS/HARD samples",
-        "episode_name": "Act on ambiguous/hard samples",
-        "episode_details": """
-FOLLOW ALL OF THESE STEPS IN ORDER:
-*Proceed to the next step once the previous step worked successfully.*
-1. Ask the user whether they want to remove some % of ambiguous and hard samples from the dataset.
-IF NO:
-* Complete the task here.
-IF YES:
-2. Confirm what % of ambiguous and hard samples the user wants to remove.
-3. **Generate code** to remove this % of ambiguous and hard samples from the dataset. Save the modified dataset with the \
-suffix `_filtered` in the filename. *NOTE* This must be done on the TRAINING dataset only!
-    - Generate code, do not use tools here.
-    - You can load the indices from the working directory - see Data IQ's output.
-    - Note: pickle is a python built-in library so there is no need to install it.
-4. Re-run the machine learning study with the `autoprognosis_classification_train_test` tool using the filtered dataset.
-5. Compare the performance of the model before and after removing the ambiguous and hard samples and confirm with the \
-user which model they prefer.
-
-6. FINALLY: Check with the user if they want to try filtering a different % of ambiguous and hard samples. If so, repeat \
-the process from step 2. Iterate with the user until they are happy with the results.
-""",
-        "coordinator_guidance": """
-Select this episode if the data IQ insights suggest that there are many AMBIGUOUS and HARD samples.
-This is because the user may want to consider removing these samples and retraining the model.
-""",
-        "worker_guidance": None,
-        "tools": ["autoprognosis_classification_train_test"],
-    },
-    {
-        "episode_id": "MLE_4",
-        "selection_condition": None,
-        "episode_name": "Subgroup analysis",
-        "episode_details": """
-Check if the user wants to perform subgroup analysis.
-
-If they do, do the following substeps in ORDER.
-**Do NOT jump to using the tool straight away, the tool will only work correctly if you follow these steps in order.** 
-
-(1) First you will need to get the subgroup definitions from the user,
-(2) Then generate code to filter the dataset by the subgroups and SAVE SEPARATE FILES files.
-(3) You will need to provide those file names to the `autoprognosis_subgroup_evaluation` as `data_file_paths` argument.
-(4) So, finally invoke the `autoprognosis_subgroup_evaluation` tool with the appropriate arguments. \
-NOTE: invoke the tool, do NOT write a message to the user (or write any code) in this last step!
-
-If the user has provided both a training and a test dataset, use the training dataset here.
-
-You may later want to discuss trying the feature importance plots for each subgroup.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": """
-Only do this if the user wants to perform subgroup analysis. Guide the user through this complex multi-step process.
-""",
-        "tools": ["autoprognosis_subgroup_evaluation"],
-    },
-    {
-        "episode_id": "MLI_1",
-        "selection_condition": None,
-        "episode_name": "Iterate with the user",
-        "episode_details": """
-Iterate with the user to get the best Machine Learning medical study that meet their needs - IF they want to do so.
-Use your best judgement to suggest how modelling performance can be improved, and what further steps can be taken.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": "If the user is happy with the results, mark this task as completed.",
-        "tools": [
-            "autoprognosis_classification_train_test",
-            "autoprognosis_regression_train_test",
-            "autoprognosis_subgroup_evaluation",
-            "autoprognosis_survival_train_test",
-            "shap_explainer",
-            "permutation_explainer",
-        ],
-    },
-    {
-        "episode_id": "END_1",
-        "selection_condition": None,
-        "episode_name": "Discuss the project and finish up",
-        "episode_details": """
-- State that it looks like the project is drawing to a close.
-- Summarize to the user what has been done in the project. Be systematic and clear. List the steps that have been \
-taken, and the results that have been obtained.
-- Ask the user if there is anything else they would like to do, or if they are happy with the results.
-- If the user wants do do extra steps, work with them to achieve this.
-- If they want to REDO particular project stages, explicitly state:
-"It looks like the <STAGE> stage needs to be redone."
-and issue completed.
-This will send the control back to the coordinator to reissue the tasks.
-""",
-        "coordinator_guidance": None,
-        "worker_guidance": None,
-        "tools": None,
-    },
-]
 
 EPISODE_DB_SPECIFICATION = """
 # Episode Database Specification
@@ -2462,15 +1446,24 @@ MESSAGE_OPTIONS = {
 
 # region: === Engine helper functions (may be considered for moving to a separate module) ===
 
-possible_episodes = [
-    {"enabled": True, "episode_id": d["episode_id"], "episode_name": d["episode_name"]}
-    for d in copy.deepcopy(EPISODE_DB)
-]
+all_plan_files = (
+    load_plan_and_template_files(return_as="relative_paths")["template_plan_files"]
+    + load_plan_and_template_files(return_as="relative_paths")["plan_files"]
+)
+PlanFileParam = EngineParameter(
+    name="plan_file",
+    description="Path to the plan / episode database file.",
+    kind="enum",
+    enum_values=all_plan_files,
+    default=all_plan_files[0],
+)
+
 PossibleEpisodesParam = EngineParameter(
     name="possible_episodes",
     description="List of possible episodes that can be used in the project. Unselect as needed.",
     kind="records",
-    default=possible_episodes,
+    default_set_by_static_method="get_possible_episodes",
+    default=[],
     records_disabled_keys=["episode_id", "episode_name"],
 )
 
@@ -3110,8 +2103,16 @@ class OpenV1Engine(OpenAIEngineBase):
                     raise ValueError("EngineState was None.")
                 self.session.engine_state = messages_with_engine_state[-1].engine_state
 
+    @staticmethod
+    def _load_episode_db(plan_file: str) -> List[Dict[str, Any]]:
+        with open(REPO_PATH / Path(plan_file), "r") as f:
+            episode_db = json.load(f)
+        return episode_db
+
     def _before_define_agents_hook(self) -> None:
         super()._before_define_agents_hook()
+
+        episode_db = self._load_episode_db(plan_file=self.session.engine_params["plan_file"])
 
         # === Set up tool & episode filtering. ===
 
@@ -3140,9 +2141,9 @@ class OpenV1Engine(OpenAIEngineBase):
             print("Allowed tools:")
             rich.pretty.pprint(allowed_tools)
         # Filter episodes.
-        self.episode_db = copy.deepcopy(EPISODE_DB)
+        self.episode_db = copy.deepcopy(episode_db)
         # NOTE: Must use self.episode_db, not EPISODE_DB in this engine!
-        for idx, episode in enumerate(EPISODE_DB):
+        for idx, episode in enumerate(episode_db):
             if episode["tools"] is None:
                 # If episode has None tools, replace with **allowed tools** (NOT all available tools).
                 self.episode_db[idx]["tools"] = allowed_tools
@@ -3188,13 +2189,31 @@ class OpenV1Engine(OpenAIEngineBase):
             print("PLAN after filtering out episodes with excluded tools:")
             rich.pretty.pprint(self.plan)
 
-        # NOTE: Anywhere else in this engine, use self.episode_db and self.plan, not EPISODE_DB and PLAN!
+        print("Episode DB:")
+        rich.pretty.pprint(self.episode_db)
+        print("Plan:")
+        rich.pretty.pprint(self.plan)
+
+        # NOTE: Anywhere else in this engine, use self.episode_db and self.plan,
+        # not `episode_db` as derived from the plan file and not `PLAN`. Those are for initialization only.
         # === Set up tool & episode filtering. (END) ===
 
     @staticmethod
     def get_engine_parameters() -> List[EngineParameter]:
         parent_params = OpenAIEngineBase.get_engine_parameters()
-        return parent_params + [ToolSetParameter, PossibleEpisodesParam, UseSummarizationParam]
+        return parent_params + [UseSummarizationParam, ToolSetParameter, PlanFileParam, PossibleEpisodesParam]
+
+    @staticmethod
+    def get_possible_episodes(**kwargs: Any) -> List[Dict[str, Any]]:
+        plan_file = kwargs["plan_file"]
+        episode_db = OpenV1Engine._load_episode_db(plan_file=plan_file)
+        possible_episodes = [
+            {"enabled": True, "episode_id": d["episode_id"], "episode_name": d["episode_name"]}
+            for d in copy.deepcopy(episode_db)
+        ]
+        # print("Possible episodes:")
+        # rich.pretty.pprint(possible_episodes)
+        return possible_episodes
 
     def get_plan_for_display(self):
         completed_episodes, remaining_episodes = get_completed_and_remaining_episodes(
@@ -4279,7 +3298,7 @@ class AzureOpenAIV1Engine(
     @staticmethod
     def get_engine_parameters() -> List[EngineParameter]:
         parent_params = AzureOpenAIEngineMixin.get_engine_parameters()
-        return parent_params + [ToolSetParameter, PossibleEpisodesParam, UseSummarizationParam]
+        return parent_params + [UseSummarizationParam, ToolSetParameter, PlanFileParam, PossibleEpisodesParam]
 
     @staticmethod
     def get_engine_name() -> str:

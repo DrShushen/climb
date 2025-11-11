@@ -5,6 +5,7 @@ import pandas as pd
 import streamlit as st
 
 from climb.common import create_new_session
+from climb.common.plan_files import load_plan_file
 from climb.db.tinydb_db import TinyDB_DB
 from climb.engine import AZURE_OPENAI_CONFIG_PATH, ENGINE_MAP, EngineBase, load_azure_openai_configs
 from climb.ui.st_common import (
@@ -283,7 +284,7 @@ with st.container(border=True):
 
             disabled = param.records_disabled_keys or []
 
-            df = pd.DataFrame(param.default)
+            df = pd.DataFrame(value_set if value_set is not None else param.default)
 
             # Estimate a reasonable width for all the columns in the dataframe.
             # Convert each column to string, and return the maximum character length of each column.
@@ -317,6 +318,29 @@ with st.container(border=True):
         else:
             raise ValueError(f"Unexpected parameter kind: {param.kind}")
     st.session_state.new_session_settings["engine_params"] = engine_params
+
+# Any extra validation:
+if "plan_file" in engine_params:
+    try:
+        plan_file_data = load_plan_file(engine_params["plan_file"], relative_path=True)
+    except ValueError as e:
+        st.error(f"Failed to load plan file: {e}")
+        cannot_create = True
+    if len(plan_file_data) == 0:
+        st.error("No episodes available in the plan file. Please select a different plan file.")
+        cannot_create = True
+
+if "possible_episodes" in engine_params:
+    if len([ep for ep in engine_params["possible_episodes"] if ep["enabled"]]) == 0:
+        st.error("No episodes enabled in the possible episodes parameter. Please select at least one enabled episode.")
+        cannot_create = True
+
+if "model_id" in engine_params and "temperature" in engine_params:
+    if "gpt-5" in engine_params["model_id"] and engine_params["temperature"] != 1.0:
+        st.error(
+            "GPT-5 class models only support a temperature of `1.0`. Please set the temperature to `1.0` in the engine parameters."
+        )
+        cannot_create = True
 
 if st.button(
     "Start new session ⏵",
