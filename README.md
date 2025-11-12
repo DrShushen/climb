@@ -101,8 +101,8 @@ If you are forking/deriving from the code that **requires the tools in the `impl
 
 **Note:**
 
-The code of CliMB-DC **core** does not depend on the code in the `impl_agpl` directory or its functionality. The `[extra]` version is *completely isolated and optional*.
-Hence the core of CliMB-DC can be used under the Apache-2.0 license while the tools in the `impl_agpl` directory can be used *only* under the AGPL-3.0 license.
+The code ofCliMB **core** does not depend on the code in the `impl_agpl` directory or its functionality. The `[extra]` version is *completely isolated and optional*.
+Hence the core ofCliMB can be used under the Apache-2.0 license while the tools in the `impl_agpl` directory can be used *only* under the AGPL-3.0 license.
 
 
 <!-- exclude_docs_end -->
