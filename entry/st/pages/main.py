@@ -12,6 +12,7 @@ import streamlit_antd_components as sac
 
 from climb.common.disclaimer import DISCLAIMER_TEXT
 from climb.common.exc import EXC_DOCS_REFS
+from climb.common.utils import dedent
 
 try:
     from weasyprint import HTML
@@ -30,7 +31,7 @@ except Exception as ex:
 
 from climb.common import Message, create_new_session
 from climb.common.data_structures import Agent, InteractionStage, ResponseKind, Session, UploadedFileAbstraction
-from climb.common.utils import analyze_df_modifications, dedent, replace_str_from_dict, ui_log
+from climb.common.utils import analyze_df_modifications, replace_str_from_dict, ui_log
 from climb.db import DB
 from climb.db.tinydb_db import TinyDB_DB
 from climb.engine import (
@@ -452,6 +453,23 @@ def process_messages_for_report(messages: List[Message]) -> str:
                 top_text += " failed ❌"
             this_markdown += top_text + "\n"
 
+            # NOTE: The cases where session and additional_kwargs_required are not None are properly handled.
+            tool_call_as_code = dedent(f"""
+            import json
+            from climb.tool import get_tool
+
+            tool = get_tool("{message.outgoing_tool_call.name}")
+            tool.receive_working_directory("{engine().working_directory_abs}")
+            kwargs = json.loads("{message.outgoing_tool_call.arguments}")
+            kwargs["session"] = None
+            kwargs["additional_kwargs_required"] = {{}}
+
+            logs_output = tool.execute(**kwargs)
+            print(list(logs_output))
+            """)
+
+            this_markdown += f"\n**Tool call as code:**\n\n```python\n{tool_call_as_code}\n```\n"
+
             # Tool call logs.
             if message.tool_call_logs:
                 # with st.expander(TOOL_LOGS_PREFIX, expanded=engine().session.session_settings.show_tool_call_logs):
@@ -514,7 +532,6 @@ def process_messages_for_report(messages: List[Message]) -> str:
         markdowns.append(this_markdown)
 
     final = "\n\n---\n\n".join(markdowns)
-    print(final)
 
     return final
 

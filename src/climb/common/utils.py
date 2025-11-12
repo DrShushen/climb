@@ -264,6 +264,7 @@ def fix_windows_path_backslashes(path: str) -> str:
     return path
 
 
+# TODO: Replace this with the built-in `textwrap.dedent` function.
 def dedent(text: str) -> str:
     """Remove the same amount of leading spaces from each line of the text.
 
