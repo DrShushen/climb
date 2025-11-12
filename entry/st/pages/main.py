@@ -1,18 +1,21 @@
 import os
 import re
+from dataclasses import dataclass
+from textwrap import dedent
 from typing import Any, Callable, Dict, Iterable, List, Literal, Optional, Tuple, cast
 
 import markdown
 import matplotlib.figure
+import nbformat as nbf
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 import streamlit_antd_components as sac
+from nbformat.v4 import new_code_cell, new_markdown_cell, new_notebook
 
 from climb.common.disclaimer import DISCLAIMER_TEXT
 from climb.common.exc import EXC_DOCS_REFS
-from climb.common.utils import dedent
 
 try:
     from weasyprint import HTML
@@ -382,17 +385,103 @@ def show_tab_warnings_if_tool_running():
 
 # Tab warnings mechanism-related functions [END].
 
+# ======================================================================================================================
+# PDF and IPYNB reports.
+# ======================================================================================================================
 
-# TODO: Needs to be tidied up.
-def process_messages_for_report(messages: List[Message]) -> str:
-    markdowns = []
+
+# Common intermediate representation (used by both PDF and IPYNB paths)
+@dataclass
+class ReportCell:
+    kind: Literal["markdown", "code"]
+    content: str
+    fence_in_markdown: bool = False
+    language: Optional[str] = "python"
+
+
+def _strip_triple_backticks(s: str) -> str:
+    """
+    Remove a single outer layer of ``` fences (with or without language tag).
+    Leaves inner fences (if any) intact.
+    """
+    text = s.strip()
+    if not text.startswith("```"):
+        return s
+    m = re.match(r"^```[^\n]*\n", text)
+    if not m:
+        return s
+    body = text[m.end() :]
+    if body.endswith("```"):
+        body = body[:-3]
+    return body.strip("\n")
+
+
+_SECTION_BLOCK_RE = re.compile(
+    r"(?ims)^\s*(DEPENDENCIES|CODE|FILES_IN|FILES_OUT)\s*:\s*\n```([a-zA-Z0-9_-]*)\n(.*?)\n```"
+)
+
+
+def _parse_code_bundle_sections(content: str) -> Optional[List[Tuple[str, str, str]]]:
+    """
+    Parse a composite block of the form:
+
+    DEPENDENCIES:
+    ```
+    ...
+    ```
+
+    CODE:
+    ```python
+    ...
+    ```
+
+    FILES_IN:
+    ```
+    ...
+    ```
+
+    FILES_OUT:
+    ```
+    ...
+    ```
+
+    Returns a list of (SECTION_NAME, lang, body) in document order if at least
+    one CODE section is present; otherwise returns None.
+    """
+    matches = list(_SECTION_BLOCK_RE.finditer(content))
+    if not matches:
+        return None
+
+    # Ensure we preserve order and only accept when CODE exists
+    has_code = any(m.group(1).upper() == "CODE" for m in matches)
+    if not has_code:
+        return None
+
+    # Optionally ignore stray text outside matched sections; if there is
+    # non-whitespace outside, fall back to legacy behavior.
+    last_end = 0
+    for m in matches:
+        if content[last_end : m.start()].strip():
+            return None
+        last_end = m.end()
+    if content[last_end:].strip():
+        return None
+
+    return [(m.group(1).upper(), (m.group(2) or "").strip(), m.group(3)) for m in matches]
+
+
+def process_messages_for_report_cells(messages: List["Message"]) -> List[ReportCell]:
+    """
+    Build a linear list of ReportCell objects (markdown/code) representing the
+    session content. This is the single source of truth used by both the PDF
+    and IPYNB exporters.
+    """
+    cells: List[ReportCell] = []
 
     for message in messages:
-        this_markdown = ""
-
         # 1. Show the message.text.
         message_text = message.text or ""
-        this_markdown += f"**{message.role.capitalize()}:**\n\n"
+        cells.append(ReportCell("markdown", f"**{message.role.capitalize()}:**\n\n"))
 
         # 1-A: Handle code blocks (can result in multiple text sections)
         pre_code, code_block, post_code = id_and_excise_code(message_text)
@@ -417,7 +506,7 @@ def process_messages_for_report(messages: List[Message]) -> str:
                     content = content.replace("TASK COMPLETED", "✅🎉 Task completed!")
                 if "= CONTINUE =" in content:
                     content = content.replace("= CONTINUE =", "▶️")
-                if message.agent == "coordinator":
+                if getattr(message, "agent", None) == "coordinator":
                     content = "💡 `Planning step`"
                     # content[: content.index("SYSTEM:")] + "💡 `Planning completed`"
                 # - <WD>/ image replacement.
@@ -426,11 +515,52 @@ def process_messages_for_report(messages: List[Message]) -> str:
                     # forces_unsafe = True
                 # --- --- ---
 
-                this_markdown += content + "\n"
+                cells.append(ReportCell("markdown", content + "\n"))
+
             # Any code post-processing:
             elif text_or_code == "code":
                 # with st.expander(CODE_ITSELF_PREFIX, expanded=engine().session.session_settings.show_code):
-                this_markdown += "\n" + f"**{CODE_ITSELF_PREFIX}**" + "\n\n" + content + "\n"
+                # In some sessions this "code" section is actually a composite Markdown bundle
+                # with DEPENDENCIES, CODE, FILES_IN, FILES_OUT. Handle that shape so only
+                # the actual CODE subsection becomes an executable code cell in the notebook.
+                cells.append(ReportCell("markdown", f"\n**{CODE_ITSELF_PREFIX}**\n\n"))
+
+                parsed = _parse_code_bundle_sections(content)
+
+                if parsed:
+                    for section, lang, body in parsed:
+                        if section == "DEPENDENCIES":
+                            # keep as markdown (with fenced block)
+                            md = f"DEPENDENCIES:\n```{lang}\n{body}\n```\n\n"
+                            cells.append(ReportCell("markdown", md))
+                        elif section == "CODE":
+                            # label as markdown, then actual code as code cell
+                            cells.append(ReportCell("markdown", "CODE:\n\n"))
+                            code_lang = lang or "python"
+                            cells.append(
+                                ReportCell(
+                                    "code",
+                                    body.strip("\n"),
+                                    fence_in_markdown=True,  # original block is fenced in markdown
+                                    language=code_lang,
+                                )
+                            )
+                        elif section == "FILES_IN":
+                            md = f"FILES_IN:\n```{lang}\n{body}\n```\n\n"
+                            cells.append(ReportCell("markdown", md))
+                        elif section == "FILES_OUT":
+                            md = f"FILES_OUT:\n```{lang}\n{body}\n```\n\n"
+                            cells.append(ReportCell("markdown", md))
+                else:
+                    # Fallback to legacy behavior: show label then dump raw content as the code cell
+                    cells.append(
+                        ReportCell(
+                            "code",
+                            _strip_triple_backticks(content),
+                            fence_in_markdown=False,  # original wasn't fenced under this label
+                            language="python",
+                        )
+                    )
             else:
                 raise ValueError(f"Unexpected `text_or_code` value: {text_or_code}")
 
@@ -451,7 +581,7 @@ def process_messages_for_report(messages: List[Message]) -> str:
                 top_text += " completed successfully ✅"
             else:
                 top_text += " failed ❌"
-            this_markdown += top_text + "\n"
+            cells.append(ReportCell("markdown", top_text + "\n"))
 
             # NOTE: The cases where session and additional_kwargs_required are not None are properly handled.
             tool_call_as_code = dedent(f"""
@@ -466,42 +596,58 @@ def process_messages_for_report(messages: List[Message]) -> str:
 
             logs_output = tool.execute(**kwargs)
             print(list(logs_output))
-            """)
+            """).strip("\n")
 
-            this_markdown += f"\n**Tool call as code:**\n\n```python\n{tool_call_as_code}\n```\n"
+            cells.append(ReportCell("markdown", "\n**Tool call as code:**\n\n"))
+            cells.append(
+                ReportCell(
+                    "code",
+                    tool_call_as_code,
+                    fence_in_markdown=True,  # original was fenced under this header
+                    language="python",
+                )
+            )
 
             # Tool call logs.
-            if message.tool_call_logs:
+            if getattr(message, "tool_call_logs", None):
                 # with st.expander(TOOL_LOGS_PREFIX, expanded=engine().session.session_settings.show_tool_call_logs):
                 #    st.markdown(f"```\n{message.tool_call_logs}\n```")
-                this_markdown += (
-                    "\n" + f"**{TOOL_LOGS_PREFIX}**" + "\n\n" + f"```\n{message.tool_call_logs}\n```" + "\n"
+                cells.append(
+                    ReportCell(
+                        "markdown",
+                        "\n" + f"**{TOOL_LOGS_PREFIX}**" + "\n\n" + f"```\n{message.tool_call_logs}\n```" + "\n",
+                    )
                 )
 
             # Tool call return.
-            if message.tool_call_return:
+            if getattr(message, "tool_call_return", None):
                 # with st.expander(
                 #     TOOL_RETURN_PREFIX, expanded=engine().session.session_settings.show_tool_call_return
                 # ):
                 #     st.markdown(f"```\n{message.tool_call_return}\n```")
-                this_markdown += (
-                    "\n" + f"**{TOOL_RETURN_PREFIX}**" + "\n\n" + f"```\n{message.tool_call_return}\n```" + "\n"
+                cells.append(
+                    ReportCell(
+                        "markdown",
+                        "\n" + f"**{TOOL_RETURN_PREFIX}**" + "\n\n" + f"```\n{message.tool_call_return}\n```" + "\n",
+                    )
                 )
 
             # User-only report outputs.
-            if message.tool_call_user_report:
-                this_markdown += "\n" + f"**{TOOL_USER_REPORT_PREFIX}**" + "\n\n"
+            if getattr(message, "tool_call_user_report", None):
+                cells.append(ReportCell("markdown", "\n" + f"**{TOOL_USER_REPORT_PREFIX}**" + "\n\n"))
                 # with st.expander(TOOL_USER_REPORT_PREFIX, expanded=True):
                 for user_output in message.tool_call_user_report:  # pyright: ignore
                     if isinstance(user_output, str):
                         # st.markdown(user_output)
-                        this_markdown += user_output + "\n"
+                        cells.append(ReportCell("markdown", user_output + "\n"))
                     elif isinstance(user_output, go.Figure):
                         # st.plotly_chart(user_output)
-                        this_markdown += "\n**Plotly figures not yet supported in the report**\n"
+                        cells.append(ReportCell("markdown", "\n**Plotly figures not yet supported in the report**\n"))
                     elif isinstance(user_output, matplotlib.figure.Figure):
                         # st.pyplot(user_output)
-                        this_markdown += "\n**Matplotlib figures not yet supported in the report**\n"
+                        cells.append(
+                            ReportCell("markdown", "\n**Matplotlib figures not yet supported in the report**\n")
+                        )
                     else:
                         raise ValueError(f"Unexpected user output type: {type(user_output)}")
 
@@ -518,29 +664,63 @@ def process_messages_for_report(messages: List[Message]) -> str:
                 else "Code execution failed ❌"
             )
             # st.markdown(top_message)
-            this_markdown += top_message + "\n"
+            cells.append(ReportCell("markdown", top_message + "\n"))
             # with st.expander(CODE_EXECUTION_OUT_PREFIX, expanded=engine().session.session_settings.show_code_out):
             output_message = ""
-            if message.generated_code_stdout:
+            if getattr(message, "generated_code_stdout", None):
                 output_message += f"\n```\n{message.generated_code_stdout}\n```\n"
             # NOTE: Should we show stderr regardless of the show logs setting?
-            if message.generated_code_stderr:
+            if getattr(message, "generated_code_stderr", None):
                 output_message += f"\n**Error:**\n\n```\n{message.generated_code_stderr}\n```"
             # st.markdown(output_message)
-            this_markdown += f"**{CODE_EXECUTION_OUT_PREFIX}**" + "\n\n" + output_message + "\n"
+            cells.append(ReportCell("markdown", f"**{CODE_EXECUTION_OUT_PREFIX}**" + "\n\n" + output_message + "\n"))
 
-        markdowns.append(this_markdown)
+        # Separator between messages (matches "\n\n---\n\n")
+        cells.append(ReportCell("markdown", "\n\n---\n\n"))
 
-    final = "\n\n---\n\n".join(markdowns)
+    # Remove trailing separator cell if present.
+    if cells and cells[-1].kind == "markdown" and cells[-1].content.strip() == "---":
+        cells.pop()
 
-    return final
+    return cells
 
 
-# TODO: Needs to be tidied up.
+def report_cells_to_markdown(cells: List[ReportCell]) -> str:
+    """
+    Render the list of ReportCell back to a markdown string that closely
+    matches the original report layout.
+    """
+    parts: List[str] = []
+    prev_markdown_header: Optional[str] = None
+
+    for cell in cells:
+        if cell.kind == "markdown":
+            parts.append(cell.content)
+            prev_markdown_header = cell.content.strip()
+        else:
+            code = cell.content
+            # Preserve original behavior for legacy-code block fallback:
+            # - If the preceding header is exactly CODE_ITSELF_PREFIX and fence_in_markdown=False,
+            #   the original path *did not* add fences here.
+            if not cell.fence_in_markdown and prev_markdown_header == f"**{CODE_ITSELF_PREFIX}**":
+                parts.append("\n" + code + "\n")
+            else:
+                lang_tag = cell.language or ""
+                parts.append(f"\n```{lang_tag}\n{code}\n```\n")
+
+            prev_markdown_header = None  # reset after a code cell
+
+    return "".join(parts)
+
+
 def prepare_report(working_dir: str) -> str:
     messages = engine().get_message_history()
     messages = [m for m in messages if show_in_history_if(m)]
-    report = process_messages_for_report(messages)
+
+    # Build from the common representation (cells) and then render to markdown
+    # to maintain parity with the PDF path.
+    cells = process_messages_for_report_cells(messages)
+    report = report_cells_to_markdown(cells)
 
     def markdown_to_pdf(markdown_text: str, output_pdf: str):
         # Convert Markdown to HTML
@@ -582,11 +762,6 @@ def prepare_report(working_dir: str) -> str:
         {html_text}
         """
 
-        # print(html_text)
-        # # Save the HTML content to a file
-        # with open("output.html", "w") as f:
-        #     f.write(html_text)
-
         # Generate a PDF from the HTML content
         HTML(string=html_text, base_url=os.path.abspath(working_dir)).write_pdf(output_pdf)
 
@@ -594,6 +769,73 @@ def prepare_report(working_dir: str) -> str:
     markdown_to_pdf(report, output_pdf)
 
     return output_pdf
+
+
+def prepare_report_ipynb(working_dir: str) -> str:
+    """
+    New exporter: write the session report as a Jupyter notebook (.ipynb).
+
+    Code that is actually executable (the extracted message code blocks and
+    'Tool call as code' snippets) are emitted as code cells. Everything else
+    is emitted as markdown cells.
+    """
+    messages = engine().get_message_history()
+    messages = [m for m in messages if show_in_history_if(m)]
+    cells = process_messages_for_report_cells(messages)
+
+    # Normalize any absolute working-dir paths in both markdown and code cells
+    # to keep the notebook portable inside the working directory.
+    abs_wd = os.path.abspath(working_dir)
+
+    def _normalize_text(t: str) -> str:
+        return t.replace(abs_wd, "./").replace(working_dir, "./")
+
+    nb_cells = []
+
+    # Header (parallels the PDF header, in markdown)
+    nb_cells.append(new_markdown_cell("## Session report"))
+    nb_cells.append(
+        new_markdown_cell(
+            f"**Session name:** {engine().session.friendly_name}\n\n"
+            f"**Working directory:**\n\n"
+            f"You will find all the session files, including the transformed data and the created models here\n\n"
+            f"`{abs_wd}`"
+        )
+    )
+    nb_cells.append(new_markdown_cell("### Full conversation history"))
+
+    # Conversation cells
+    for c in cells:
+        if c.kind == "markdown":
+            nb_cells.append(new_markdown_cell(_normalize_text(c.content)))
+        else:
+            code_text = _normalize_text(c.content)
+            nb_cells.append(new_code_cell(code_text))
+
+    nb = new_notebook(
+        cells=nb_cells,
+        metadata={
+            "kernelspec": {
+                "name": "python3",
+                "display_name": "Python 3",
+                "language": "python",
+            },
+            "language_info": {
+                "name": "python",
+            },
+        },
+    )
+
+    output_ipynb = os.path.join(working_dir, "report.ipynb")
+    with open(output_ipynb, "w", encoding="utf-8") as f:
+        nbf.write(nb, f)
+
+    return output_ipynb
+
+
+# ======================================================================================================================
+# PDF and IPYNB reports [END].
+# ======================================================================================================================
 
 
 def df_from_plan(plan_list_of_dicts: List[dict]) -> pd.DataFrame:
@@ -1187,7 +1429,7 @@ with main_col_2:
             # Add a streamlit button
             st.markdown("")  # Spacer.
             st.markdown("##### Report:")
-            if st.button("🖨️ Generate session report", key="gen_report_btn_1"):
+            if st.button("🖨️ Generate session report as PDF", key="gen_report_btn_1"):
                 if WEASYPRINT_WORKING:
                     with st.spinner("Generating report..."):
                         report_path = prepare_report(working_dir=engine().working_directory_abs)
@@ -1205,6 +1447,18 @@ with main_col_2:
                         "WeasyPrint import failed. Please check the troubleshooting section in the documentation.\n\n"
                         "---\n\n" + WEASYPRINT_WARNING_FULL.replace("\n", "\n\n")
                     )
+            if st.button("🖨️ Generate session report as Jupyter Notebook", key="gen_report_btn_2"):
+                with st.spinner("Generating report..."):
+                    report_path = prepare_report_ipynb(working_dir=engine().working_directory_abs)
+                    with open(report_path, "rb") as file:
+                        st.download_button(
+                            label="⬇️ Download report",
+                            data=file,
+                            file_name=os.path.basename(report_path),
+                            mime="text/ipynb",
+                            type="primary",
+                            key="download_report_btn_2",
+                        )
 
             # Bottom spacer.
             for _ in range(2):
