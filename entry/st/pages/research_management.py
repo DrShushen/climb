@@ -95,7 +95,7 @@ def start_new_session() -> None:
 sessions_df.insert(0, "Select", False)
 
 if not sessions:
-    st.write("No research history available.")
+    st.write("No CliMB sessions available.")
 else:
     de = st.data_editor(
         sessions_df,
@@ -194,9 +194,10 @@ st.markdown("#### 🕹️ Start a new session")
 st.write("")
 st.info(
     """
-    **CliMB** currently supports the following classes of OpenAI models:
-    - `gpt-4o`, `gpt-4-turbo`: **recommended** as they good reasoning capabilities.
-    - `gpt-4o-mini`, `gpt-3.5-turbo`: **not** recommended as they are less capable and are more likely to \
+    **CliMB** supports a variety of OpenAI models. Note the following:
+    - `gpt-5`, `o1`, `o3`: These are better capacity models, and are generally *recommended* for CliMB.
+    - `gpt-4o`, `gpt-4-turbo` class of models: these are the *minimum usable* capacity models for CliMB.
+    - `*-mini` or `*-nano` classes of models, `gpt-3.5-turbo`: These are *not recommended* as they are less capable and are more likely to \
 lead to substandard results.
     """
 )
@@ -247,43 +248,49 @@ with st.container(border=True):
             static_method = getattr(EngineClass, param.disabled_set_by_static_method)
             kwargs_dict.update(engine_params)
             disabled_set_dynamically = static_method(**kwargs_dict)
-            print(f">>> disabled_set_dynamically ({param.name}): {disabled_set_dynamically}")
         if hasattr(param, "enum_values_set_by_engine_config") and param.enum_values_set_by_engine_config is not None:
             static_method = getattr(EngineClass, param.enum_values_set_by_engine_config)
             kwargs_dict.update(engine_params)
             enum_value_set_dynamically = static_method(**kwargs_dict)
         param_disabled = param.disabled if disabled_set_dynamically is False else True
         # --- --- ---
+        short_col_width = 0.5
         if param.kind == "float":
-            engine_params[param.name] = st.number_input(  # type: ignore
-                param.name,
-                help=param.description,
-                value=value_set_dynamically if value_set_dynamically is not None else param.default,  # type: ignore
-                min_value=param.min_value,
-                max_value=param.max_value,
-                disabled=param_disabled,
-            )
+            col_, _ = st.columns([short_col_width, 1 - short_col_width])
+            with col_:
+                engine_params[param.name] = st.number_input(  # type: ignore
+                    param.name,
+                    help=param.description,
+                    value=value_set_dynamically if value_set_dynamically is not None else param.default,  # type: ignore
+                    min_value=param.min_value,
+                    max_value=param.max_value,
+                    disabled=param_disabled,
+                )
         elif param.kind == "bool":
-            engine_params[param.name] = st.checkbox(
-                param.name,
-                help=param.description,
-                value=value_set_dynamically if value_set_dynamically is not None else param.default,  # type: ignore
-                disabled=param_disabled,
-            )
+            col_, _ = st.columns([short_col_width, 1 - short_col_width])
+            with col_:
+                engine_params[param.name] = st.checkbox(
+                    param.name,
+                    help=param.description,
+                    value=value_set_dynamically if value_set_dynamically is not None else param.default,  # type: ignore
+                    disabled=param_disabled,
+                )
         elif param.kind == "enum":
-            engine_params[param.name] = st.selectbox(
-                param.name,
-                help=param.description,
-                options=param.enum_values if enum_value_set_dynamically is None else enum_value_set_dynamically,  # type: ignore
-                index=(
-                    param.enum_values.index(
-                        value_set_dynamically if value_set_dynamically is not None else param.default
-                    )
-                    if not enum_value_set_dynamically
-                    else enum_value_set_dynamically.index(enum_value_set_dynamically[0])
-                ),
-                disabled=param_disabled,
-            )
+            col_, _ = st.columns([short_col_width, 1 - short_col_width])
+            with col_:
+                engine_params[param.name] = st.selectbox(
+                    param.name,
+                    help=param.description,
+                    options=param.enum_values if enum_value_set_dynamically is None else enum_value_set_dynamically,  # type: ignore
+                    index=(
+                        param.enum_values.index(
+                            value_set_dynamically if value_set_dynamically is not None else param.default
+                        )
+                        if not enum_value_set_dynamically
+                        else enum_value_set_dynamically.index(enum_value_set_dynamically[0])
+                    ),
+                    disabled=param_disabled,
+                )
         elif param.kind == "records":
             st.markdown(param.name)
             st.caption(f"{param.description}")
@@ -347,6 +354,12 @@ if "model_id" in engine_params and "temperature" in engine_params:
             "GPT-5 class models only support a temperature of `1.0`. Please set the temperature to `1.0` in the engine parameters."
         )
         cannot_create = True
+
+if "privacy_mode" in engine_params and engine_params["privacy_mode"] == "guardrail_with_approval":
+    st.error(
+        "The `guardrail_with_approval` privacy mode is not yet implemented. Please select a different privacy mode."
+    )
+    cannot_create = True
 
 if st.button(
     "Start new session ⏵",

@@ -32,7 +32,7 @@ MessageVisibility = Literal["all", "ui_only", "llm_only", "llm_only_ephemeral", 
 # - "ui_only": Message is given only to the UI.
 # - "llm_only": Message is given only to the LLM.
 # - "llm_only_ephemeral": Message is given only to the LLM, but only in the current reasoning cycle.
-# - "system_only": Message is given only to the system (system being this tool, for its internal use,
+# - "system_only": Message is given only to the system (system being CliMB, for its internal use,
 #   e.g. for handling things like code execution.)
 
 Agent = Literal["coordinator", "worker", "supervisor", "simulated_user"]
@@ -354,6 +354,7 @@ def create_new_session(
     session = Session(
         session_key=key,
         working_directory=wd,
+        started_at=now,
         friendly_name=friendly_name,
         engine_name=engine_name,
         engine_params=engine_params,

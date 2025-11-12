@@ -21,7 +21,12 @@ from climb.common import (
     ToolSpecs,
     UIControlledState,
 )
-from climb.common.plan_files import REPO_PATH, load_plan_and_template_files
+from climb.common.plan_files import (
+    PLAN_FILES_DIR_RELATIVE_STR,
+    REPO_PATH,
+    TEMPLATES_DIR_RELATIVE_STR,
+    load_plan_and_template_files,
+)
 from climb.common.utils import check_extra_available, d2m, engine_log, m2d, update_templates
 from climb.db import DB
 from climb.tool import list_all_tool_names, list_all_tool_specs
@@ -54,24 +59,6 @@ DEBUG__PRINT_TOOL_FILTERING = False
 if DEBUG__USE_FILTER_TOOLS is False:
     raise RuntimeError("DEBUG__USE_FILTER_TOOLS must be True for this engine.")
 
-# region: === TOOL SETS ===
-TOOL_SETS = ["default", "full"]
-
-if check_extra_available():
-    TOOL_SETS.append("extra")
-
-ToolSetParameter = EngineParameter(
-    name="tool_set",
-    description=(
-        # TODO: Add more information.
-        "The set of tools to be used by the engine."
-    ),
-    kind="enum",
-    enum_values=TOOL_SETS,
-    default="default",
-)
-
-# endregion
 
 # region: === Prompt templates ===
 
@@ -1405,7 +1392,13 @@ MESSAGE_OPTIONS = {
 
 PlanFileParam = EngineParameter(
     name="plan_file",
-    description="Path to the plan / episode database file.",
+    description=f"""
+    Path to the plan file.
+    * The plan file is a JSON file that contains the plan / episode database to be used for the project.
+    * Plan files can be customized on the `🏗️ Plan Editor` page.
+    * The plans under `{TEMPLATES_DIR_RELATIVE_STR}` are the default plans provided by CliMB.
+    * The plans under `{PLAN_FILES_DIR_RELATIVE_STR}` are your custom plans.
+    """,
     kind="enum",
     enum_values=[],
     enum_values_set_by_engine_config="get_all_plan_files",
@@ -1423,7 +1416,12 @@ PossibleEpisodesParam = EngineParameter(
 
 UseSummarizationParam = EngineParameter(
     name="use_summarization",
-    description="Whether to use summarization for better longer context management.",
+    description="""
+    Whether to use summarization for better longer context management.
+    * If enabled, after each project stage, only a short summary will be carried forward to the next stage.
+    * This can help to avoid performance degradation for long projects.
+    * However, it can also make individual project steps less reliable, as the AI does not see the full record of previous steps.
+    """,
     kind="bool",
     default=False,
 )
@@ -1985,6 +1983,7 @@ class WorkerCotState(pydantic.BaseModel):
     delegated_tools: Optional[List[str]] = [] if DEBUG__USE_FILTER_TOOLS else None
 
 
+# region: === TOOL SETS ===
 # NOTE:
 # Define the *additional* tools.
 # If this tool_set -> then allow episodes with these tools.
@@ -1997,6 +1996,27 @@ ADDITIONAL_TOOLS["extra"] = ["knn_shapley_data_valuation", "outlier_detection"]
 # Therefore:
 EXCLUDE_DEFAULT = ADDITIONAL_TOOLS["full"] + ADDITIONAL_TOOLS["extra"]
 EXCLUDE_FULL = ADDITIONAL_TOOLS["extra"]
+
+TOOL_SETS = ["default", "full"]
+
+if check_extra_available():
+    TOOL_SETS.append("extra")
+
+ToolSetParameter = EngineParameter(
+    name="tool_set",
+    description=f"""
+    The set of tools to be used by the engine.
+    * `default`: The default tool set provided by CliMB.
+    * `full`: `default` + additional tools: `{ADDITIONAL_TOOLS["full"]}`
+    * `extra`: `full` + additional tools: `{ADDITIONAL_TOOLS["extra"]}` (requires the `extra` tool set to be installed)
+    * To learn more about the tools, see [Tools Reference](https://climb-ai.readthedocs.io/en/latest/tool.html).
+    """,
+    kind="enum",
+    enum_values=TOOL_SETS,
+    default="default",
+)
+
+# endregion
 
 
 class OpenV1Engine(OpenAIEngineBase):
