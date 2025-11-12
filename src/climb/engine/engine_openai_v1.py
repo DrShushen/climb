@@ -1475,8 +1475,8 @@ UseSummarizationParam = EngineParameter(
 )
 
 
-def get_all_episode_ids_from_db(episodes_db: List[Dict]) -> List[str]:
-    return [ep["episode_id"] for ep in episodes_db]
+def get_all_episode_ids_from_db(episode_db: List[Dict]) -> List[str]:
+    return [ep["episode_id"] for ep in episode_db]
 
 
 def filter_messages_by_agent(

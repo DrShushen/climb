@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Tuple
 from uuid import uuid4
 
 import streamlit as st
+from streamlit_sortables import sort_items
 
 import climb.ui.st_common as st_common
 from climb.common.plan_files import (
@@ -67,10 +68,14 @@ if "loaded_file" not in st.session_state:
     st.session_state.loaded_file: Path | None = None
 if "plan_items" not in st.session_state:
     st.session_state.plan_items: List[Dict[str, Any]] = []
+if "plan_sequence" not in st.session_state:
+    st.session_state.plan_sequence: List[str] = []
 if "last_serialized" not in st.session_state:
     st.session_state.last_serialized = None
 if "manual_open_state" not in st.session_state:
     st.session_state.manual_open_state: Dict[str, bool] = {}
+if "manual_open_state_override" not in st.session_state:
+    st.session_state.manual_open_state_override: bool = False
 if "is_new_from_template" not in st.session_state:
     st.session_state.is_new_from_template: bool = False
 if "template_source_file" not in st.session_state:
@@ -117,13 +122,23 @@ def ensure_str_is_valid_filename(filename: str) -> str:
     return filename
 
 
-def _read_json(path: Path) -> List[Dict[str, Any]]:
+def _read_plan_file(path: Path) -> Tuple[List[Dict[str, Any]], List[str]]:
+    """Read plan file supporting both legacy (list of episodes) and new ({plan, episode_db}) formats.
+    Returns (items, plan_sequence).
+    """
     with path.open("r", encoding="utf-8") as f:
         data = json.load(f)
-    if not isinstance(data, list):
-        raise ValueError("Top-level JSON must be a list of objects.")
+    if isinstance(data, dict):
+        episode_db = data.get("episode_db", [])
+        plan_seq = data.get("plan", []) or []
+        if not isinstance(episode_db, list):
+            raise ValueError("Invalid plan file: 'episode_db' must be a list.")
+        if not isinstance(plan_seq, list):
+            raise ValueError("Invalid plan file: 'plan' must be a list.")
+    else:
+        raise ValueError("Invalid plan file: expected list or dict with 'episode_db' and 'plan'.")
     items: List[Dict[str, Any]] = []
-    for i, obj in enumerate(data):
+    for i, obj in enumerate(episode_db):
         if not isinstance(obj, dict):
             raise ValueError(f"Item {i} is not an object.")
         base = _clone_template()
@@ -137,7 +152,9 @@ def _read_json(path: Path) -> List[Dict[str, Any]]:
         extras = {k: obj[k] for k in obj.keys() if k not in SCHEMA_KEYS}
         base["_extras"] = {k: obj[k] for k in extras}
         items.append(base)
-    return items
+    # Normalize plan sequence to strings
+    plan_seq_str = [str(x) for x in plan_seq if isinstance(x, (str, int, float))]
+    return items, plan_seq_str
 
 
 def _ordered_for_save(item: Dict[str, Any]) -> OrderedDict:
@@ -175,18 +192,22 @@ def _ordered_for_save(item: Dict[str, Any]) -> OrderedDict:
     return od
 
 
-def _serialize_items_for_compare(items: List[Dict[str, Any]]) -> str:
-    """Stable serialization for 'dirty' detection (ignores _uid, but includes extras)."""
-    to_save = []
-    for it in items:
-        to_save.append(_ordered_for_save(it))
+def _serialize_for_compare(items: List[Dict[str, Any]], plan_seq: List[str]) -> str:
+    """Stable serialization for 'dirty' detection (ignores _uid, but includes extras) of both plan and episodes."""
+    to_save = OrderedDict()
+    to_save["plan"] = list(plan_seq or [])
+    to_save["episode_db"] = [_ordered_for_save(it) for it in items]
     return json.dumps(to_save, ensure_ascii=False, sort_keys=True)
 
 
-def _validate(items: List[Dict[str, Any]]) -> Tuple[List[str], List[str]]:
-    """Return (errors, warnings). Save is blocked if errors."""
+def _validate(items: List[Dict[str, Any]], plan_seq: List[str]) -> Tuple[List[str], List[str]]:
+    """Return (errors, warnings). Save is blocked if errors. Validates episodes and plan."""
     errors: List[str] = []
     warnings: List[str] = []
+
+    # no episodes in the database
+    if len(items) == 0:
+        errors.append("No episodes in the database. Please add at least one episode to the database.")
 
     # episode_id checks
     ids = [str(it.get("episode_id") or "").strip() for it in items]
@@ -228,10 +249,29 @@ def _validate(items: List[Dict[str, Any]]) -> Tuple[List[str], List[str]]:
         if missing:
             errors.append(f"Item {idx + 1} missing required key(s): {missing}")
 
+    # plan validation
+    valid_ids = set([i for i in ids if i])
+    invalid_in_plan = [eid for eid in (plan_seq or []) if eid not in valid_ids]
+    if invalid_in_plan:
+        warnings.append(f"Plan contains episode_id(s) not present in episode_db: {invalid_in_plan}")
+    # duplicate plan ids
+    seen_plan = set()
+    dup_plan = []
+    for eid in plan_seq or []:
+        if eid in seen_plan:
+            dup_plan.append(eid)
+        else:
+            seen_plan.add(eid)
+    if dup_plan:
+        errors.append(f"Plan has duplicate episode_id(s): {sorted(set(dup_plan))}")
+    # empty plan
+    if not plan_seq or len(plan_seq) == 0:
+        errors.append("Plan is empty. Please add at least one episode to the plan.")
+
     return errors, warnings
 
 
-def _save_plan(path: Path, items: List[Dict[str, Any]]) -> None:
+def _save_plan(path: Path, items: List[Dict[str, Any]], plan_seq: List[str]) -> None:
     # backup if file exists
     # if path.exists():
     #     ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -240,8 +280,11 @@ def _save_plan(path: Path, items: List[Dict[str, Any]]) -> None:
 
     # write plan to file:
     ordered_items = [_ordered_for_save(it) for it in items]
+    top_level = OrderedDict()
+    top_level["plan"] = list(plan_seq or [])
+    top_level["episode_db"] = ordered_items
     with path.open("w", encoding="utf-8") as f:
-        json.dump(ordered_items, f, ensure_ascii=False, indent=4)
+        json.dump(top_level, f, ensure_ascii=False, indent=4)
 
 
 def _new_episode_id(existing_ids: List[str]) -> str:
@@ -291,6 +334,13 @@ def delete_item(idx: int):
         pass
     # Remove the item and re-run
     del st.session_state.plan_items[idx]
+
+
+def plan_add_items(new_ids: List[str]):
+    existing = set(st.session_state.plan_sequence or [])
+    to_add = [e for e in new_ids if e not in existing]
+    if to_add:
+        st.session_state.plan_sequence = list(st.session_state.plan_sequence or []) + to_add
 
 
 def optional_singleline(it: Dict[str, Any], field_key: str, label: str, widget_key_prefix: str) -> str | None:
@@ -405,7 +455,16 @@ def tools_editor(it: Dict[str, Any], uid: str):
 ensure_data_dir()
 
 with st.container(border=True):
-    col_loader_left, col_loader_right = st.columns([0.7, 0.3])
+    column_infopanel_notes, col_loader_left, col_loader_right = st.columns([0.35, 0.4, 0.25])
+    with column_infopanel_notes:
+        st.caption(
+            "**Instructions:**\n"
+            "- Open an existing plan file to edit it, or create a new plan from a template.\n"
+            "- Add, edit, and delete episodes in :green-background[Episode Database] to create your plan.\n"
+            "- Modify the :green-background[Plan Sequence] to control the suggested order of episodes in the plan.\n"
+            "- More instructions on editing are available in the corresponding sections below.\n"
+            "- Save your plan by clicking the :grey-background[💾 Save changes]."
+        )
     with col_loader_left:
         source_options = ("My plans", "Templates")
         selected_source = st.radio(
@@ -439,8 +498,8 @@ with st.container(border=True):
         )
     with col_loader_right:
         # st.caption("")
-        refresh = st.button("↻ Refresh files", use_container_width=True)
-        load_btn = st.button("📂 Load", use_container_width=True)
+        refresh = st.button("↻ Refresh files", use_container_width=True, help="Refresh the list of available files.")
+        load_btn = st.button("📂 Load", use_container_width=True, help="Load the selected file into the plan editor.")
         load_status_container = st.container()
 
     # st_common.horizontal_rule()
@@ -451,9 +510,13 @@ if files_available_names and load_btn:
     path_to_open = browse_dir / selected_name
     if path_to_open.exists():
         try:
-            st.session_state.plan_items = _read_json(path_to_open)
+            items_loaded, plan_loaded = _read_plan_file(path_to_open)
+            st.session_state.plan_items = items_loaded
+            st.session_state.plan_sequence = plan_loaded
             st.session_state.loaded_file = path_to_open
-            st.session_state.last_serialized = _serialize_items_for_compare(st.session_state.plan_items)
+            st.session_state.last_serialized = _serialize_for_compare(
+                st.session_state.plan_items, st.session_state.plan_sequence
+            )
             st.session_state.is_new_from_template = selected_source == "Templates"
             st.session_state.template_source_file = path_to_open if st.session_state.is_new_from_template else None
             if st.session_state.is_new_from_template:
@@ -473,17 +536,10 @@ items: List[Dict[str, Any]] = st.session_state.plan_items
 # -------------------- Toolbar --------------------
 
 with st.container():
-    col_menu_current_file, col_menu_add_item, col_menu_reset, col_menu_save = st.columns([0.6, 0.1, 0.1, 0.2])
+    col_menu_current_file, col_menu_reset, col_menu_delete, col_menu_save = st.columns([0.6, 0.1, 0.1, 0.2])
     with col_menu_current_file:
         if current_file is None:
-            st.markdown("_No file open_")
-    with col_menu_add_item:
-        add_btn = st.button(
-            "➕ Add item",
-            use_container_width=True,
-            disabled=current_file is None,
-            help="Add a new item to the episode list.",
-        )
+            st.markdown(":red-background[No plan loaded, load it above]")
     with col_menu_reset:
         reload_btn = st.button(
             "⟲ Reset",
@@ -494,14 +550,137 @@ with st.container():
     # c4: Has the save button, and due to streamlit operation ordering, this must go after the editable elements list
     # as otherwise the changes will not be correctly reflected.
 
-    column_infopanel_notes, column_infopanel_statuses = st.columns([0.5, 0.5])
-    with column_infopanel_notes:
-        st.caption(
-            "- Open an existing plan file to edit it, or create a new plan from a template.\n"
-            "- Add, edit, and delete episodes to create your plan.\n"
-            f"- Save your plan to a file in the `{PLAN_FILES_DIR_RELATIVE_STR}/` directory."
-        )
+    col_statuses_left, column_infopanel_statuses = st.columns([0.3, 0.7])
+    with col_statuses_left:
+        st.markdown("Any messages about the status of your plan will appear here ➡")
 
+
+if reload_btn and current_file is not None:
+    try:
+        items_loaded, plan_loaded = _read_plan_file(current_file)
+        st.session_state.plan_items = items_loaded
+        st.session_state.plan_sequence = plan_loaded
+        st.session_state.last_serialized = _serialize_for_compare(
+            st.session_state.plan_items, st.session_state.plan_sequence
+        )
+        _reset_manual_expand_states()
+        with column_infopanel_statuses:
+            st.info(f"Reloaded from file: {current_file.name}")
+        st.rerun()
+    except Exception as e:
+        st.error(f"Failed to reload: {e}")
+
+with col_menu_delete:
+    delete_btn = st.button(
+        "🗑️ Delete",
+        use_container_width=True,
+        type="secondary",
+        disabled=st.session_state.is_new_from_template or current_file is None,
+        help="Delete the current plan file.",
+    )
+
+
+# Explicit delete action (only for 'My plans')
+if current_file is not None and not st.session_state.is_new_from_template and delete_btn:
+    path_to_delete = current_file.resolve()
+    try:
+        if path_to_delete.exists() and path_to_delete.is_file():
+            # If the file being deleted is currently loaded, clear the editor state
+            if st.session_state.loaded_file and st.session_state.loaded_file.resolve() == path_to_delete.resolve():
+                st.session_state.loaded_file = None
+                st.session_state.plan_items = []
+                st.session_state.plan_sequence = []
+                st.session_state.last_serialized = None
+                st.session_state.is_new_from_template = False
+                st.session_state.template_source_file = None
+                _reset_manual_expand_states()
+            # Delete the file
+            path_to_delete.unlink()
+            with load_status_container:
+                st.success(f"Deleted plan: `{path_to_delete.name}`")
+            st.rerun()
+        else:
+            with load_status_container:
+                st.error("Selected file does not exist or is not a file.")
+    except Exception as e:
+        with load_status_container:
+            st.error(f"Failed to delete file: {e}")
+
+if current_file is not None:
+    with column_infopanel_statuses:
+        if not items:
+            st.info("This file currently contains an empty list. Use **Add item** to begin.")
+
+
+st_common.horizontal_rule()
+st.markdown("")
+
+# -------------------- Plan (Episode Ordered List) Editor --------------------
+
+if current_file is None:
+    st.stop()
+
+plan_editor_container = st.container(border=False)
+
+st_common.horizontal_rule()
+st.markdown("")
+
+# -------------------- Items Editor --------------------
+
+
+def on_expand_collapse_all_toggle_change():
+    value = st.session_state.get("expand_collapse_all_toggle", False)
+    if value:
+        for it in items:
+            st.session_state.manual_open_state[it.get("_uid")] = True
+    else:
+        for it in items:
+            st.session_state.manual_open_state[it.get("_uid")] = False
+    st.session_state.manual_open_state_override = True
+    # ^ Allows to temporarily ignore the UI open state of the episodes, and force open/close all of them.
+
+
+col_title_episodes_database, col_expand_collapse_all_episodes, col_add_episode_to_db = st.columns([0.7, 0.2, 0.1])
+with col_title_episodes_database:
+    st.markdown("#### Episode database:")
+with col_expand_collapse_all_episodes:
+    expand_collapse_all_toggle = st.toggle(
+        "Expand/collapse all episodes",
+        value=False,
+        key="expand_collapse_all_toggle",
+        on_change=on_expand_collapse_all_toggle_change,
+        help="Expand/collapse all episodes below.",
+    )
+with col_add_episode_to_db:
+    add_btn = st.button(
+        "➕ Add item",
+        use_container_width=True,
+        disabled=current_file is None,
+        help="Add a new item to the episode database.",
+    )
+
+with st.expander(":material/info: Episode database explanation"):
+    col_episodes_db_explanation_1, col_episodes_db_explanation_2 = st.columns([0.4, 0.6])
+    with col_episodes_db_explanation_1:
+        st.caption("""
+        **General instructions:**
+        * The episode database contains all the possible episodes that can be used by the CliMB engine.
+        * You can add new episodes to the database by clicking the `➕ Add item` button above.
+        * You can delete episodes from the database by clicking the `🗑️ Delete` button next to the episode.
+        * You can move episodes up and down in the database by clicking the `↑ Move up` and `↓ Move down` buttons next to the episode. This is only for your convenience, the engine will not use this order.
+        * You can edit the different fields for each episode by expanding that episode's panel (use the checkbox on the left of the episode title).
+        """)
+    with col_episodes_db_explanation_2:
+        st.caption("""
+        **Episode fields:**
+        * `episode_id`: must be unique and is used to identify the episode in the plan.
+        * `episode_name`: is the name of the episode, make it clear and concise.
+        * `episode_details`: is the detailed description of the episode, it should contain the specific task that the episode is designed to complete, for the worker agent.
+        * `coordinator_guidance` (optional): is the guidance for the coordinator (planner) agent about the episode.
+        * `worker_guidance` (optional): is the guidance for the worker agent about the episode (to supplement the `episode_details`).
+        * `tools`: configures the selection of tools that the worker can use to complete the episode.
+        * `selection_condition` (optional): is the (concise) condition under which the episode should be selected, for the coordinator agent.
+        """)
 
 # Toolbar actions
 if add_btn and current_file is not None:
@@ -514,32 +693,6 @@ if add_btn and current_file is not None:
     st.session_state.plan_items = items
     st.rerun()
 
-if reload_btn and current_file is not None:
-    try:
-        st.session_state.plan_items = _read_json(current_file)
-        st.session_state.last_serialized = _serialize_items_for_compare(st.session_state.plan_items)
-        _reset_manual_expand_states()
-        with column_infopanel_statuses:
-            st.info(f"Reloaded from file: {current_file.name}")
-        st.rerun()
-    except Exception as e:
-        st.error(f"Failed to reload: {e}")
-
-
-if current_file is not None:
-    with column_infopanel_statuses:
-        if not items:
-            st.info("This file currently contains an empty list. Use **Add item** to begin.")
-
-
-st_common.horizontal_rule()
-st.markdown("")
-
-# -------------------- Items Editor --------------------
-
-if current_file is None:
-    st.stop()
-
 for idx, it in enumerate(items):
     uid = it.get("_uid", f"row{idx}")
 
@@ -548,13 +701,19 @@ for idx, it in enumerate(items):
         title = f"`{it.get('episode_id') or 'NEW'}` {it.get('episode_name') or ''}"
         col_episode_1, col_episode_2, col_episode_btns = st.columns([0.06, 0.6, 0.34])
         with col_episode_1:
+            if st.session_state.manual_open_state_override:
+                # Manually set the checkbox state when the override (expand/collapse all episodes toggle) is active.
+                st.session_state[f"{OPEN_STATE_PREFIX}{uid}"] = st.session_state.manual_open_state.get(uid, False)
             is_open = st.checkbox(
                 "❯",
                 value=bool(st.session_state.manual_open_state.get(uid, False)),
                 key=f"{OPEN_STATE_PREFIX}{uid}",
                 # help="Use the checkbox to open/close the editor for each item",
             )
-            st.session_state.manual_open_state[uid] = bool(is_open)
+            if not st.session_state.manual_open_state_override:
+                # React to the checkbox state change when the override (expand/collapse all episodes toggle)
+                # is not active.
+                st.session_state.manual_open_state[uid] = bool(is_open)
         with col_episode_2:
             st.markdown(f"##### {title}")
         with col_episode_btns:
@@ -643,32 +802,127 @@ for idx, it in enumerate(items):
                     st.markdown("_Read-only extra keys (preserved on save)_")
                     st.json(extras)
 
+if current_file is not None:
+    with plan_editor_container:
+        col_plan_left, col_plan_right = st.columns([0.4, 0.6])
+        with col_plan_left:
+            st.markdown("#### Plan sequence:")
+            st.caption("""
+            * The plan sequence is the default order of the episodes from the episode database) given to the CliMB engine.
+            * The engine may review and modify the plan sequence, it will only use this as a starting point.
+            * Edit the plan sequence in this section.
+            * You can add, remove, and reorder episodes by their `episode_id` in this section.
+            """)
+
+            # Sync plan with current episode IDs
+            current_ids = [
+                str(it.get("episode_id") or "").strip() for it in st.session_state.plan_items if it.get("episode_id")
+            ]
+            valid_id_set = set(current_ids)
+            plan_before = list(st.session_state.plan_sequence or [])
+            missing_in_db = [eid for eid in plan_before if eid not in valid_id_set]
+            if missing_in_db:
+                # Auto-remove missing to keep plan consistent
+                st.session_state.plan_sequence = [eid for eid in plan_before if eid in valid_id_set]
+                st.warning(f"Removed non-existent episode_id(s) from plan: {missing_in_db}")
+
+            # Duplicates warning (allow but warn)
+            seen_tmp = set()
+            dup_tmp = []
+            for eid in st.session_state.plan_sequence:
+                if eid in seen_tmp:
+                    dup_tmp.append(eid)
+                seen_tmp.add(eid)
+            if dup_tmp:
+                st.warning(f"Plan has duplicate episode_id(s): {sorted(set(dup_tmp))}")
+
+        with col_plan_right:
+            # col_plan_add_episodes, col_remove_episodes, col_clear_plan = st.columns([0.45, 0.45, 0.1])
+            # with col_plan_add_episodes:
+            # Add to plan
+            available_to_add = [eid for eid in current_ids if eid not in set(st.session_state.plan_sequence or [])]
+            add_cols = st.columns([0.7, 0.3])
+            with add_cols[0]:
+                add_select = st.multiselect(
+                    "Add episodes to the end of the plan",
+                    options=available_to_add,
+                    key="plan_add_select",
+                    placeholder="Select episode_id(s) to add",
+                )
+            with add_cols[1]:
+                st.markdown("")
+                if st.button(
+                    "➕ Add to plan",
+                    use_container_width=True,
+                    disabled=len(add_select) == 0,
+                    help="Selected episode_id(s) will be added to the end of the plan.",
+                ):
+                    plan_add_items(add_select)
+
+            st_common.horizontal_rule()
+
+            # Current plan rows
+            if not st.session_state.plan_sequence:
+                st.info("Plan is currently empty. Add episode_id(s) above.")
+            else:
+                # Removal of episodes from the plan:
+                # with col_remove_episodes:
+                rem_cols = st.columns([0.7, 0.3])
+                with rem_cols[0]:
+                    remove_select = st.multiselect(
+                        "Remove episodes from the plan",
+                        options=st.session_state.plan_sequence,
+                        key="plan_remove_select",
+                        placeholder="Select episode_id(s) to remove",
+                    )
+                with rem_cols[1]:
+                    st.markdown("")
+                    if st.button(
+                        "🗑️ Remove selected",
+                        use_container_width=True,
+                        disabled=len(remove_select) == 0,
+                        help="Selected episode_id(s) will be removed from the plan.",
+                    ):
+                        st.session_state.plan_sequence = [
+                            eid for eid in st.session_state.plan_sequence if eid not in set(remove_select)
+                        ]
+
+                    # Clearing the plan:
+                    # with col_clear_plan:
+                    if st.button(
+                        "Clear plan",
+                        use_container_width=True,
+                        type="secondary",
+                        disabled=not bool(st.session_state.plan_sequence),
+                        help="All episode_id(s) will be removed from the plan.",
+                    ):
+                        st.session_state.plan_sequence = []
+
+        # Reordering the plan:
+        col_plan_reordering_caption, col_plan_reordering_clear_btn = st.columns([0.8, 0.2])
+        st.caption(
+            "Drag episode IDs below to reorder. The order here (left to right, may go onto multiple lines) is the current plan order."
+        )
+        sorted_items = sort_items(st.session_state.plan_sequence)
+        if sorted_items != st.session_state.plan_sequence:
+            st.session_state.plan_sequence = sorted_items
 
 if current_file is not None:
-    dirty = st.session_state.last_serialized != _serialize_items_for_compare(items)
+    dirty = st.session_state.last_serialized != _serialize_for_compare(items, st.session_state.plan_sequence)
 
     with column_infopanel_statuses:
-        # DEBUG:
-        # import rich.pretty
-        # print("items serialized:")
-        # rich.pretty.pprint(_serialize_items_for_compare(items))
-        # print("st.session_state.last_serialized:")
-        # rich.pretty.pprint(st.session_state.last_serialized)
-        # print("items serialized == st.session_state.last_serialized:")
-        # print(_serialize_items_for_compare(items) == st.session_state.last_serialized)
-
         if dirty:
             st.info("There are unsaved changes.")
 
-        errs, warns = _validate(items)
+        errs, warns = _validate(items, st.session_state.plan_sequence)
 
         if errs:
-            st.error("Validation errors:\n\n- " + "\n- ".join(errs))
+            st.error("Problem with the plan:\n\n- " + "\n- ".join(errs))
         elif warns:
             st.warning("Warnings:\n\n- " + "\n- ".join(warns))
 
     with col_menu_save:
-        errs, warns = _validate(items)
+        errs, warns = _validate(items, st.session_state.plan_sequence)
         # For 'new from template', prompt for a filename under PLAN_FILES_DIR
         save_disabled_extra = False
         dest_path_preview_str = ""
@@ -690,24 +944,23 @@ if current_file is not None:
                 ("./" + str(PLAN_FILES_DIR / pan_file_being_edited_filename)) if pan_file_being_edited_filename else ""
             )
 
+        if errs:
+            save_helper_text = "Fix the problems with the plan first."
+        elif not dirty:
+            save_helper_text = "No changes to save."
+        elif st.session_state.is_new_from_template:
+            if dest_path_preview_str:
+                save_helper_text = f"Save to {dest_path_preview_str}"
+            else:
+                save_helper_text = "Enter a name for the new plan to be able to save it"
+        else:
+            save_helper_text = "Save to disk."
         save_btn = st.button(
             "💾 Save changes",
             type="primary",
             use_container_width=True,
             disabled=bool(errs) or not dirty or save_disabled_extra,
-            help=(
-                "Fix validation errors first."
-                if errs
-                else (
-                    "No changes to save."
-                    if not dirty
-                    else (
-                        f"Save to {dest_path_preview_str}"
-                        if st.session_state.is_new_from_template and dest_path_preview_str
-                        else "Save to disk."
-                    )
-                )
-            ),
+            help=save_helper_text,
         )
 
     with col_menu_current_file:
@@ -719,25 +972,28 @@ if current_file is not None:
             )
             pan_file_being_edited_path = (PLAN_FILES_DIR / pan_file_being_edited_filename).resolve()
             st.markdown(
-                f"##### Editing template: `{current_file.name}` → will save to `{os.path.join(PLAN_FILES_DIR_RELATIVE_STR, pan_file_being_edited_filename)}`"
+                f"### Editing template: `{current_file.name}` → will save to `{os.path.join(PLAN_FILES_DIR_RELATIVE_STR, pan_file_being_edited_filename)}`"
             )
         else:
-            st.markdown(f"##### Editing plan file: `{current_file.name}`")
+            st.markdown(f"### Editing plan file: `{current_file.name}`")
 
     if save_btn:
         if st.session_state.is_new_from_template:
-            _save_plan(pan_file_being_edited_path, items)
+            _save_plan(pan_file_being_edited_path, items, st.session_state.plan_sequence)
             st.session_state.loaded_file = pan_file_being_edited_path
-            st.session_state.last_serialized = _serialize_items_for_compare(items)
+            st.session_state.last_serialized = _serialize_for_compare(items, st.session_state.plan_sequence)
             st.session_state.is_new_from_template = False
             st.session_state.template_source_file = None
             # Switch UI selection to the newly saved plan
             st.session_state.selected_source = "My plans"
             with column_infopanel_statuses:
                 st.success(f"Saved new plan: {pan_file_being_edited_path.name}")
-            # st.rerun()
         else:
-            _save_plan(current_file, items)
-            st.session_state.last_serialized = _serialize_items_for_compare(items)
+            _save_plan(current_file, items, st.session_state.plan_sequence)
+            st.session_state.last_serialized = _serialize_for_compare(items, st.session_state.plan_sequence)
             with column_infopanel_statuses:
                 st.success(f"Saved: {current_file.name}")
+        st.rerun()
+
+# Reset the manual open state override (for expand/collapse all episodes toggle).
+st.session_state.manual_open_state_override = False
