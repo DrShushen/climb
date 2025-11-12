@@ -129,8 +129,6 @@ def menu() -> None:
     st.sidebar.page_link("pages/main.py", label=PAGE_TITLES["main_emoji"])
     st.sidebar.page_link("pages/research_management.py", label=PAGE_TITLES["research_management_emoji"])
     st.sidebar.page_link("pages/settings.py", label=PAGE_TITLES["settings_emoji"])
-    with st.sidebar:
-        horizontal_rule()
     st.sidebar.page_link("pages/plan_editor.py", label=PAGE_TITLES["plan_editor_emoji"])
 
     with st.sidebar:

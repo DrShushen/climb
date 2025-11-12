@@ -543,7 +543,6 @@ class OpenAIEngineBase(EngineBase):
         self,
         tool_call: ToolCallRecord,
         user_input: UserInputRequest,
-        # ui_message_processor: UiToolCallMessageProcessor,
     ) -> ToolReturnIter:
         tool = get_tool(tool_call.name)
         self.session.engine_state.executing_tool = tool_call.name
