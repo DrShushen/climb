@@ -1,56 +1,3 @@
-# <img src="docs/assets/climb-logo-no-text.png" height=25> CliMB-DC
-
-This repository contains **CliMB-DC**, a Data-Centric copilot system that builds upon the [CliMB](https://github.com/vanderschaarlab/climb) ecosystem.
-
-## 📦 Installation: CliMB-DC
-The installation process is analogous to the original CliMB system, with the only difference being in the [📈 Install the CliMB package step](https://climb-ai.readthedocs.io/en/latest/installation.html#install-the-climb-package). You should replace the command:
-```bash
-git clone https://github.com/vanderschaarlab/climb.git
-```
-with:
-```bash
-git clone https://github.com/DrShushen/climb-dc.git
-```
-
-## 🚀 Usage: CliMB-v1
-
-In order to run CliMB-DC, you can follow the original [CliMB quickstart guide](https://climb-ai.readthedocs.io/en/latest/quickstart.html) but choose the *engine* (in the *Research Management* page, *Select engine* dropdown) to be:
-```
-openai_v1
-```
-or
-```
-azure_openai_v1
-```
-depending on the OpenAI model provider you are using.
-
-## 📃 Note on Licensing
-
-The code inside [`impl_agpl` directory](./src/climb/tool/impl_agpl) is only compatible with the [AGPL-3.0 license](https://choosealicense.com/licenses/agpl-3.0/).
-
-It is not compatible with the [Apache-2.0 license](https://choosealicense.com/licenses/apache-2.0/), under which the core of the project (CliMB-DC **core**) is licensed.
-
-If you wish to use the extra tools provided in the `impl_agpl` directory, you must explicitly install the `[extra]` version of CliMB-DC like so:
-
-```bash
-# Clone the *CliMB-DC* repository.
-git clone https://github.com/DrShushen/climb-dc.git
-cd climb
-# Install with the `[extra]` option.
-pip install -e climb[extra]
-```
-
-If you are forking/deriving from the code that **requires the tools in the `impl_agpl` directory** (i.e. CliMB-DC with `[extra]`), you **must** also license your code under the AGPL-3.0 license.
-
-**Note:**
-
-The code of CliMB-DC **core** does not depend on the code in the `impl_agpl` directory or its functionality. The `[extra]` version is *completely isolated and optional*.
-Hence the core of CliMB-DC can be used under the Apache-2.0 license while the tools in the `impl_agpl` directory can be used *only* under the AGPL-3.0 license.
-
----
-
-*Below you can find the content of the original README.md file for the CliMB system.*
-
 <!-- CliMB README.md -->
 
 <!-- exclude_docs -->
@@ -136,6 +83,28 @@ include_docs_end -->
 Please follow the steps in [📦 Installation](https://climb-ai.readthedocs.io/en/latest/installation.html) section in the documentation to install CliMB.
 
 To update to the latest version of CliMB, please follow [📦⬆️ Updating CliMB](https://climb-ai.readthedocs.io/en/latest/installation.html#updating-climb)
+
+### 📃 Note on Licensing
+
+The code inside [`impl_agpl` directory](./src/climb/tool/impl_agpl) is only compatible with the [AGPL-3.0 license](https://choosealicense.com/licenses/agpl-3.0/).
+
+It is not compatible with the [Apache-2.0 license](https://choosealicense.com/licenses/apache-2.0/), under which the core of the project (CliMB **core**) is licensed.
+
+If you wish to use the extra tools provided in the `impl_agpl` directory, you must explicitly install the `[extra]` version of CliMB like so:
+
+```bash
+# Install with the `[extra]` option.
+pip install -e climb[extra]
+```
+
+If you are forking/deriving from the code that **requires the tools in the `impl_agpl` directory** (i.e. CliMB with `[extra]`), you **must** also license your code under the AGPL-3.0 license.
+
+**Note:**
+
+The code of CliMB-DC **core** does not depend on the code in the `impl_agpl` directory or its functionality. The `[extra]` version is *completely isolated and optional*.
+Hence the core of CliMB-DC can be used under the Apache-2.0 license while the tools in the `impl_agpl` directory can be used *only* under the AGPL-3.0 license.
+
+
 <!-- exclude_docs_end -->
 <!-- include_docs
 ```{admonition} Warning

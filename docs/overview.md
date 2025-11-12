@@ -1,7 +1,6 @@
 <!-- CliMB README.md -->
 
 
-
 # <img src="assets/climb-logo-no-text.png" height=25> CliMB
 
 > **CliMB**: **Cli**nical **M**achine learning **B**uilder

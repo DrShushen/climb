@@ -4,22 +4,33 @@ from typing import Any, Dict, List, Literal, Union
 
 import rich.pretty
 
-REPO_PATH = Path(__file__).parent.parent.parent.parent
+try:
+    REPO_PATH = Path(__file__).parent.parent.parent.parent
 
-# User plan files directory:
-PLAN_FILES_DIR = REPO_PATH / "plans"
-# Template / default plan files directory:
-TEMPLATES_DIR = PLAN_FILES_DIR / "defaults"
+    # User plan files directory:
+    PLAN_FILES_DIR = REPO_PATH / "plans"
+    # Template / default plan files directory:
+    TEMPLATES_DIR = PLAN_FILES_DIR / "defaults"
 
-TEMPLATES_DIR_STR = str(TEMPLATES_DIR)
-PLAN_FILES_DIR_RELATIVE = PLAN_FILES_DIR.resolve().relative_to(REPO_PATH)
-TEMPLATES_DIR_RELATIVE = TEMPLATES_DIR.resolve().relative_to(REPO_PATH)
+    TEMPLATES_DIR_STR = str(TEMPLATES_DIR)
+    PLAN_FILES_DIR_RELATIVE = PLAN_FILES_DIR.resolve().relative_to(REPO_PATH)
+    TEMPLATES_DIR_RELATIVE = TEMPLATES_DIR.resolve().relative_to(REPO_PATH)
 
-# And string versions of each (for UI display convenience):
-REPO_PATH_STR = str(REPO_PATH)
-PLAN_FILES_DIR_STR = str(PLAN_FILES_DIR)
-PLAN_FILES_DIR_RELATIVE_STR = "./" + str(PLAN_FILES_DIR_RELATIVE)
-TEMPLATES_DIR_RELATIVE_STR = "./" + str(TEMPLATES_DIR_RELATIVE)
+    # And string versions of each (for UI display convenience):
+    REPO_PATH_STR = str(REPO_PATH)
+    PLAN_FILES_DIR_STR = str(PLAN_FILES_DIR)
+    PLAN_FILES_DIR_RELATIVE_STR = "./" + str(PLAN_FILES_DIR_RELATIVE)
+    TEMPLATES_DIR_RELATIVE_STR = "./" + str(TEMPLATES_DIR_RELATIVE)
+
+
+except Exception:
+    # To avoid failure in docs.
+    REPO_PATH = None
+    PLAN_FILES_DIR = None
+    TEMPLATES_DIR = None
+    TEMPLATES_DIR_STR = None
+    PLAN_FILES_DIR_RELATIVE = None
+    TEMPLATES_DIR_RELATIVE = None
 
 
 def load_plan_and_template_files(

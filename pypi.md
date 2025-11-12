@@ -13,7 +13,6 @@
 [![slack](https://img.shields.io/badge/chat-on%20slack-purple?logo=slack)](https://join.slack.com/t/vanderschaarlab/shared_invite/zt-1u2rmhw06-sHS5nQDMN3Ka2Zer6sAU6Q)
 <!-- exclude_docs_end -->
 
-
 # <img src='https://raw.githubusercontent.com/vanderschaarlab/climb/main/docs/assets/climb-logo-no-text.png' height=25> CliMB
 
 > **CliMB**: **Cli**nical **M**achine learning **B**uilder
@@ -84,6 +83,28 @@ include_docs_end -->
 Please follow the steps in [📦 Installation](https://climb-ai.readthedocs.io/en/latest/installation.html) section in the documentation to install CliMB.
 
 To update to the latest version of CliMB, please follow [📦⬆️ Updating CliMB](https://climb-ai.readthedocs.io/en/latest/installation.html#updating-climb)
+
+### 📃 Note on Licensing
+
+The code inside [`impl_agpl` directory](https://github.com/vanderschaarlab/climb/tree/main/src/climb/tool/impl_agpl) is only compatible with the [AGPL-3.0 license](https://choosealicense.com/licenses/agpl-3.0/).
+
+It is not compatible with the [Apache-2.0 license](https://choosealicense.com/licenses/apache-2.0/), under which the core of the project (CliMB **core**) is licensed.
+
+If you wish to use the extra tools provided in the `impl_agpl` directory, you must explicitly install the `[extra]` version of CliMB like so:
+
+```bash
+# Install with the `[extra]` option.
+pip install -e climb[extra]
+```
+
+If you are forking/deriving from the code that **requires the tools in the `impl_agpl` directory** (i.e. CliMB with `[extra]`), you **must** also license your code under the AGPL-3.0 license.
+
+**Note:**
+
+The code of CliMB-DC **core** does not depend on the code in the `impl_agpl` directory or its functionality. The `[extra]` version is *completely isolated and optional*.
+Hence the core of CliMB-DC can be used under the Apache-2.0 license while the tools in the `impl_agpl` directory can be used *only* under the AGPL-3.0 license.
+
+
 <!-- exclude_docs_end -->
 <!-- include_docs
 ```{admonition} Warning
