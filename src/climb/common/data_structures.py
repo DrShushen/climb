@@ -148,12 +148,15 @@ class EngineParameter(pydantic.BaseModel):
     name: str
     description: str
     kind: Literal["float", "bool", "enum", "records"]
-    default: EngineParameterValue
+    default: EngineParameterValue | None
     enum_values: Optional[List[str]] = None
     min_value: Optional[float] = None
     max_value: Optional[float] = None
-    set_by_static_method: Optional[str] = None
-    default_set_by_static_method: Optional[str] = None
+    # Dynamical setting of some fields ---------------------
+    value_set_by_static_method: Optional[str] = None
+    disabled_set_by_static_method: Optional[str] = None
+    enum_values_set_by_engine_config: Optional[str] = None
+    # ------------------------------------------------------
     disabled: Optional[bool] = False
     records_disabled_keys: Optional[List[str]] = None
 
@@ -213,6 +216,11 @@ class UIControlledState(pydantic.BaseModel):
     interaction_stage: InteractionStage = "reason"
     input_request: Optional[UserInputRequest] = None
     input_placeholder: Optional[str] = None  # Only used for `restart_at_user_message`
+
+
+class EngineConfig(pydantic.BaseModel):
+    episode_db: List[Dict[str, Any]]
+    plan: List[str]
 
 
 class EngineState(pydantic.BaseModel):
@@ -317,6 +325,11 @@ class Session(pydantic.BaseModel):
         agent="worker",
         agent_switched=False,
         ui_controlled=UIControlledState(),
+    )
+
+    engine_config: EngineConfig = EngineConfig(
+        episode_db=[],
+        plan=[],
     )
 
     session_settings: SessionSettings = SessionSettings()

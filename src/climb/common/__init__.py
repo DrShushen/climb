@@ -3,6 +3,7 @@
 from . import disclaimer, exc
 from .data_structures import (
     Agent,
+    EngineConfig,
     EngineParameter,
     EngineParameterValue,
     EngineState,
@@ -26,6 +27,7 @@ __all__ = [
     "Agent",
     "create_new_session",
     "disclaimer",
+    "EngineConfig",
     "EngineParameter",
     "EngineParameterValue",
     "EngineState",

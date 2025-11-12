@@ -235,30 +235,30 @@ with st.container(border=True):
         # NOTE: we also keep dynamically adding the engine_params defined thus far to potentially be used by
         # a param-setting static method. Hence the order of the parameters matters, if a parameter is set by a
         # static method, it should be defined after the parameters that the static method depends on.
-        if hasattr(param, "set_by_static_method") and param.set_by_static_method is not None:
-            static_method = getattr(EngineClass, param.set_by_static_method)
+        value_set_dynamically = None
+        disabled_set_dynamically = False
+        enum_value_set_dynamically = None
+        if hasattr(param, "value_set_by_static_method") and param.value_set_by_static_method is not None:
+            static_method = getattr(EngineClass, param.value_set_by_static_method)
             kwargs_dict.update(engine_params)
-            value_set = static_method(**kwargs_dict)
+            value_set_dynamically = static_method(**kwargs_dict)
             value_may_be_editable = False
-        elif hasattr(param, "default_set_by_static_method") and param.default_set_by_static_method is not None:
-            static_method = getattr(EngineClass, param.default_set_by_static_method)
+        if hasattr(param, "disabled_set_by_static_method") and param.disabled_set_by_static_method is not None:
+            static_method = getattr(EngineClass, param.disabled_set_by_static_method)
             kwargs_dict.update(engine_params)
-            value_set = static_method(**kwargs_dict)
-            value_may_be_editable = True
-        else:
-            value_set = None
-            value_may_be_editable = True
-        param_disabled = param.disabled if value_may_be_editable else True
-        # ^ What it means:
-        # - If the parameter's value is set by a static method, it is never editable.
-        # - If the parameter's default is set by a static method, it is may be editable,
-        #   depending on the `disabled` attribute of the parameter.
+            disabled_set_dynamically = static_method(**kwargs_dict)
+            print(f">>> disabled_set_dynamically ({param.name}): {disabled_set_dynamically}")
+        if hasattr(param, "enum_values_set_by_engine_config") and param.enum_values_set_by_engine_config is not None:
+            static_method = getattr(EngineClass, param.enum_values_set_by_engine_config)
+            kwargs_dict.update(engine_params)
+            enum_value_set_dynamically = static_method(**kwargs_dict)
+        param_disabled = param.disabled if disabled_set_dynamically is False else True
         # --- --- ---
         if param.kind == "float":
             engine_params[param.name] = st.number_input(  # type: ignore
                 param.name,
                 help=param.description,
-                value=value_set if value_set is not None else param.default,  # type: ignore
+                value=value_set_dynamically if value_set_dynamically is not None else param.default,  # type: ignore
                 min_value=param.min_value,
                 max_value=param.max_value,
                 disabled=param_disabled,
@@ -267,15 +267,21 @@ with st.container(border=True):
             engine_params[param.name] = st.checkbox(
                 param.name,
                 help=param.description,
-                value=value_set if value_set is not None else param.default,  # type: ignore
+                value=value_set_dynamically if value_set_dynamically is not None else param.default,  # type: ignore
                 disabled=param_disabled,
             )
         elif param.kind == "enum":
             engine_params[param.name] = st.selectbox(
                 param.name,
                 help=param.description,
-                options=param.enum_values,  # type: ignore
-                index=param.enum_values.index(value_set if value_set is not None else param.default),  # type: ignore
+                options=param.enum_values if enum_value_set_dynamically is None else enum_value_set_dynamically,  # type: ignore
+                index=(
+                    param.enum_values.index(
+                        value_set_dynamically if value_set_dynamically is not None else param.default
+                    )
+                    if not enum_value_set_dynamically
+                    else enum_value_set_dynamically.index(enum_value_set_dynamically[0])
+                ),
                 disabled=param_disabled,
             )
         elif param.kind == "records":
@@ -284,7 +290,7 @@ with st.container(border=True):
 
             disabled = param.records_disabled_keys or []
 
-            df = pd.DataFrame(value_set if value_set is not None else param.default)
+            df = pd.DataFrame(value_set_dynamically if value_set_dynamically is not None else param.default)
 
             # Estimate a reasonable width for all the columns in the dataframe.
             # Convert each column to string, and return the maximum character length of each column.

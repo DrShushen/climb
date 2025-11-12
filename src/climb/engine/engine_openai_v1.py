@@ -11,6 +11,7 @@ import rich.prompt
 
 from climb.common import (
     Agent,
+    EngineConfig,
     EngineParameter,
     EngineState,
     KeyGeneration,
@@ -216,50 +217,6 @@ can include user interaction protocols or detailed steps to follow.
 - `selection_condition` describes the criteria under which a task or episode becomes relevant, often based on the \
 outcomes of previous tasks or episodes.
 """
-
-
-PLAN = [
-    "ENV_1",
-    "ENV_2",
-    "DP-F_1",
-    "ENV_3",
-    "INFO_1",
-    "INFO_2",
-    "INFO_3",
-    "EDA_1",
-    "EDA_1B",
-    "EDA_2",
-    "EDA_3",
-    "EDA_4",
-    "EDA_5",
-    "DP-F_2",
-    "DP-BM_1",
-    "DP-M_1",
-    "DP-M_2",
-    "DP-M_3",
-    "DP-M_4",
-    "DP-AM_1",
-    "DP-AM_2",
-    "DP-AM_3",
-    "DP-AM_4",
-    "DP-AM_5",
-    "DP-AM_6",
-    "MLC_1",
-    "MLC_3",
-    "MLC_4",
-    "ML_1-CLASSIFICATION",
-    "ML_1-REGRESSION",
-    "ML_1-SURVIVAL",
-    "ML_CONF",
-    "MLE_1",
-    "MLE_2",
-    "MLE_3",
-    "MLE_2-CLASSIFICATION",
-    "MLE_2X-CLASSIFICATION",
-    "MLE_4",
-    "MLI_1",
-    "END_1",
-]
 
 
 COORDINATOR_EXAMPLES = f"""
@@ -1446,23 +1403,20 @@ MESSAGE_OPTIONS = {
 
 # region: === Engine helper functions (may be considered for moving to a separate module) ===
 
-all_plan_files = (
-    load_plan_and_template_files(return_as="relative_paths")["template_plan_files"]
-    + load_plan_and_template_files(return_as="relative_paths")["plan_files"]
-)
 PlanFileParam = EngineParameter(
     name="plan_file",
     description="Path to the plan / episode database file.",
     kind="enum",
-    enum_values=all_plan_files,
-    default=all_plan_files[0],
+    enum_values=[],
+    enum_values_set_by_engine_config="get_all_plan_files",
+    default=None,
 )
 
 PossibleEpisodesParam = EngineParameter(
     name="possible_episodes",
     description="List of possible episodes that can be used in the project. Unselect as needed.",
     kind="records",
-    default_set_by_static_method="get_possible_episodes",
+    value_set_by_static_method="get_possible_episodes",
     default=[],
     records_disabled_keys=["episode_id", "episode_name"],
 )
@@ -2104,7 +2058,7 @@ class OpenV1Engine(OpenAIEngineBase):
                 self.session.engine_state = messages_with_engine_state[-1].engine_state
 
     @staticmethod
-    def _load_episode_db(plan_file: str) -> List[Dict[str, Any]]:
+    def _load_plan_data(plan_file: str) -> Dict[str, Any]:
         with open(REPO_PATH / Path(plan_file), "r") as f:
             episode_db = json.load(f)
         return episode_db
@@ -2112,7 +2066,19 @@ class OpenV1Engine(OpenAIEngineBase):
     def _before_define_agents_hook(self) -> None:
         super()._before_define_agents_hook()
 
-        episode_db = self._load_episode_db(plan_file=self.session.engine_params["plan_file"])
+        if not self.session.engine_config.episode_db or not self.session.engine_config.plan:
+            # Load from plan file only once ever, then store in session.engine_config.
+            plan_data = self._load_plan_data(plan_file=self.session.engine_params["plan_file"])
+            episode_db = plan_data["episode_db"]
+            plan = plan_data["plan"]
+            self.session.engine_config = EngineConfig(
+                episode_db=episode_db,
+                plan=plan,
+            )
+        else:
+            # Initialize from session.engine_config.
+            episode_db = self.session.engine_config.episode_db
+            plan = self.session.engine_config.plan
 
         # === Set up tool & episode filtering. ===
 
@@ -2183,7 +2149,7 @@ class OpenV1Engine(OpenAIEngineBase):
 
         # Filter the PLAN (set self.plan) to only include episodes whose `episode_id`s are in self.episode_db.
         # (i.e. only include episodes that have not been excluded based on the tool_set parameter).
-        self.plan = [ep for ep in PLAN if ep in get_all_episode_ids_from_db(self.episode_db)]
+        self.plan = [ep for ep in plan if ep in get_all_episode_ids_from_db(self.episode_db)]
         # NOTE: Must use self.plan, not PLAN in this engine!
         if DEBUG__PRINT_TOOL_FILTERING:
             print("PLAN after filtering out episodes with excluded tools:")
@@ -2195,7 +2161,8 @@ class OpenV1Engine(OpenAIEngineBase):
         rich.pretty.pprint(self.plan)
 
         # NOTE: Anywhere else in this engine, use self.episode_db and self.plan,
-        # not `episode_db` as derived from the plan file and not `PLAN`. Those are for initialization only.
+        # not `episode_db` and not `plan` (as originally loaded from the plan file).
+        # Those are for initialization only.
         # === Set up tool & episode filtering. (END) ===
 
     @staticmethod
@@ -2206,7 +2173,8 @@ class OpenV1Engine(OpenAIEngineBase):
     @staticmethod
     def get_possible_episodes(**kwargs: Any) -> List[Dict[str, Any]]:
         plan_file = kwargs["plan_file"]
-        episode_db = OpenV1Engine._load_episode_db(plan_file=plan_file)
+        plan_data = OpenV1Engine._load_plan_data(plan_file=plan_file)
+        episode_db = plan_data["episode_db"]
         possible_episodes = [
             {"enabled": True, "episode_id": d["episode_id"], "episode_name": d["episode_name"]}
             for d in copy.deepcopy(episode_db)
@@ -2214,6 +2182,13 @@ class OpenV1Engine(OpenAIEngineBase):
         # print("Possible episodes:")
         # rich.pretty.pprint(possible_episodes)
         return possible_episodes
+
+    @staticmethod
+    def get_all_plan_files(**kwargs: Any) -> List[str]:
+        return (
+            load_plan_and_template_files(return_as="relative_paths")["template_plan_files"]
+            + load_plan_and_template_files(return_as="relative_paths")["plan_files"]
+        )
 
     def get_plan_for_display(self):
         completed_episodes, remaining_episodes = get_completed_and_remaining_episodes(

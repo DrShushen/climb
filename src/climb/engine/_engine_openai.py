@@ -130,7 +130,8 @@ class OpenAIEngineBase(EngineBase):
                 default=0.5,
                 min_value=0.0,
                 max_value=1.0,
-                default_set_by_static_method="set_temperature",
+                value_set_by_static_method="set_temperature",
+                disabled_set_by_static_method="set_temperature_disabled",
             ),
             PrivacyModeParameter,
         ]
@@ -626,6 +627,10 @@ class OpenAIEngineBase(EngineBase):
     def set_temperature(**kwargs: Any) -> float:
         return 1.0 if "gpt-5" in kwargs["model_id"] else 0.5  # NOTE: The only supported temperature for GPT-5 is 1.0.
 
+    @staticmethod
+    def set_temperature_disabled(**kwargs: Any) -> bool:
+        return True if "gpt-5" in kwargs["model_id"] else False
+
 
 class AzureOpenAIEngineMixin:
     # For typing only here:
@@ -697,7 +702,7 @@ class AzureOpenAIEngineMixin:
                 kind="enum",
                 enum_values=ALLOWED_MODELS,
                 default="gpt-4-0125-preview",
-                set_by_static_method="set_model_id",
+                value_set_by_static_method="set_model_id",
                 disabled=True,
             ),
             EngineParameter(
@@ -711,7 +716,8 @@ class AzureOpenAIEngineMixin:
                 min_value=0.0,
                 max_value=1.0,
                 disabled=not configs_found,
-                default_set_by_static_method="set_temperature",
+                value_set_by_static_method="set_temperature",
+                disabled_set_by_static_method="set_temperature_disabled",
             ),
             PrivacyModeParameter,
         ]
