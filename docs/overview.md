@@ -119,12 +119,27 @@ By proceeding to use this software, you agree to these terms and accept full res
 
 ## ✍️ Citing
 
-If you use CliMB in your work, please cite the [associated paper](http://arxiv.org/abs/2410.03736):
-```bibtex
-@article{saveliev2024climb,
-  title={CliMB: An AI-enabled Partner for Clinical Predictive Modeling},
-  author={Saveliev, Evgeny and Schubert, Tim and Pouplin, Thomas and Kosmoliaptsis, Vasilis and van der Schaar, Mihaela},
-  journal={arXiv preprint arXiv:2410.03736},
-  year={2024}
-}
-```
+If you use CliMB in your work, please cite the following two papers:
+
+- [Towards Human-Guided, Data-Centric LLM Co-Pilots](https://arxiv.org/abs/2501.10321)
+  ```bibtex
+  @article{saveliev2025towards,
+    title={Towards Human-Guided, Data-Centric LLM Co-Pilots}, 
+    author={Evgeny Saveliev and Jiashuo Liu and Nabeel Seedat and Anders Boyd and Mihaela van der Schaar},
+    year={2025},
+    eprint={2501.10321},
+    archivePrefix={arXiv},
+    primaryClass={cs.LG},
+    url={https://arxiv.org/abs/2501.10321}, 
+  }
+  ```
+
+- [CliMB: An AI-enabled Partner for Clinical Predictive Modeling](http://arxiv.org/abs/2410.03736):
+  ```bibtex
+  @article{saveliev2024climb,
+    title={CliMB: An AI-enabled Partner for Clinical Predictive Modeling},
+    author={Saveliev, Evgeny and Schubert, Tim and Pouplin, Thomas and Kosmoliaptsis, Vasilis and van der Schaar, Mihaela},
+    journal={arXiv preprint arXiv:2410.03736},
+    year={2024}
+  }
+  ```
